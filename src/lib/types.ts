@@ -26,6 +26,8 @@ export interface FormField {
   allowOther?: boolean;
   placeholder?: string;
   sectionTitle?: string; // used when type === 'page_break' or section header
+  section?: string;
+  fpsicoCode?: string;
 }
 
 export interface FormSchema {
