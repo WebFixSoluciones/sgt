@@ -4,6 +4,13 @@ import '@/styles/globals.css';
 export const metadata: Metadata = {
   title: 'SGT Prevención | Gestor de Evaluaciones',
   description: 'Sistema de evaluación de riesgos psicosociales y prevención laboral SGT.',
+  icons: {
+    icon: [
+      { url: '/icon.png', type: 'image/png' },
+      { url: '/favicon.ico' },
+    ],
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({

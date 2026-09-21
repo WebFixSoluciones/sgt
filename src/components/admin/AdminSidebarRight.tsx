@@ -73,10 +73,9 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
     <div className="flex flex-col h-full justify-between">
       {/* Upper Area */}
       <div className="space-y-6">
-        {/* Admin Profile Box (Dropbox Style) */}
         <div className="p-3 bg-[#f8fafc] border border-slate-200 rounded-xl flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#0061fe] text-white font-bold flex items-center justify-center text-sm shadow-xs">
-            AD
+          <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 overflow-hidden flex items-center justify-center shadow-xs p-1">
+            <img src="/icon.png" alt="SGT" className="w-8 h-8 object-contain" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-xs font-bold text-slate-900 truncate">Administrador SGT</div>
