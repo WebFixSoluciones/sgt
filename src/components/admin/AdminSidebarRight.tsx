@@ -241,15 +241,17 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
           </Link>
         </div>
 
-        {/* Right Header: Quick action button */}
+        {/* Right Header: Quick action button (hidden when already in form builder) */}
         <div className="flex items-center gap-2">
-          <Link
-            href="/admin/formularios/nuevo"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0061fe] hover:bg-[#0052d9] text-white text-xs font-medium rounded-lg transition-colors shadow-xs"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>Crear Formulario</span>
-          </Link>
+          {!pathname.startsWith('/admin/formularios') && (
+            <Link
+              href="/admin/formularios/nuevo"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0061fe] hover:bg-[#0052d9] text-white text-xs font-medium rounded-lg transition-colors shadow-xs"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Crear Formulario</span>
+            </Link>
+          )}
         </div>
       </header>
 
