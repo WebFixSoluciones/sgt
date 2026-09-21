@@ -11,8 +11,20 @@ interface DatabaseSchema {
   groups: EvaluationGroup[];
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'db.json');
+const IS_SERVERLESS = Boolean(
+  process.env.VERCEL ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME ||
+  process.env.LAMBDA_TASK_ROOT
+);
+
+const LOCAL_DATA_DIR = path.join(process.cwd(), 'data');
+const LOCAL_DB_FILE = path.join(LOCAL_DATA_DIR, 'db.json');
+
+const SERVERLESS_DATA_DIR = path.join('/tmp', 'sgt_data');
+const SERVERLESS_DB_FILE = path.join(SERVERLESS_DATA_DIR, 'db.json');
+
+const DATA_DIR = IS_SERVERLESS ? SERVERLESS_DATA_DIR : LOCAL_DATA_DIR;
+const DB_FILE = IS_SERVERLESS ? SERVERLESS_DB_FILE : LOCAL_DB_FILE;
 
 // In-memory cache for speed
 let memDb: DatabaseSchema | null = null;
@@ -40,11 +52,11 @@ async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
         }
       }
     } catch (e) {
-      console.warn('Vercel Blob read error, falling back to local:', e);
+      console.warn('Vercel Blob read error, falling back to local/tmp:', e);
     }
   }
 
-  // Local filesystem fallback
+  // Filesystem fallback (uses /tmp on Vercel/serverless)
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -53,12 +65,20 @@ async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
       const content = fs.readFileSync(DB_FILE, 'utf-8');
       return JSON.parse(content);
     } else {
-      const initial = getInitialDb();
-      fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
+      let initial = getInitialDb();
+      if (fs.existsSync(LOCAL_DB_FILE)) {
+        try {
+          const localContent = fs.readFileSync(LOCAL_DB_FILE, 'utf-8');
+          initial = JSON.parse(localContent);
+        } catch (e) {}
+      }
+      try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
+      } catch (e) {}
       return initial;
     }
   } catch (err) {
-    console.error('Error reading local DB:', err);
+    console.error('Error reading DB:', err);
     return getInitialDb();
   }
 }

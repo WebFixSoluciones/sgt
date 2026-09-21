@@ -339,9 +339,19 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
       const data = await res.json();
       if (data.success) {
         setSavedSuccess(true);
-        setTimeout(() => setSavedSuccess(false), 2500);
+        setTimeout(() => setSavedSuccess(false), 3000);
+
+        // Cache in localStorage for offline/serverless resilience
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(`sgt_form_${data.data.id}`, JSON.stringify(data.data));
+          } catch (e) {}
+        }
+
         if (isNew) {
-          router.push(`/admin/formularios/${data.data.id}`);
+          // Smoothly update URL without hard reload/404
+          window.history.replaceState(null, '', `/admin/formularios/${data.data.id}`);
+          setForm(data.data);
         }
       } else {
         alert(data.error || 'Error al guardar el formulario');
