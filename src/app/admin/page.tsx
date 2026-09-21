@@ -21,6 +21,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema } from '@/lib/types';
+import AdminEvaluationWizard from '@/components/admin/AdminEvaluationWizard';
 
 export default function AdminFormsPage() {
   const [campaigns, setCampaigns] = useState<EvaluationCampaign[]>([]);
@@ -32,15 +33,9 @@ export default function AdminFormsPage() {
   const [bulkAction, setBulkAction] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  // New Campaign Modal State
-  const [showNewModal, setShowNewModal] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newCompany, setNewCompany] = useState('CHAIDE Y CHAIDE');
-  const [newCode, setNewCode] = useState('');
-  const [newExpected, setNewExpected] = useState('100');
-  const [selectedFormId, setSelectedFormId] = useState('');
-  const [nextEvaluationCode, setNextEvaluationCode] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // New Campaign Wizard State
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardInitialData, setWizardInitialData] = useState<Partial<EvaluationCampaign> | null>(null);
 
   // Duplicate / Template Modal State
   const [duplicateSource, setDuplicateSource] = useState<EvaluationCampaign | null>(null);
@@ -58,9 +53,6 @@ export default function AdminFormsPage() {
       const formsData = await formsRes.json();
       if (formsData.success) {
         setForms(formsData.data);
-        if (formsData.data.length > 0 && !selectedFormId) {
-          setSelectedFormId(formsData.data[0].id);
-        }
       }
     } catch (e) {
       console.error(e);
@@ -115,50 +107,16 @@ export default function AdminFormsPage() {
     }
   };
 
-  const handleCreateCampaign = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle || !newCode || !newCompany || !selectedFormId) return;
-
-    try {
-      setIsSubmitting(true);
-      const res = await fetch('/api/evaluaciones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: newCode,
-          title: newTitle,
-          company: newCompany,
-          formId: selectedFormId,
-          expectedParticipants: parseInt(newExpected, 10) || 100,
-          nextEvaluationCode: nextEvaluationCode.trim() || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setShowNewModal(false);
-        setNewTitle('');
-        setNewCode('');
-        setNextEvaluationCode('');
-        await fetchCampaigns();
-      } else {
-        alert(data.error || 'Error al crear evaluación');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error en el servidor');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleDuplicate = (camp: EvaluationCampaign) => {
-    setNewTitle(`${camp.title} (COPIA)`);
-    setNewCode(`${camp.code}-COPIA`);
-    setNewCompany(camp.company);
-    setSelectedFormId(camp.formId);
-    setNewExpected(String(camp.expectedParticipants));
-    setNextEvaluationCode(camp.nextEvaluationCode || '');
-    setShowNewModal(true);
+    setWizardInitialData({
+      title: `${camp.title} (COPIA)`,
+      code: `${camp.code}-COPIA`,
+      company: camp.company,
+      formId: camp.formId,
+      expectedParticipants: camp.expectedParticipants,
+      nextEvaluationCode: camp.nextEvaluationCode,
+    });
+    setWizardOpen(true);
   };
 
   // Filtered lists
@@ -187,7 +145,10 @@ export default function AdminFormsPage() {
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Formularios</h1>
           <button
-            onClick={() => setShowNewModal(true)}
+            onClick={() => {
+              setWizardInitialData(null);
+              setWizardOpen(true);
+            }}
             className="px-3.5 py-1.5 bg-[#2271b1] hover:bg-[#135e96] text-white text-sm font-medium rounded transition-colors shadow-sm inline-flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
@@ -482,133 +443,17 @@ export default function AdminFormsPage() {
         </div>
       </div>
 
-      {/* Modal: Añadir Nuevo Formulario / Convocatoria */}
-      {showNewModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white border border-slate-200 rounded-lg max-w-lg w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-900">Crear Nueva Evaluación / Formulario</h3>
-              <button
-                onClick={() => setShowNewModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg leading-none"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateCampaign} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Título de la Evaluación *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. CHAIDE Y CHAIDE CUESTIONARIO LIPS-60 2026"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded text-sm text-slate-900 focus:outline-none focus:border-[#2271b1]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Código de Acceso (ID) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej. CHAIDE-LIPS-2026"
-                    value={newCode}
-                    onChange={(e) => setNewCode(e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 border border-slate-300 rounded text-sm text-slate-900 font-mono focus:outline-none focus:border-[#2271b1]"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-0.5">Se usará en el link: /evaluar/[COD]</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Empresa Destino *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej. CHAIDE Y CHAIDE"
-                    value={newCompany}
-                    onChange={(e) => setNewCompany(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded text-sm text-slate-900 focus:outline-none focus:border-[#2271b1]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Plantilla o Formulario Base *
-                </label>
-                <select
-                  value={selectedFormId}
-                  onChange={(e) => setSelectedFormId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded text-sm text-slate-900 bg-white focus:outline-none focus:border-[#2271b1]"
-                >
-                  {forms.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.title} ({f.fields.length} preguntas / secciones)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Trabajadores Esperados
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="100"
-                    value={newExpected}
-                    onChange={(e) => setNewExpected(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded text-sm text-slate-900 focus:outline-none focus:border-[#2271b1]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Encadenar Siguiente (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Código siguiente encuesta"
-                    value={nextEvaluationCode}
-                    onChange={(e) => setNextEvaluationCode(e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 border border-slate-300 rounded text-sm text-slate-900 font-mono focus:outline-none focus:border-[#2271b1]"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-0.5">Pasa automáticamente al terminar</p>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowNewModal(false)}
-                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-[#2271b1] hover:bg-[#135e96] text-white text-sm font-medium rounded transition-colors disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Creando...' : 'Crear Evaluación'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Asistente de Creación Paso a Paso */}
+      <AdminEvaluationWizard
+        isOpen={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onSuccess={async () => {
+          await fetchCampaigns();
+        }}
+        existingCampaigns={campaigns}
+        forms={forms}
+        initialData={wizardInitialData}
+      />
     </div>
   );
 }

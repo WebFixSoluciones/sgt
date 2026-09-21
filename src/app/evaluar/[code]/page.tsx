@@ -9,6 +9,7 @@ import {
   ArrowRight,
   ArrowLeft,
   CheckCircle2,
+  Check,
   AlertCircle,
   Loader2,
   HelpCircle,
@@ -53,6 +54,8 @@ export default function WorkerEvaluationPage() {
   const [isFinalSubmitting, setIsFinalSubmitting] = useState(false);
   const [transitionMsg, setTransitionMsg] = useState<string | null>(null);
   const [surveyCompletedSuccess, setSurveyCompletedSuccess] = useState(false);
+  const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
+  const [validationNotice, setValidationNotice] = useState<string | null>(null);
 
   // 1. Fetch Campaign & Form Schema
   useEffect(() => {
@@ -197,6 +200,26 @@ export default function WorkerEvaluationPage() {
   const handleSelectAnswer = async (fieldId: string, value: string | number) => {
     const updatedAnswers = { ...answers, [fieldId]: value };
     setAnswers(updatedAnswers);
+    setActiveFieldId(fieldId);
+    setValidationNotice(null);
+
+    // Auto-advance smoothly to the next unanswered question in the current section
+    const currentFields = sections[currentSectionIndex]?.fields || [];
+    const currentIndex = currentFields.findIndex((f) => f.id === fieldId);
+    if (currentIndex !== -1) {
+      const nextUnanswered = currentFields.slice(currentIndex + 1).find((f) => {
+        return updatedAnswers[f.id] === undefined || updatedAnswers[f.id] === '';
+      });
+      if (nextUnanswered) {
+        setTimeout(() => {
+          const el = document.getElementById(`field-${nextUnanswered.id}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setActiveFieldId(nextUnanswered.id);
+          }
+        }, 180);
+      }
+    }
 
     // Auto-save draft asynchronously
     try {
@@ -224,17 +247,26 @@ export default function WorkerEvaluationPage() {
   const handleNextSection = () => {
     // Validate required fields in current section
     const currentFields = sections[currentSectionIndex]?.fields || [];
-    for (const f of currentFields) {
-      if (f.required && (answers[f.id] === undefined || answers[f.id] === '')) {
-        alert(`Por favor responda a la pregunta obligatoria: "${f.label}"`);
-        return;
+    const firstMissing = currentFields.find(
+      (f) => f.required && (answers[f.id] === undefined || answers[f.id] === '')
+    );
+
+    if (firstMissing) {
+      setValidationNotice(`Pregunta requerida pendiente: "${firstMissing.label}"`);
+      setActiveFieldId(firstMissing.id);
+      const el = document.getElementById(`field-${firstMissing.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
+      return;
     }
 
     if (currentSectionIndex < sections.length - 1) {
       const nextIndex = currentSectionIndex + 1;
       setCurrentSectionIndex(nextIndex);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      setActiveFieldId(null);
+      setValidationNotice(null);
 
       // Save section advance
       fetch('/api/sesiones', {
@@ -257,6 +289,8 @@ export default function WorkerEvaluationPage() {
     if (currentSectionIndex > 0) {
       setCurrentSectionIndex(currentSectionIndex - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      setActiveFieldId(null);
+      setValidationNotice(null);
     }
   };
 
@@ -499,13 +533,23 @@ export default function WorkerEvaluationPage() {
   }
 
   // -------------------------------------------------------------
-  // Step 2: Survey Form Renderer (Clean, Flat, 100% Responsive)
+  // Step 2: Survey Form Renderer (Assisted Sections with Enfoque Activo)
   // -------------------------------------------------------------
   const currentSection = sections[currentSectionIndex];
   const progressPercent = Math.round(((currentSectionIndex + 1) / Math.max(sections.length, 1)) * 100);
 
+  const currentSectionFields = currentSection?.fields || [];
+  const currentSectionTotal = currentSectionFields.length;
+  const currentSectionAnswered = currentSectionFields.filter(
+    (f) => answers[f.id] !== undefined && answers[f.id] !== ''
+  ).length;
+  const currentSectionPending = currentSectionTotal - currentSectionAnswered;
+  const allRequiredAnswered = currentSectionFields.every(
+    (f) => !f.required || (answers[f.id] !== undefined && answers[f.id] !== '')
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50 py-6 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#f8fafc] py-6 px-4 sm:px-6 lg:px-8">
       {/* Resume modal if triggered */}
       {showResumeModal && (
         <ResumePromptModal
@@ -516,75 +560,133 @@ export default function WorkerEvaluationPage() {
       )}
 
       <div className="max-w-3xl mx-auto space-y-6">
-        {/* Top Floating / Sticky Progress Header */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs sticky top-4 z-10">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-600 mb-2.5">
+        {/* Top Floating / Sticky Assisted Progress Header */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm sticky top-3 z-30 space-y-3">
+          {/* Company branding & Session info */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-600">
             <div className="flex items-center gap-3">
               <img
                 src="/logo-sgt.jpg"
                 alt="SGT"
-                className="h-7 w-auto object-contain hidden sm:block"
+                className="h-8 w-auto object-contain hidden sm:block rounded-md border border-slate-100"
               />
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900">{campaign.company}</span>
+                <span className="font-bold text-slate-900 text-sm">{campaign.company}</span>
                 <span className="text-slate-300">•</span>
-                <span className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[11px] font-semibold">
+                <span className="font-mono text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-md text-[11px] font-semibold">
                   COD: {workerCode}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+
+            <div className="flex items-center gap-3 self-end sm:self-auto">
               {isSavingDraft && (
-                <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                  <Loader2 className="w-3 h-3 animate-spin" /> Auto-guardando...
+                <span className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                  <Loader2 className="w-3 h-3 animate-spin text-blue-600" /> Guardando respuesta...
                 </span>
               )}
-              <span className="font-semibold text-blue-700">
-                Sección {currentSectionIndex + 1} de {sections.length} ({progressPercent}%)
+              <span className="font-bold text-blue-600 text-xs px-2.5 py-1 bg-blue-50 rounded-lg">
+                Bloque {currentSectionIndex + 1} de {sections.length} ({progressPercent}%)
               </span>
             </div>
           </div>
 
+          {/* Section Step Badges Stepper */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 scrollbar-none text-xs">
+            {sections.map((sec, idx) => {
+              const isDone = idx < currentSectionIndex;
+              const isCurrent = idx === currentSectionIndex;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    if (idx <= currentSectionIndex) {
+                      setCurrentSectionIndex(idx);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  disabled={idx > currentSectionIndex}
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+                    isCurrent
+                      ? 'bg-blue-600 text-white shadow-xs ring-2 ring-blue-600/20'
+                      : isDone
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-70'
+                  }`}
+                >
+                  {isDone ? <Check className="w-3 h-3" /> : <span>{idx + 1}</span>}
+                  <span className="max-w-[130px] truncate">{sec.title}</span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Progress Bar */}
-          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
 
-          {/* Section Title */}
-          <div className="mt-3 font-semibold text-sm text-slate-800 flex items-center gap-2">
-            <span>{currentSection?.title || 'Preguntas'}</span>
+          {/* Current Section Title & Counter */}
+          <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+            <span className="font-bold text-slate-800 line-clamp-1">
+              {currentSection?.title || 'Preguntas'}
+            </span>
+            <span className="text-slate-500 font-medium shrink-0">
+              Respondidas: <strong className="text-slate-800">{currentSectionAnswered}</strong> de {currentSectionTotal}
+            </span>
           </div>
         </div>
 
-        {/* Question Cards List */}
-        <div className="space-y-4">
+        {/* Question Cards List with Assisted Focus & Transitions */}
+        <div className="space-y-4 animate-fade-in-slide">
           {currentSection?.fields.map((field, fieldIdx) => {
             const currentValue = answers[field.id];
+            const isAnswered = currentValue !== undefined && currentValue !== '';
+            const isActive = activeFieldId === field.id;
 
             return (
               <div
                 key={field.id}
-                className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs transition-all hover:border-slate-300"
+                id={`field-${field.id}`}
+                onClick={() => setActiveFieldId(field.id)}
+                className={`rounded-2xl p-5 sm:p-6 transition-all duration-200 border ${
+                  isActive
+                    ? 'bg-white border-blue-500 ring-2 ring-blue-500/20 shadow-md'
+                    : isAnswered
+                    ? 'bg-white border-slate-200/90 shadow-xs'
+                    : 'bg-white border-slate-200/70 hover:border-slate-300 shadow-xs'
+                }`}
               >
-                {/* Question Label */}
-                <div className="mb-3">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">
-                    Pregunta {fieldIdx + 1} {field.required && <span className="text-rose-600">*</span>}
-                  </span>
-                  <h3 className="text-sm sm:text-base font-semibold text-slate-900 leading-snug">
-                    {field.label}
-                  </h3>
-                  {field.description && (
-                    <p className="mt-1 text-xs text-slate-500">{field.description}</p>
+                {/* Question Label & Status Badge */}
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      Pregunta {fieldIdx + 1} de {currentSectionTotal}{' '}
+                      {field.required && <span className="text-rose-600 font-bold">*</span>}
+                    </span>
+                    <h3 className="text-sm sm:text-base font-semibold text-slate-900 leading-snug">
+                      {field.label}
+                    </h3>
+                    {field.description && (
+                      <p className="mt-1 text-xs text-slate-500 leading-relaxed">{field.description}</p>
+                    )}
+                  </div>
+
+                  {isAnswered && (
+                    <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold rounded-full flex items-center gap-1 shrink-0">
+                      <Check className="w-3 h-3" />
+                      <span>Respondida</span>
+                    </span>
                   )}
                 </div>
 
                 {/* Radio Options Grid */}
                 {field.type === 'radio' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-4">
                     {field.options?.map((opt) => {
                       const isSelected = String(currentValue) === String(opt.value);
                       return (
@@ -592,15 +694,15 @@ export default function WorkerEvaluationPage() {
                           type="button"
                           key={opt.id}
                           onClick={() => handleSelectAnswer(field.id, opt.value)}
-                          className={`p-3 rounded-lg border text-left text-xs sm:text-sm font-medium transition-all flex items-center justify-between ${
+                          className={`p-3.5 rounded-xl border text-left text-xs sm:text-sm font-medium transition-all duration-150 flex items-center justify-between ${
                             isSelected
-                              ? 'bg-blue-50/80 border-blue-600 text-blue-900 ring-1 ring-blue-600 shadow-xs'
+                              ? 'bg-blue-50/80 border-blue-600 text-blue-950 ring-1 ring-blue-600 shadow-xs scale-[1.01]'
                               : 'bg-slate-50/50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
                           }`}
                         >
-                          <span>{opt.label}</span>
+                          <span className="leading-snug">{opt.label}</span>
                           <span
-                            className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ml-2 ${
+                            className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ml-2.5 transition-colors ${
                               isSelected
                                 ? 'border-blue-600 bg-blue-600 text-white'
                                 : 'border-slate-300 bg-white'
@@ -616,11 +718,11 @@ export default function WorkerEvaluationPage() {
 
                 {/* Select Dropdown */}
                 {field.type === 'select' && (
-                  <div className="mt-2">
+                  <div className="mt-3">
                     <select
                       value={currentValue !== undefined ? String(currentValue) : ''}
                       onChange={(e) => handleSelectAnswer(field.id, e.target.value)}
-                      className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
                     >
                       <option value="">-- Seleccione una opción --</option>
                       {field.options?.map((opt) => (
@@ -634,26 +736,26 @@ export default function WorkerEvaluationPage() {
 
                 {/* Textarea */}
                 {field.type === 'textarea' && (
-                  <div className="mt-2">
+                  <div className="mt-3">
                     <textarea
                       rows={3}
                       value={currentValue !== undefined ? String(currentValue) : ''}
                       onChange={(e) => handleSelectAnswer(field.id, e.target.value)}
-                      placeholder="Escriba aquí sus observaciones o consideraciones adicionales..."
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                      placeholder="Escriba aquí sus observaciones o consideraciones..."
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
                     />
                   </div>
                 )}
 
                 {/* Text Input */}
                 {field.type === 'text' && (
-                  <div className="mt-2">
+                  <div className="mt-3">
                     <input
                       type="text"
                       value={currentValue !== undefined ? String(currentValue) : ''}
                       onChange={(e) => handleSelectAnswer(field.id, e.target.value)}
                       placeholder="Ingrese texto..."
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
                     />
                   </div>
                 )}
@@ -662,25 +764,44 @@ export default function WorkerEvaluationPage() {
           })}
         </div>
 
-        {/* Bottom Navigation Buttons */}
-        <div className="flex items-center justify-between gap-4 pt-4 pb-12">
+        {/* Guided Sticky Bottom Control Bar */}
+        <div className="sticky bottom-3 z-30 bg-white/95 backdrop-blur-sm border border-slate-200/90 rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
           <button
             type="button"
             onClick={handlePrevSection}
             disabled={currentSectionIndex === 0}
-            className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs sm:text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-2 disabled:opacity-30 disabled:pointer-events-none"
+            className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-semibold rounded-xl transition-colors inline-flex items-center justify-center gap-1.5 disabled:opacity-30 disabled:pointer-events-none"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Anterior</span>
           </button>
 
+          {/* Dynamic Status / Validation Notice */}
+          <div className="text-center text-xs">
+            {validationNotice ? (
+              <div className="text-amber-700 font-semibold flex items-center justify-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span className="line-clamp-1">{validationNotice}</span>
+              </div>
+            ) : allRequiredAnswered ? (
+              <div className="text-emerald-700 font-semibold flex items-center justify-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>¡Bloque completado! Listo para continuar.</span>
+              </div>
+            ) : (
+              <div className="text-slate-500 font-medium">
+                Quedan <strong className="text-slate-800">{currentSectionPending}</strong> preguntas en este bloque
+              </div>
+            )}
+          </div>
+
           {currentSectionIndex < sections.length - 1 ? (
             <button
               type="button"
               onClick={handleNextSection}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-2 shadow-xs"
+              className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-colors inline-flex items-center justify-center gap-1.5 shadow-xs"
             >
-              <span>Siguiente</span>
+              <span>Continuar Bloque {currentSectionIndex + 2}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
@@ -688,7 +809,7 @@ export default function WorkerEvaluationPage() {
               type="button"
               onClick={handleFinalSubmit}
               disabled={isFinalSubmitting}
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm disabled:opacity-50"
+              className="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors inline-flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
             >
               {isFinalSubmitting ? (
                 <>
