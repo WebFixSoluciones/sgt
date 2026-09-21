@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { FormSchema, WorkerSubmission } from './types';
+import { formatEcuadorDateTime } from './date-utils';
 
 /**
  * Builds an Excel workbook buffer (.xlsx) matching the standard structure
@@ -43,10 +44,10 @@ export function generateEvaluationExcel(
     row.push(sub.id || '');
 
     // Col 2: Fecha entrada
-    row.push(sub.startedAt || sub.updatedAt || '');
+    row.push(formatEcuadorDateTime(sub.startedAt || sub.updatedAt));
 
     // Col 3: Fecha de actualización
-    row.push(sub.completedAt || sub.updatedAt || '');
+    row.push(formatEcuadorDateTime(sub.completedAt || sub.updatedAt));
 
     // Col 4: IP del usuario
     row.push(sub.ip || '127.0.0.1');
@@ -129,8 +130,8 @@ export function generateMultiFormEvaluationExcel(
       sub.id || '',
       sub.workerCode || '',
       sub.status === 'completed' ? 'Completado' : 'En Progreso',
-      sub.startedAt || '',
-      sub.completedAt || '',
+      formatEcuadorDateTime(sub.startedAt),
+      formatEcuadorDateTime(sub.completedAt || sub.updatedAt),
       sub.ip || '127.0.0.1',
       sub.userAgent || '',
     ]);
@@ -165,7 +166,7 @@ export function generateMultiFormEvaluationExcel(
       const row: (string | number)[] = [
         sub.id || '',
         sub.workerCode || '',
-        sub.completedAt || sub.updatedAt || '',
+        formatEcuadorDateTime(sub.completedAt || sub.updatedAt || sub.startedAt),
       ];
 
       for (const field of questionFields) {

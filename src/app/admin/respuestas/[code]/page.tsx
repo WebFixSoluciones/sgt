@@ -18,6 +18,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema, WorkerSubmission } from '@/lib/types';
+import { formatEcuadorDateTime } from '@/lib/date-utils';
 
 export default function RespuestasPage() {
   const params = useParams();
@@ -202,8 +203,8 @@ export default function RespuestasPage() {
                   return (
                     <tr key={sub.id} className="hover:bg-blue-50/30 transition-colors">
                       <td className="py-3 px-3 font-mono font-medium text-slate-700">{sub.id}</td>
-                      <td className="py-3 px-3 text-slate-600">
-                        {sub.completedAt || sub.updatedAt || sub.startedAt}
+                      <td className="py-3 px-3 text-slate-600 font-mono text-xs">
+                        {formatEcuadorDateTime(sub.completedAt || sub.updatedAt || sub.startedAt)}
                       </td>
                       <td className="py-3 px-3 font-mono font-bold text-blue-900">{sub.workerCode}</td>
                       <td className="py-3 px-3 text-slate-700">Código {puesto}</td>
@@ -252,7 +253,7 @@ export default function RespuestasPage() {
                 </h3>
                 <p className="text-xs text-slate-500">
                   ID Entrada: {selectedSubmission.id} • IP: {selectedSubmission.ip} • Fecha:{' '}
-                  {selectedSubmission.completedAt || selectedSubmission.updatedAt}
+                  {formatEcuadorDateTime(selectedSubmission.completedAt || selectedSubmission.updatedAt || selectedSubmission.startedAt)}
                 </p>
               </div>
               <button

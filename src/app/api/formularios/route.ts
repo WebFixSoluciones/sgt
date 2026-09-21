@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getForms, saveForm, getFormById } from '@/lib/storage';
 import { FormSchema } from '@/lib/types';
+import { getEcuadorISOString } from '@/lib/date-utils';
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Título y campos son requeridos' }, { status: 400 });
     }
 
+    const nowEc = getEcuadorISOString();
     const newForm: FormSchema = {
       id: body.id || `form-${Date.now()}`,
       title: title.trim(),
@@ -29,8 +31,8 @@ export async function POST(req: NextRequest) {
       isTemplate: Boolean(isTemplate),
       category: category || 'general',
       fields: fields || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: nowEc,
+      updatedAt: nowEc,
     };
 
     await saveForm(newForm);

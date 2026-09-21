@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFormById, saveForm } from '@/lib/storage';
+import { getEcuadorISOString } from '@/lib/date-utils';
 
 export async function GET(
   req: NextRequest,
@@ -31,7 +32,7 @@ export async function PUT(
       ...existing,
       ...body,
       id: existing.id,
-      updatedAt: new Date().toISOString(),
+      updatedAt: getEcuadorISOString(),
     };
 
     await saveForm(updated);

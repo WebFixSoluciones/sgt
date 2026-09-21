@@ -1,11 +1,12 @@
 import { WorkerSubmission } from './types';
+import { formatEcuadorFpsicoDate } from './date-utils';
 
 /**
  * Generates an official INSST FPSICO 4.0 compliant TXT file content.
  * Specification:
  * - Each row corresponds to one completed questionnaire.
  * - 4 mandatory comma-separated parts, each wrapped in double quotes:
- *   1. Date/Time: "DD/MM/AAAA HH:MM:SS"
+ *   1. Date/Time: "DD/MM/AAAA HH:MM:SS" (Zona horaria Ecuador UTC-5)
  *   2. Demographic Variables: e.g. "211" or "(28)11" (if category > 9, enclose in parentheses)
  *   3. 89 Item Answers: 89 contiguous digits (e.g. 1 to 5, or 0)
  *   4. Questionnaire Identifier / Entry ID: e.g. "6592"
@@ -17,15 +18,9 @@ export function generateFpsicoTxt(submissions: WorkerSubmission[], fpsicoFieldId
   for (const sub of submissions) {
     if (sub.status !== 'completed') continue;
 
-    // 1. Date formatting (European: DD/MM/AAAA HH:MM:SS)
-    const dateObj = new Date(sub.completedAt || sub.updatedAt || sub.startedAt);
-    const day = String(dateObj.getDate()).padStart(2, '0');
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const year = dateObj.getFullYear();
-    const hours = String(dateObj.getHours()).padStart(2, '0');
-    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-    const seconds = String(dateObj.getSeconds()).padStart(2, '0');
-    const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    // 1. Date formatting in Ecuador Timezone (DD/MM/AAAA HH:MM:SS)
+    const formattedDate = formatEcuadorFpsicoDate(sub.completedAt || sub.updatedAt || sub.startedAt);
+
 
     // 2. Demographic Variables (Agrupación de puestos, Horarios, Antigüedad)
     const puestoVal = String(sub.answers['puesto'] ?? sub.answers['agrupacion_puestos'] ?? '1');

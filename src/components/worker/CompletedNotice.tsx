@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { CheckCircle2, ShieldAlert, ArrowLeft, PhoneCall } from 'lucide-react';
+import { CheckCircle2, ShieldAlert, ArrowLeft, PhoneCall, Calendar } from 'lucide-react';
+import { formatEcuadorDateTime } from '@/lib/date-utils';
 
 interface CompletedNoticeProps {
   company: string;
@@ -36,6 +37,12 @@ export default function CompletedNotice({
           <strong className="text-slate-800">{company}</strong> con el código de trabajador{' '}
           <span className="font-mono font-bold text-slate-800">{workerCode}</span>.
         </p>
+        {completedAt && (
+          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-600">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <span>Registrado el: <strong className="text-slate-800 font-mono">{formatEcuadorDateTime(completedAt)}</strong></span>
+          </div>
+        )}
       </div>
 
       <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs text-slate-600 text-left space-y-2">

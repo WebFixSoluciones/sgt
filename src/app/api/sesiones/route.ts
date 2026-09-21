@@ -7,6 +7,7 @@ import {
   resetSubmission,
 } from '@/lib/storage';
 import { WorkerSubmission } from '@/lib/types';
+import { getEcuadorISOString } from '@/lib/date-utils';
 
 export async function POST(req: NextRequest) {
   try {
@@ -108,8 +109,8 @@ export async function POST(req: NextRequest) {
         answers: { ...(existing?.answers || {}), ...(answers || {}) },
         ip: req.headers.get('x-forwarded-for') || req.ip || '181.199.58.217',
         userAgent: req.headers.get('user-agent') || 'Browser Client',
-        startedAt: existing?.startedAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        startedAt: existing?.startedAt || getEcuadorISOString(),
+        updatedAt: getEcuadorISOString(),
       };
 
       await saveSubmission(submission);
@@ -129,9 +130,9 @@ export async function POST(req: NextRequest) {
         answers: { ...(existing?.answers || {}), ...(answers || {}) },
         ip: req.headers.get('x-forwarded-for') || req.ip || '181.199.58.217',
         userAgent: req.headers.get('user-agent') || 'Browser Client',
-        startedAt: existing?.startedAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        completedAt: new Date().toISOString(),
+        startedAt: existing?.startedAt || getEcuadorISOString(),
+        updatedAt: getEcuadorISOString(),
+        completedAt: getEcuadorISOString(),
       };
 
       await saveSubmission(submission);

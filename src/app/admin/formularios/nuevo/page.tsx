@@ -1,6 +1,7 @@
 import React from 'react';
 import FormBuilder from '@/components/admin/FormBuilder';
 import { FormSchema } from '@/lib/types';
+import { getEcuadorISOString } from '@/lib/date-utils';
 
 export default function NuevoFormularioPage() {
   const blankForm: FormSchema = {
@@ -59,8 +60,8 @@ export default function NuevoFormularioPage() {
         ],
       },
     ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: getEcuadorISOString(),
+    updatedAt: getEcuadorISOString(),
   };
 
   return <FormBuilder initialForm={blankForm} isNew={true} />;

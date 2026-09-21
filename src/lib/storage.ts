@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { FormSchema, EvaluationCampaign, WorkerSubmission, EvaluationGroup } from './types';
 import { initialForms, initialCampaigns, initialGroups, initialSubmissions } from './seed-data';
+import { getEcuadorISOString } from './date-utils';
 
 interface DatabaseSchema {
   forms: FormSchema[];
@@ -128,7 +129,7 @@ export async function saveCampaign(campaign: EvaluationCampaign): Promise<Evalua
   };
   const index = db.campaigns.findIndex((c) => c.id === normalizedCampaign.id || c.code === normalizedCampaign.code);
   if (index >= 0) {
-    db.campaigns[index] = { ...normalizedCampaign, updatedAt: new Date().toISOString() };
+    db.campaigns[index] = { ...normalizedCampaign, updatedAt: getEcuadorISOString() };
   } else {
     db.campaigns.unshift(normalizedCampaign);
   }
@@ -152,7 +153,7 @@ export async function toggleCampaignStatus(code: string): Promise<EvaluationCamp
   const campaign = db.campaigns.find((c) => c.code.toUpperCase() === code.trim().toUpperCase());
   if (!campaign) return null;
   campaign.status = campaign.status === 'active' ? 'inactive' : 'active';
-  campaign.updatedAt = new Date().toISOString();
+  campaign.updatedAt = getEcuadorISOString();
   await writeToDiskOrBlob(db);
   return campaign;
 }
@@ -181,7 +182,7 @@ export async function saveForm(form: FormSchema): Promise<FormSchema> {
   const db = await getDatabase();
   const index = db.forms.findIndex((f) => f.id === form.id);
   if (index >= 0) {
-    db.forms[index] = { ...form, updatedAt: new Date().toISOString() };
+    db.forms[index] = { ...form, updatedAt: getEcuadorISOString() };
   } else {
     db.forms.unshift(form);
   }
@@ -221,7 +222,7 @@ export async function saveSubmission(submission: WorkerSubmission): Promise<Work
         s.workerCode.toUpperCase() === submission.workerCode.toUpperCase())
   );
 
-  submission.updatedAt = new Date().toISOString();
+  submission.updatedAt = getEcuadorISOString();
 
   if (index >= 0) {
     db.submissions[index] = submission;
@@ -261,8 +262,8 @@ export async function resetSubmission(evaluationCode: string, workerCode: string
       currentFieldIndex: 0,
       currentSectionTitle: '',
       answers: {},
-      startedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      startedAt: getEcuadorISOString(),
+      updatedAt: getEcuadorISOString(),
       completedAt: undefined,
     };
     db.submissions[index] = reset;

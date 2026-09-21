@@ -24,6 +24,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema, WorkerSubmission } from '@/lib/types';
+import { formatEcuadorLongDate } from '@/lib/date-utils';
 
 interface DimensionScore {
   name: string;
@@ -385,7 +386,7 @@ export default function AdminResultadosPage() {
           </div>
 
           <div className="text-left sm:text-right text-xs text-slate-400">
-            <div>Fecha de emisión: {new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+            <div>Fecha de emisión: {formatEcuadorLongDate(new Date())}</div>
             <div className="font-semibold text-slate-600 mt-0.5">SGT Corp. Prevención S.A.</div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCampaigns, saveCampaign, toggleCampaignStatus } from '@/lib/storage';
 import { EvaluationCampaign } from '@/lib/types';
+import { getEcuadorISOString } from '@/lib/date-utils';
 
 export async function GET(req: NextRequest) {
   try {
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const nowEc = getEcuadorISOString();
     const newCampaign: EvaluationCampaign = {
       id: `camp-${Date.now()}`,
       code: code.trim().toUpperCase(),
@@ -40,8 +42,8 @@ export async function POST(req: NextRequest) {
       nextEvaluationCode: nextEvaluationCode || undefined,
       visits: 0,
       submissionsCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: nowEc,
+      updatedAt: nowEc,
     };
 
     await saveCampaign(newCampaign);
