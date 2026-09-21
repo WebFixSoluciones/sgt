@@ -7,15 +7,6 @@ import {
   PlusCircle,
   Search,
   Edit,
-  Clock,
-  CheckCircle2,
-  Copy,
-  ShieldCheck,
-  Activity,
-  Moon,
-  Sparkles,
-  ArrowRight,
-  Layers,
 } from 'lucide-react';
 import { FormSchema } from '@/lib/types';
 
@@ -98,10 +89,6 @@ export default function AdminFormulariosPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredForms.map((form) => {
-            const isFPSICO = form.title.toLowerCase().includes('fpsico');
-            const isLIPS = form.title.toLowerCase().includes('lips');
-            const isEstres = form.title.toLowerCase().includes('estrés') || form.title.toLowerCase().includes('estres');
-            const isNocturno = form.title.toLowerCase().includes('nocturno');
             const questionCount = form.fields.filter((f) => f.type !== 'page_break').length;
 
             return (
@@ -110,60 +97,26 @@ export default function AdminFormulariosPage() {
                 className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
               >
                 <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold ${
-                        isFPSICO
-                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                          : isLIPS
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : isEstres
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                          : isNocturno
-                          ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                          : 'bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}
-                    >
-                      {isFPSICO ? (
-                        <ShieldCheck className="w-5 h-5" />
-                      ) : isEstres ? (
-                        <Activity className="w-5 h-5" />
-                      ) : isNocturno ? (
-                        <Moon className="w-5 h-5" />
-                      ) : (
-                        <FileText className="w-5 h-5" />
-                      )}
-                    </div>
-
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md uppercase tracking-wider">
-                      {isFPSICO ? 'INSST Oficial' : isLIPS ? 'Batería LIPS' : isEstres ? 'Test OIT' : 'Plantilla'}
-                    </span>
+                  {/* Single unified icon color and background */}
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-blue-600" />
                   </div>
 
+                  {/* Title & Description */}
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2">
                       {form.title}
                     </h3>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
                       {form.description || 'Plantilla estandarizada de preguntas para evaluaciones laborales.'}
                     </p>
                   </div>
-
-                  <div className="flex items-center gap-3 text-xs text-slate-500 pt-2 border-t border-slate-100">
-                    <span className="font-semibold text-slate-700">
-                      {questionCount} preguntas
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      {Math.max(5, Math.round(questionCount * 0.25))} min
-                    </span>
-                  </div>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-slate-400 truncate max-w-[120px]">
-                    ID: {form.id}
+                {/* Bottom Row: questionCount & Editar en Constructor */}
+                <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-slate-600">
+                    {questionCount} preguntas
                   </span>
 
                   <Link
