@@ -7,21 +7,15 @@ import {
   BarChart3,
   FileSpreadsheet,
   FileText,
-  Download,
   Printer,
   Building2,
   Calendar,
   Users,
-  CheckCircle2,
-  AlertTriangle,
-  ShieldCheck,
   ChevronDown,
   Search,
   ArrowRight,
-  TrendingUp,
-  Activity,
-  Layers,
-  Sparkles,
+  ClipboardList,
+  Check,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema, WorkerSubmission } from '@/lib/types';
 import { formatEcuadorLongDate } from '@/lib/date-utils';
@@ -58,7 +52,7 @@ export default function AdminResultadosPage() {
   const [selectorSearch, setSelectorSearch] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // 1. Fetch all campaigns on mount
+  // 1. Fetch all campaigns on mount (filtering out trash)
   useEffect(() => {
     const fetchCampaigns = async () => {
       try {
@@ -125,7 +119,6 @@ export default function AdminResultadosPage() {
     if (!currentForm) return [];
 
     const total = submissions.length || 1;
-    const isFpsico = currentForm.id === 'form-fpsico-40' || currentForm.title.toLowerCase().includes('fpsico');
     const isEstres = currentForm.id === 'form-estres-laboral' || currentForm.title.toLowerCase().includes('estrés') || currentForm.title.toLowerCase().includes('estres');
 
     if (isEstres) {
@@ -182,7 +175,7 @@ export default function AdminResultadosPage() {
     }));
   }, [currentForm, submissions]);
 
-  // Handler for PDF download (opens print formatted report)
+  // Handler for printing official report (PDF)
   const handleDownloadPdf = () => {
     window.print();
   };
@@ -206,89 +199,115 @@ export default function AdminResultadosPage() {
   });
 
   return (
-    <div className="w-full px-6 sm:px-8 py-6 space-y-6">
+    <div className="w-full px-6 sm:px-8 py-5 space-y-4">
       {/* ========================================================================= */}
-      {/* 1. TOP UNIFIED HEADER: TÍTULO, CÓDIGO, SELECTOR Y ACCIONES DIRECTAS */}
+      {/* 1. TOP UNIFIED HEADER: SELECTOR MEJORADO, TÍTULO Y ACCIONES DIRECTAS */}
       {/* ========================================================================= */}
-      <div className="print:hidden bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        {/* Left: Code badge, Company, Switcher & Title */}
-        <div className="space-y-1.5 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg">
-              {campaign?.code || 'CÓDIGO'}
-            </span>
-            <span className="text-xs font-semibold text-slate-500">
-              {campaign?.company}
+      <div className="print:hidden bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        {/* Left: Enhanced Selector & Title */}
+        <div className="space-y-2 min-w-0">
+          {/* Prominent, Polished Evaluation Selector */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Evaluación:
             </span>
 
-            {/* Compact Cambiar Evaluación Dropdown */}
-            <div className="relative inline-block">
+            <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-300 hover:border-blue-400 text-slate-800 rounded-xl text-xs font-semibold transition-all shadow-2xs group"
+                title="Haga clic para cambiar de evaluación"
               >
-                <span>Cambiar de Evaluación</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                <span className="font-bold text-slate-900 truncate max-w-[200px]">
+                  {campaign?.company || 'Seleccionar Empresa'}
+                </span>
+                <span className="font-mono text-[11px] px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded font-bold">
+                  {campaign?.code || '---'}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
+                    dropdownOpen ? 'rotate-180' : ''
+                  }`}
+                />
               </button>
 
               {dropdownOpen && (
-                <div className="absolute left-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-2">
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      value={selectorSearch}
-                      onChange={(e) => setSelectorSearch(e.target.value)}
-                      placeholder="Buscar por empresa o código..."
-                      className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                      autoFocus
-                    />
-                  </div>
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setDropdownOpen(false)}
+                  />
+                  <div className="absolute left-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-2">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        value={selectorSearch}
+                        onChange={(e) => setSelectorSearch(e.target.value)}
+                        placeholder="Buscar por empresa o código..."
+                        className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        autoFocus
+                      />
+                    </div>
 
-                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
-                    {filteredCampaignSelector.map((c) => (
-                      <div
-                        key={c.id}
-                        onClick={() => {
-                          setSelectedCode(c.code);
-                          setDropdownOpen(false);
-                        }}
-                        className={`p-2.5 rounded-lg cursor-pointer text-left transition-colors ${
-                          c.code === selectedCode
-                            ? 'bg-blue-50 text-blue-900 font-semibold'
-                            : 'hover:bg-slate-50 text-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold truncate max-w-[200px]">{c.company}</span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 rounded text-slate-600">
-                            {c.code}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-500 truncate mt-0.5">{c.title}</div>
-                      </div>
-                    ))}
+                    <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
+                      {filteredCampaignSelector.map((c) => {
+                        const isSelected = c.code === selectedCode;
+                        return (
+                          <div
+                            key={c.id}
+                            onClick={() => {
+                              setSelectedCode(c.code);
+                              setDropdownOpen(false);
+                            }}
+                            className={`p-2.5 rounded-lg cursor-pointer text-left transition-colors flex items-center justify-between gap-2 ${
+                              isSelected
+                                ? 'bg-blue-50 text-blue-900 font-semibold'
+                                : 'hover:bg-slate-50 text-slate-700'
+                            }`}
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold truncate max-w-[200px]">
+                                  {c.company}
+                                </span>
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-bold">
+                                  {c.code}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                                {c.title}
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <Check className="w-4 h-4 text-blue-600 shrink-0" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
           </div>
 
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
             {campaign?.title || 'Resultados de la Evaluación'}
           </h1>
         </div>
 
         {/* Right: The 4 Action Buttons: VER ENTRADAS, PDF, EXCEL, FPSICO TXT */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {/* 1. VER ENTRADAS */}
           {campaign && (
             <Link
               href={`/admin/respuestas/${campaign.code}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all shadow-xs hover:border-blue-400 hover:text-blue-700"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all shadow-xs hover:border-blue-400 hover:text-blue-700"
               title="Ver listado individual de respuestas de trabajadores"
             >
-              <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600" />
               <span>VER ENTRADAS</span>
             </Link>
           )}
@@ -296,20 +315,20 @@ export default function AdminResultadosPage() {
           {/* 2. DESCARGAR PDF */}
           <button
             onClick={handleDownloadPdf}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md"
             title="Generar informe en PDF con gráficos y membrete oficial"
           >
-            <Printer className="w-4 h-4" />
+            <Printer className="w-3.5 h-3.5" />
             <span>DESCARGAR PDF</span>
           </button>
 
           {/* 3. DESCARGAR EXCEL */}
           <button
             onClick={handleDownloadExcel}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md"
             title="Descargar libro Excel con pestañas por formulario"
           >
-            <FileSpreadsheet className="w-4 h-4" />
+            <FileSpreadsheet className="w-3.5 h-3.5" />
             <span>DESCARGAR EXCEL</span>
           </button>
 
@@ -317,10 +336,10 @@ export default function AdminResultadosPage() {
           {hasFpsico && (
             <button
               onClick={handleDownloadTxt}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md"
               title="Descargar archivo .txt compatible con el software oficial FPSICO 4.0 del INSST"
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="w-3.5 h-3.5" />
               <span>DESCARGAR FPSICO (TXT)</span>
             </button>
           )}
@@ -328,18 +347,18 @@ export default function AdminResultadosPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. PRINTABLE REPORT CONTAINER (USED IN SCREEN & IN WINDOW.PRINT()) */}
+      {/* 2. PRINTABLE REPORT CONTAINER (OPTIMIZED SPACING & STREAMLINED LAYOUT) */}
       {/* ========================================================================= */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs space-y-8 print:border-none print:shadow-none print:p-0">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs space-y-5 print:border-none print:shadow-none print:p-0">
         {/* REPORT HEADER (VISIBLE ONLY IN PRINT / PDF) */}
-        <div className="hidden print:flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-slate-200">
+        <div className="hidden print:flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-slate-200">
           <div className="flex items-center gap-4">
             <img src="/logo-sgt.jpg" alt="Prevención SGT" className="h-12 w-auto object-contain" />
             <div>
               <div className="text-xs font-bold text-blue-700 uppercase tracking-wider">
                 Informe Ejecutivo de Evaluación Ocupacional
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
+              <h2 className="text-xl font-bold text-slate-900 mt-0.5">
                 {campaign?.title || 'Evaluación de Riesgos'}
               </h2>
               <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
@@ -356,31 +375,31 @@ export default function AdminResultadosPage() {
           </div>
         </div>
 
-        {/* METRICS SUMMARY CARDS */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+        {/* COMPACT METRICS SUMMARY CARDS */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
             <div className="text-[11px] font-semibold text-slate-500 uppercase">Trabajadores Evaluados</div>
-            <div className="text-2xl font-black text-slate-900 mt-1">{submissions.length}</div>
+            <div className="text-2xl font-bold text-slate-900 mt-0.5">{submissions.length}</div>
             <div className="text-[11px] text-slate-400 mt-0.5">de {campaign?.expectedParticipants || 100} previstos</div>
           </div>
 
-          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl">
             <div className="text-[11px] font-semibold text-emerald-700 uppercase">Completados</div>
-            <div className="text-2xl font-black text-emerald-800 mt-1">{completedSubmissions.length}</div>
+            <div className="text-2xl font-bold text-emerald-800 mt-0.5">{completedSubmissions.length}</div>
             <div className="text-[11px] text-emerald-600 mt-0.5">
               {Math.round(((completedSubmissions.length || 0) / (submissions.length || 1)) * 100)}% tasa de éxito
             </div>
           </div>
 
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl">
             <div className="text-[11px] font-semibold text-blue-700 uppercase">Formularios Agrupados</div>
-            <div className="text-2xl font-black text-blue-900 mt-1">{forms.length}</div>
+            <div className="text-2xl font-bold text-blue-900 mt-0.5">{forms.length}</div>
             <div className="text-[11px] text-blue-600 mt-0.5">cuestionarios en este proceso</div>
           </div>
 
-          <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl">
+          <div className="p-3.5 bg-purple-50/70 border border-purple-200 rounded-xl">
             <div className="text-[11px] font-semibold text-purple-700 uppercase">Estado Campaña</div>
-            <div className="text-base font-black text-purple-900 mt-2 uppercase tracking-wide">
+            <div className="text-base font-bold text-purple-900 mt-1 uppercase tracking-wide">
               {campaign?.status === 'active' ? '✓ Activa' : 'Inactiva'}
             </div>
             <div className="text-[11px] text-purple-600 mt-0.5">Gestión de riesgos</div>
@@ -389,7 +408,7 @@ export default function AdminResultadosPage() {
 
         {/* MULTI-FORM TABS SELECTOR (IF MULTIPLE FORMS) */}
         {forms.length > 1 && (
-          <div className="print:hidden space-y-2">
+          <div className="print:hidden space-y-1.5">
             <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Visualizar Resultados por Formulario Agrupado:
             </div>
@@ -398,7 +417,7 @@ export default function AdminResultadosPage() {
                 <button
                   key={f.id}
                   onClick={() => setActiveFormIndex(i)}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     activeFormIndex === i
                       ? 'bg-blue-600 text-white shadow-xs'
                       : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
@@ -412,13 +431,13 @@ export default function AdminResultadosPage() {
           </div>
         )}
 
-        {/* CURRENT FORM TITLE BANNER */}
-        <div className="p-4 bg-[#f8fafc] border border-slate-200 rounded-xl flex items-center justify-between">
+        {/* CURRENT FORM TITLE BANNER (COMPACT) */}
+        <div className="p-3 px-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-4">
           <div>
-            <div className="text-[11px] font-semibold text-blue-600 uppercase tracking-wider">
+            <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
               Cuestionario Analizado
             </div>
-            <h3 className="text-base font-bold text-slate-900 mt-0.5">
+            <h3 className="text-sm font-bold text-slate-900 mt-0.5">
               {currentForm?.title || 'Formulario'}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -426,7 +445,7 @@ export default function AdminResultadosPage() {
             </p>
           </div>
 
-          <div className="print:hidden">
+          <div className="print:hidden shrink-0">
             <Link
               href={`/admin/formularios/${currentForm?.id}`}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold shadow-2xs transition-colors"
@@ -438,42 +457,39 @@ export default function AdminResultadosPage() {
         </div>
 
         {/* ========================================================================= */}
-        {/* 4. VISUAL RISK LEVEL GRAPHICS (BARRAS DE RIESGO Y NIVELES) */}
+        {/* 3. VISUAL RISK LEVEL: FILAS CONTINUAS SIN CARDS (MISMA LÍNEA) */}
         {/* ========================================================================= */}
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
             <div>
-              <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                 Distribución de Factores y Niveles de Riesgo
               </h4>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Porcentaje de riesgo ponderado por dimensión evaluada
-              </p>
             </div>
 
             {/* Legend */}
             <div className="flex flex-wrap items-center gap-3 text-[11px]">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                 <span className="text-slate-600 font-medium">Adecuado (0-25%)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-amber-400" />
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
                 <span className="text-slate-600 font-medium">Moderado (26-50%)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-orange-500" />
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
                 <span className="text-slate-600 font-medium">Elevado (51-75%)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-rose-600" />
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
                 <span className="text-slate-600 font-medium">Muy Elevado (&gt;75%)</span>
               </div>
             </div>
           </div>
 
-          {/* Dimension Bars */}
-          <div className="space-y-4">
+          {/* STREAMLINED SINGLE-CONTAINER LIST (NO HEAVY CARDS, ALL IN ONE LINE) */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 shadow-2xs">
             {dimensions.map((dim) => {
               const barColor =
                 dim.score > 75
@@ -493,31 +509,42 @@ export default function AdminResultadosPage() {
                   ? 'bg-amber-50 text-amber-700 border-amber-200'
                   : 'bg-emerald-50 text-emerald-700 border-emerald-200';
 
+              const highRiskCount = dim.workersCount.elevado + dim.workersCount.muyElevado;
+
               return (
-                <div key={dim.name} className="p-4 bg-white border border-slate-200 rounded-xl space-y-2 shadow-2xs">
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-xs sm:text-sm font-bold text-slate-800">{dim.name}</span>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${badgeColor}`}>
-                        {dim.level} ({dim.score}%)
-                      </span>
+                <div
+                  key={dim.name}
+                  className="px-4 py-2.5 flex items-center justify-between gap-3 sm:gap-4 hover:bg-slate-50/70 transition-colors"
+                >
+                  {/* 1. Nombre de la dimensión */}
+                  <div className="w-48 sm:w-56 md:w-64 shrink-0">
+                    <span className="text-xs sm:text-sm font-semibold text-slate-800 truncate block">
+                      {dim.name}
+                    </span>
+                  </div>
+
+                  {/* 2. Barra de porcentaje en la misma línea */}
+                  <div className="flex-1 min-w-[80px] max-w-xl">
+                    <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                      <div
+                        className={`h-full ${barColor} transition-all duration-500 rounded-full`}
+                        style={{ width: `${dim.score}%` }}
+                      />
                     </div>
                   </div>
 
-                  {/* Progress track */}
-                  <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex">
-                    <div
-                      className={`h-full ${barColor} transition-all duration-700`}
-                      style={{ width: `${dim.score}%` }}
-                    />
+                  {/* 3. Porcentaje y Nivel en la misma línea */}
+                  <div className="shrink-0">
+                    <span
+                      className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${badgeColor}`}
+                    >
+                      {dim.level} ({dim.score}%)
+                    </span>
                   </div>
 
-                  {/* Sub-metrics */}
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-                    <span>Nivel Ponderado: {dim.score} / 100</span>
-                    <span>
-                      {dim.workersCount.elevado + dim.workersCount.muyElevado} trabajadores con riesgo significativo
-                    </span>
+                  {/* 4. Métrica secundaria en la misma línea */}
+                  <div className="w-36 shrink-0 text-right text-[11px] text-slate-400 hidden lg:block">
+                    <span>{highRiskCount} con riesgo alto</span>
                   </div>
                 </div>
               );
@@ -525,10 +552,10 @@ export default function AdminResultadosPage() {
           </div>
         </div>
 
-        {/* FOOTER DISCLAIMER */}
-        <div className="pt-6 border-t border-slate-200 text-center text-xs text-slate-400 space-y-1">
-          <p className="font-semibold text-slate-600">Prevención SGT • Sistema Gestor de Salud y Prevención Laboral</p>
-          <p>Informe generado automáticamente de acuerdo con los baremos estandarizados del INSST y la normativa laboral vigente.</p>
+        {/* COMPACT FOOTER DISCLAIMER */}
+        <div className="pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400 space-y-0.5">
+          <p className="font-semibold text-slate-500">Prevención SGT • Sistema Gestor de Salud y Prevención Laboral</p>
+          <p>Informe generado automáticamente con baremos estandarizados del INSST y normativa laboral vigente.</p>
         </div>
       </div>
     </div>
