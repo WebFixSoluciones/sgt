@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import {
   X,
   ArrowRight,
@@ -17,7 +18,8 @@ import {
   Layers,
   Clock,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  PlusCircle,
 } from 'lucide-react';
 import type { EvaluationCampaign, FormSchema } from '@/lib/types';
 
@@ -217,9 +219,6 @@ export default function AdminEvaluationWizard({
               <h2 className="text-base font-bold text-slate-900">
                 Asistente de Creación de Evaluación
               </h2>
-              <p className="text-xs text-slate-500">
-                Configure paso a paso la nueva campaña de salud y prevención laboral
-              </p>
             </div>
           </div>
 
@@ -356,23 +355,29 @@ export default function AdminEvaluationWizard({
           {/* ========================================================================= */}
           {currentStep === 1 && !createdCampaign && (
             <div className="space-y-4 animate-fade-in-slide">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-slate-100">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
-                    Paso 1: Formularios que Componen la Evaluación
+                    Seleccione una plantilla o formulario
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Puede seleccionar uno o varios formularios. Los trabajadores los completarán en secuencia guiada.
-                  </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg">
-                    {selectedFormIds.length} formulario(s) • {totalQuestions} preguntas
+                    {selectedFormIds.length} seleccionado(s) • {totalQuestions} preguntas
                   </span>
+                  <Link
+                    href="/admin/formularios/nuevo"
+                    onClick={() => onClose()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-50 text-blue-600 hover:text-blue-700 border border-slate-300 hover:border-blue-400 rounded-lg text-xs font-bold transition-all shadow-xs"
+                    title="Crear una nueva plantilla personalizada en el constructor"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Crear Formulario Nuevo</span>
+                  </Link>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                 {forms.map((form) => {
                   const isSelected = selectedFormIds.includes(form.id);
                   const selectedOrder = selectedFormIds.indexOf(form.id) + 1;
@@ -386,16 +391,16 @@ export default function AdminEvaluationWizard({
                     <div
                       key={form.id}
                       onClick={() => toggleFormSelection(form.id)}
-                      className={`p-4 rounded-xl border text-left cursor-pointer transition-all relative ${
+                      className={`p-3.5 sm:p-4 rounded-xl border text-left cursor-pointer transition-all relative ${
                         isSelected
                           ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20 shadow-xs'
                           : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div
-                            className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${
                               isFPSICO
                                 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                                 : isLIPS
@@ -409,24 +414,24 @@ export default function AdminEvaluationWizard({
                           >
                             <FileText className="w-5 h-5" />
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-1">
+                              <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
                                 {form.title}
                               </h4>
                               {isSelected && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-600 text-white rounded-md">
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-600 text-white rounded-md shrink-0">
                                   #{selectedOrder}
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1">
+                            <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                               <span className="font-semibold text-slate-700">
                                 {qCount} preguntas
                               </span>
                               <span>•</span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-slate-400" />
+                              <span className="flex items-center gap-1 text-slate-600 font-medium">
+                                <Clock className="w-3.5 h-3.5 text-slate-400" />
                                 {Math.max(5, Math.round(qCount * 0.25))} min
                               </span>
                             </div>
@@ -441,22 +446,31 @@ export default function AdminEvaluationWizard({
                           <div className="w-5 h-5 rounded-md border border-slate-300 shrink-0 hover:border-slate-400" />
                         )}
                       </div>
-
-                      <p className="mt-2.5 text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                        {form.description || 'Plantilla estandarizada de evaluación de factores de riesgo laboral.'}
-                      </p>
-
-                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                        <span className="text-slate-400">
-                          {isFPSICO ? 'Oficial INSST • TXT' : isLIPS ? 'Batería LIPS-60' : isEstres ? 'Test OIT' : 'Cuestionario'}
-                        </span>
-                        <span className={`font-semibold ${isSelected ? 'text-blue-700' : 'text-slate-500'}`}>
-                          {isSelected ? '✓ Incluido en la Evaluación' : '+ Clic para incluir'}
-                        </span>
-                      </div>
                     </div>
                   );
                 })}
+
+                {/* Opción de Crear Formulario Nuevo directamente en el constructor */}
+                <Link
+                  href="/admin/formularios/nuevo"
+                  onClick={() => onClose()}
+                  className="p-3.5 sm:p-4 rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50/50 hover:bg-blue-50/30 text-left transition-all flex items-center justify-between gap-3 group cursor-pointer"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 group-hover:border-blue-300 flex items-center justify-center text-slate-500 group-hover:text-blue-600 shrink-0 transition-colors">
+                      <PlusCircle className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-blue-700 transition-colors">
+                        Crear Formulario Nuevo
+                      </h4>
+                      <div className="text-xs text-slate-400 group-hover:text-blue-600 transition-colors mt-0.5">
+                        Ir al constructor de preguntas ➔
+                      </div>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+                </Link>
               </div>
             </div>
           )}
@@ -470,9 +484,6 @@ export default function AdminEvaluationWizard({
                 <h3 className="text-sm font-bold text-slate-900">
                   Paso 2: Información de la Empresa y la Campaña
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Defina a qué empresa pertenece la evaluación y el código con el que accederán los colaboradores
-                </p>
               </div>
 
               <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4 shadow-xs">
@@ -490,9 +501,6 @@ export default function AdminEvaluationWizard({
                     onChange={(e) => handleCompanyChange(e.target.value)}
                     className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Nombre oficial de la organización o cliente evaluado.
-                  </p>
                 </div>
 
                 {/* Título de la Evaluación */}
@@ -509,9 +517,6 @@ export default function AdminEvaluationWizard({
                     onChange={(e) => setTitle(e.target.value)}
                     className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Título descriptivo con el que se identificará en informes y tablas.
-                  </p>
                 </div>
 
                 {/* Código de Acceso (ID) & Trabajadores */}
@@ -548,9 +553,6 @@ export default function AdminEvaluationWizard({
                       onChange={(e) => setExpectedParticipants(e.target.value)}
                       className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
                     />
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Para calcular el % de participación en tiempo real.
-                    </p>
                   </div>
                 </div>
               </div>
@@ -564,11 +566,8 @@ export default function AdminEvaluationWizard({
             <div className="space-y-5 max-w-2xl mx-auto animate-fade-in-slide">
               <div>
                 <h3 className="text-sm font-bold text-slate-900">
-                  Paso 3: Secuencia y Ordenamiento de Encuestas (Circuito)
+                  Paso 3: Secuencia y Circuito de Encuestas
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Conecte esta evaluación con la siguiente encuesta para que el trabajador continúe automáticamente
-                </p>
               </div>
 
               {/* Selector de Modo de Circuito */}
