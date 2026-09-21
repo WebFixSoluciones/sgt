@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCampaignByCode, getFormById, getSubmissions } from '@/lib/storage';
+import { getCampaignByCode, getFormById, getSubmissions, getFormsForCampaign } from '@/lib/storage';
 import { generateFpsicoTxt } from '@/lib/export-fpsico';
 
 export async function GET(req: NextRequest) {
@@ -16,9 +16,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Evaluación no encontrada' }, { status: 404 });
     }
 
-    const form = await getFormById(campaign.formId);
+    const forms = await getFormsForCampaign(campaign);
+    const form = forms.find((f) => f.id === 'form-fpsico-40' || f.title.toLowerCase().includes('fpsico'))
+      || (campaign.formId ? await getFormById(campaign.formId) : forms[0]);
+
     if (!form) {
-      return NextResponse.json({ success: false, error: 'Formulario vinculado no encontrado' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Formulario FPSICO no encontrado en esta evaluación' }, { status: 404 });
     }
 
     const submissions = await getSubmissions(code);

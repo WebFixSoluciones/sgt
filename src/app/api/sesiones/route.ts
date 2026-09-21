@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const form = await getFormById(campaign.formId);
+    const targetFormId = campaign.formId || (campaign.formIds && campaign.formIds[0]) || '';
+    const form = targetFormId ? await getFormById(targetFormId) : null;
     if (!form) {
       return NextResponse.json(
         { success: false, error: 'Formulario vinculado no encontrado.' },

@@ -6,18 +6,12 @@ import Link from 'next/link';
 import {
   LayoutDashboard,
   ClipboardList,
-  PlusCircle,
-  FileSpreadsheet,
-  Layers,
+  FileText,
+  BarChart3,
   UserCheck,
   LogOut,
-  ShieldCheck,
-  FileText,
-  Activity,
-  Moon,
   Menu,
   X,
-  ChevronRight,
   ExternalLink,
 } from 'lucide-react';
 
@@ -63,8 +57,8 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
   };
 
   const isActive = (href: string) => {
-    if (href === '/admin' && (pathname === '/admin' || pathname.startsWith('/admin/evaluaciones'))) {
-      return true;
+    if (href === '/admin') {
+      return pathname === '/admin';
     }
     return pathname.startsWith(href);
   };
@@ -73,27 +67,10 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
     <div className="flex flex-col h-full justify-between">
       {/* Upper Area */}
       <div className="space-y-6">
-        <div className="p-3 bg-[#f8fafc] border border-slate-200 rounded-xl flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 overflow-hidden flex items-center justify-center shadow-xs p-1">
-            <img src="/icon.png" alt="SGT" className="w-8 h-8 object-contain" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-bold text-slate-900 truncate">Administrador SGT</div>
-            <div className="text-[11px] text-slate-500 truncate">admin@prevencionsgt.com</div>
-          </div>
-          <button
-            onClick={handleLogout}
-            title="Cerrar Sesión"
-            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Section: Navegación Principal */}
+        {/* Navigation Section */}
         <div className="space-y-1">
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">
-            Navegación
+            Plataforma SGT
           </div>
 
           <Link
@@ -102,17 +79,39 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
             className={`w-full ${isActive('/admin') ? 'dropbox-nav-item-active' : 'dropbox-nav-item'}`}
           >
             <LayoutDashboard className="w-4 h-4" />
-            <span className="flex-1">Formularios y Evaluaciones</span>
+            <span className="flex-1">Inicio</span>
           </Link>
 
           <Link
-            href="/admin/formularios/nuevo"
+            href="/admin/evaluaciones"
             onClick={() => setMobileMenuOpen(false)}
-            className={`w-full ${isActive('/admin/formularios/nuevo') ? 'dropbox-nav-item-active' : 'dropbox-nav-item'}`}
+            className={`w-full ${isActive('/admin/evaluaciones') ? 'dropbox-nav-item-active' : 'dropbox-nav-item'}`}
           >
-            <PlusCircle className="w-4 h-4" />
-            <span className="flex-1">Nuevo Formulario</span>
+            <ClipboardList className="w-4 h-4" />
+            <span className="flex-1">Evaluaciones</span>
           </Link>
+
+          <Link
+            href="/admin/formularios"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`w-full ${isActive('/admin/formularios') ? 'dropbox-nav-item-active' : 'dropbox-nav-item'}`}
+          >
+            <FileText className="w-4 h-4" />
+            <span className="flex-1">Formularios (Plantillas)</span>
+          </Link>
+
+          <Link
+            href="/admin/resultados"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`w-full ${isActive('/admin/resultados') ? 'dropbox-nav-item-active' : 'dropbox-nav-item'}`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span className="flex-1">Resultados e Informes</span>
+          </Link>
+
+          <div className="pt-3 pb-1 px-3">
+            <div className="h-px bg-slate-100" />
+          </div>
 
           <Link
             href="/evaluar"
@@ -121,78 +120,8 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
           >
             <UserCheck className="w-4 h-4 text-emerald-600" />
             <span className="flex-1">Portal Trabajador</span>
-            <ExternalLink className="w-3 h-3 text-slate-400" />
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
           </Link>
-        </div>
-
-        {/* Section: Plantillas Maestras */}
-        <div className="space-y-1 pt-2 border-t border-slate-100">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">
-            Plantillas Oficiales
-          </div>
-
-          <Link
-            href="/admin/formularios/form-fpsico-40"
-            onClick={() => setMobileMenuOpen(false)}
-            className="w-full dropbox-nav-item group"
-          >
-            <ShieldCheck className="w-4 h-4 text-blue-600 group-hover:scale-105 transition-transform" />
-            <div className="flex-1 min-w-0">
-              <div className="truncate font-medium">FPSICO 4.0 INSST</div>
-              <div className="text-[10px] text-slate-400">89 preguntas oficiales</div>
-            </div>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          </Link>
-
-          <Link
-            href="/admin/formularios/form-lips-60"
-            onClick={() => setMobileMenuOpen(false)}
-            className="w-full dropbox-nav-item group"
-          >
-            <FileText className="w-4 h-4 text-purple-600 group-hover:scale-105 transition-transform" />
-            <div className="flex-1 min-w-0">
-              <div className="truncate font-medium">Cuestionario LIPS-60</div>
-              <div className="text-[10px] text-slate-400">60 preguntas (0 y 1)</div>
-            </div>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          </Link>
-
-          <Link
-            href="/admin/formularios/form-estres-laboral"
-            onClick={() => setMobileMenuOpen(false)}
-            className="w-full dropbox-nav-item group"
-          >
-            <Activity className="w-4 h-4 text-amber-600 group-hover:scale-105 transition-transform" />
-            <div className="flex-1 min-w-0">
-              <div className="truncate font-medium">Test de Estrés Laboral</div>
-              <div className="text-[10px] text-slate-400">12 síntomas (escala 1-6)</div>
-            </div>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          </Link>
-
-          <Link
-            href="/admin/formularios/form-trabajo-nocturno"
-            onClick={() => setMobileMenuOpen(false)}
-            className="w-full dropbox-nav-item group"
-          >
-            <Moon className="w-4 h-4 text-indigo-600 group-hover:scale-105 transition-transform" />
-            <div className="flex-1 min-w-0">
-              <div className="truncate font-medium">Trabajo Nocturno</div>
-              <div className="text-[10px] text-slate-400">Turnos y adaptación</div>
-            </div>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          </Link>
-        </div>
-
-        {/* Section: Baterías y Grupos */}
-        <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900">
-            <Layers className="w-3.5 h-3.5 text-blue-600" />
-            <span>Encuestas en Grupo</span>
-          </div>
-          <p className="text-[11px] text-slate-600 leading-relaxed">
-            Permite enlazar evaluaciones para que el trabajador pase automáticamente de una encuesta a otra sin reingresar su código.
-          </p>
         </div>
       </div>
 
@@ -200,14 +129,14 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
       <div className="pt-4 border-t border-slate-100 space-y-3">
         <button
           onClick={handleLogout}
-          className="w-full py-2 px-3 border border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-600 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+          className="w-full py-2.5 px-3 border border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-600 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-2 shadow-2xs"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span>Cerrar Sesión</span>
         </button>
 
-        <div className="text-[10px] text-center text-slate-400">
-          SGT Corp. Prevención S.A. © 2026
+        <div className="text-[10px] text-center text-slate-400 font-medium">
+          Prevención SGT • 2026
         </div>
       </div>
     </div>
@@ -216,7 +145,7 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
   return (
     <div className="min-h-screen flex flex-col">
       {/* Top Bar for Admin */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 h-16 flex items-center justify-between px-4 sm:px-6">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 h-16 flex items-center justify-between px-6">
         <div className="flex items-center gap-3">
           {/* Mobile left sidebar drawer toggle */}
           <button
@@ -226,32 +155,26 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          <Link href="/admin" className="flex items-center gap-3">
+          <Link href="/admin" className="flex items-center">
             <img
               src="/logo-sgt.jpg"
               alt="Prevención SGT"
               className="h-10 w-auto object-contain"
             />
-            <div className="hidden sm:flex flex-col border-l border-slate-200 pl-3">
-              <span className="text-xs font-bold text-slate-900 tracking-tight">SGT Prevención</span>
-              <span className="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">
-                Administrador
-              </span>
-            </div>
           </Link>
         </div>
 
-        {/* Right Header: Quick action button (hidden when already in form builder) */}
-        <div className="flex items-center gap-2">
-          {!pathname.startsWith('/admin/formularios') && (
-            <Link
-              href="/admin/formularios/nuevo"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0061fe] hover:bg-[#0052d9] text-white text-xs font-medium rounded-lg transition-colors shadow-xs"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Crear Formulario</span>
-            </Link>
-          )}
+        {/* Right Header */}
+        <div className="flex items-center gap-3">
+          <Link
+            href="/evaluar"
+            target="_blank"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors"
+          >
+            <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="hidden sm:inline">Ver Portal</span>
+            <ExternalLink className="w-3 h-3 text-slate-400" />
+          </Link>
         </div>
       </header>
 

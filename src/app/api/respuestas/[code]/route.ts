@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCampaignByCode, getFormById, getSubmissions } from '@/lib/storage';
+import { getCampaignByCode, getFormById, getSubmissions, getFormsForCampaign } from '@/lib/storage';
 
 export async function GET(
   req: NextRequest,
@@ -12,10 +12,8 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Evaluación no encontrada' }, { status: 404 });
     }
 
-    const form = await getFormById(campaign.formId);
-    if (!form) {
-      return NextResponse.json({ success: false, error: 'Formulario vinculado no encontrado' }, { status: 404 });
-    }
+    const forms = await getFormsForCampaign(campaign);
+    const form = forms[0] || (campaign.formId ? await getFormById(campaign.formId) : null);
 
     const submissions = await getSubmissions(code);
 
@@ -24,6 +22,7 @@ export async function GET(
       data: {
         campaign,
         form,
+        forms,
         submissions,
       },
     });

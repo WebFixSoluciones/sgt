@@ -42,7 +42,7 @@ export default function AdminEvaluationWizard({
   const [currentStep, setCurrentStep] = useState(1);
 
   // Form fields
-  const [selectedFormId, setSelectedFormId] = useState('');
+  const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
   const [company, setCompany] = useState('');
   const [title, setTitle] = useState('');
   const [code, setCode] = useState('');
@@ -62,7 +62,10 @@ export default function AdminEvaluationWizard({
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
-        setSelectedFormId(initialData.formId || (forms[0]?.id ?? ''));
+        const initialFormIds = initialData.formIds && initialData.formIds.length > 0
+          ? initialData.formIds
+          : (initialData.formId ? [initialData.formId] : (forms[0]?.id ? [forms[0].id] : []));
+        setSelectedFormIds(initialFormIds);
         setCompany(initialData.company || '');
         setTitle(initialData.title || '');
         setCode(initialData.code || '');
@@ -75,7 +78,7 @@ export default function AdminEvaluationWizard({
           setNextEvaluationCode('');
         }
       } else {
-        setSelectedFormId(forms[0]?.id ?? '');
+        setSelectedFormIds(forms[0]?.id ? [forms[0].id] : []);
         setCompany('');
         setTitle('');
         setCode('');
@@ -90,10 +93,28 @@ export default function AdminEvaluationWizard({
     }
   }, [isOpen, initialData, forms]);
 
-  // Selected form object
-  const selectedForm = useMemo(() => {
-    return forms.find((f) => f.id === selectedFormId);
-  }, [forms, selectedFormId]);
+  const toggleFormSelection = (id: string) => {
+    setSelectedFormIds((prev) => {
+      if (prev.includes(id)) {
+        if (prev.length === 1) return prev; // Keep at least one selected
+        return prev.filter((item) => item !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  };
+
+  // Selected forms objects
+  const selectedForms = useMemo(() => {
+    return forms.filter((f) => selectedFormIds.includes(f.id));
+  }, [forms, selectedFormIds]);
+
+  const totalQuestions = useMemo(() => {
+    return selectedForms.reduce((acc, f) => acc + (f.fields?.filter((field) => field.type !== 'page_break').length || 0), 0);
+  }, [selectedForms]);
+
+  // Primary selected form
+  const selectedForm = selectedForms[0] || forms[0];
 
   // Selected next campaign object (for visual chaining preview)
   const selectedNextCampaign = useMemo(() => {
@@ -101,29 +122,21 @@ export default function AdminEvaluationWizard({
     return existingCampaigns.find((c) => c.code === nextEvaluationCode) || null;
   }, [existingCampaigns, nextEvaluationCode]);
 
-  // Auto-generate title and code suggestions when company or template changes
+  // Auto-generate title and code suggestions when company changes
   const handleCompanyChange = (val: string) => {
     setCompany(val);
     if (!initialData) {
-      const formName = selectedForm?.title || 'EVALUACIÓN';
       const cleanCompany = val.trim();
       if (cleanCompany) {
         if (!title || title.startsWith('EVALUACIÓN') || title.includes(' - ')) {
-          setTitle(`${cleanCompany} - ${formName}`);
+          setTitle(`EVALUACIÓN INTEGRAL ${cleanCompany.toUpperCase()} 2026`);
         }
         if (!code) {
           const compSlug = cleanCompany
             .toUpperCase()
             .replace(/[^A-Z0-9]/g, '')
             .substring(0, 8);
-          const formSlug = formName.toLowerCase().includes('fpsico')
-            ? 'PSI'
-            : formName.toLowerCase().includes('lips')
-            ? 'LIPS'
-            : formName.toLowerCase().includes('estrés') || formName.toLowerCase().includes('estres')
-            ? 'ESTRES'
-            : 'SGT';
-          setCode(`${compSlug}-${formSlug}-2026`);
+          setCode(`${compSlug}-2026`);
         }
       }
     }
@@ -132,7 +145,7 @@ export default function AdminEvaluationWizard({
   if (!isOpen) return null;
 
   // Step 1 Validation
-  const canProceedStep1 = Boolean(selectedFormId);
+  const canProceedStep1 = selectedFormIds.length > 0;
 
   // Step 2 Validation
   const canProceedStep2 = Boolean(
@@ -151,7 +164,8 @@ export default function AdminEvaluationWizard({
       const payload = {
         title: title.trim(),
         code: code.trim().toUpperCase(),
-        formId: selectedFormId,
+        formId: selectedFormIds[0] || '',
+        formIds: selectedFormIds,
         company: company.trim(),
         expectedParticipants: parseInt(expectedParticipants) || 100,
         nextEvaluationCode: isChained ? nextEvaluationCode.trim().toUpperCase() : '',
@@ -338,39 +352,43 @@ export default function AdminEvaluationWizard({
           )}
 
           {/* ========================================================================= */}
-          {/* STEP 1: SELECCIÓN DE PLANTILLA O ENCUESTA BASE */}
+          {/* STEP 1: SELECCIÓN DE PLANTILLAS O FORMULARIOS QUE COMPONEN LA EVALUACIÓN */}
           {/* ========================================================================= */}
           {currentStep === 1 && !createdCampaign && (
             <div className="space-y-4 animate-fade-in-slide">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
-                    Paso 1: Seleccione la Encuesta o Cuestionario Base
+                    Paso 1: Formularios que Componen la Evaluación
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Elija entre las plantillas oficiales preconfiguradas o un formulario personalizado
+                    Puede seleccionar uno o varios formularios. Los trabajadores los completarán en secuencia guiada.
                   </p>
                 </div>
-                <span className="text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded-md">
-                  {forms.length} plantillas disponibles
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg">
+                    {selectedFormIds.length} formulario(s) • {totalQuestions} preguntas
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
                 {forms.map((form) => {
-                  const isSelected = selectedFormId === form.id;
+                  const isSelected = selectedFormIds.includes(form.id);
+                  const selectedOrder = selectedFormIds.indexOf(form.id) + 1;
                   const isFPSICO = form.title.toLowerCase().includes('fpsico');
                   const isLIPS = form.title.toLowerCase().includes('lips');
                   const isEstres = form.title.toLowerCase().includes('estrés') || form.title.toLowerCase().includes('estres');
                   const isNocturno = form.title.toLowerCase().includes('nocturno');
+                  const qCount = form.fields?.filter((f) => f.type !== 'page_break').length || 0;
 
                   return (
                     <div
                       key={form.id}
-                      onClick={() => setSelectedFormId(form.id)}
+                      onClick={() => toggleFormSelection(form.id)}
                       className={`p-4 rounded-xl border text-left cursor-pointer transition-all relative ${
                         isSelected
-                          ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-600/20 shadow-xs'
+                          ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20 shadow-xs'
                           : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
                       }`}
                     >
@@ -392,28 +410,35 @@ export default function AdminEvaluationWizard({
                             <FileText className="w-5 h-5" />
                           </div>
                           <div>
-                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-1">
-                              {form.title}
-                            </h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-1">
+                                {form.title}
+                              </h4>
+                              {isSelected && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-600 text-white rounded-md">
+                                  #{selectedOrder}
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1">
                               <span className="font-semibold text-slate-700">
-                                {form.fields.length} preguntas / ítems
+                                {qCount} preguntas
                               </span>
                               <span>•</span>
                               <span className="flex items-center gap-1">
                                 <Clock className="w-3 h-3 text-slate-400" />
-                                {Math.max(5, Math.round(form.fields.length * 0.25))} min
+                                {Math.max(5, Math.round(qCount * 0.25))} min
                               </span>
                             </div>
                           </div>
                         </div>
 
                         {isSelected ? (
-                          <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                            <Check className="w-3 h-3" />
+                          <div className="w-5 h-5 rounded-md bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                            <Check className="w-3.5 h-3.5" />
                           </div>
                         ) : (
-                          <div className="w-5 h-5 rounded-full border border-slate-300 shrink-0" />
+                          <div className="w-5 h-5 rounded-md border border-slate-300 shrink-0 hover:border-slate-400" />
                         )}
                       </div>
 
@@ -423,10 +448,10 @@ export default function AdminEvaluationWizard({
 
                       <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
                         <span className="text-slate-400">
-                          {isFPSICO ? 'Oficial INSST • Exportación TXT' : isLIPS ? 'Batería Psicosocial LIPS' : 'Evaluación Ocupacional'}
+                          {isFPSICO ? 'Oficial INSST • TXT' : isLIPS ? 'Batería LIPS-60' : isEstres ? 'Test OIT' : 'Cuestionario'}
                         </span>
-                        <span className="text-blue-600 font-medium">
-                          {isSelected ? 'Seleccionada' : 'Haga clic para elegir'}
+                        <span className={`font-semibold ${isSelected ? 'text-blue-700' : 'text-slate-500'}`}>
+                          {isSelected ? '✓ Incluido en la Evaluación' : '+ Clic para incluir'}
                         </span>
                       </div>
                     </div>
@@ -700,22 +725,33 @@ export default function AdminEvaluationWizard({
               </div>
 
               <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs divide-y divide-slate-100">
-                {/* Plantilla Base */}
-                <div className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                      <FileText className="w-5 h-5" />
+                {/* Formularios Asignados */}
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                      Formularios que Componen la Evaluación ({selectedForms.length})
                     </div>
-                    <div>
-                      <div className="text-xs text-slate-400 font-semibold uppercase">Plantilla Base</div>
-                      <div className="text-xs sm:text-sm font-bold text-slate-900">
-                        {selectedForm?.title}
-                      </div>
-                    </div>
+                    <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
+                      {totalQuestions} preguntas en total
+                    </span>
                   </div>
-                  <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md">
-                    {selectedForm?.fields.length} preguntas
-                  </span>
+                  <div className="space-y-2">
+                    {selectedForms.map((f, i) => (
+                      <div key={f.id} className="p-2.5 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-5 h-5 rounded-md bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center">
+                            {i + 1}
+                          </span>
+                          <span className="text-xs sm:text-sm font-bold text-slate-800">
+                            {f.title}
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-500 font-medium">
+                          {f.fields?.filter(field => field.type !== 'page_break').length || 0} preguntas
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Empresa & Título */}

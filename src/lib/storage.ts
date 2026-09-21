@@ -99,25 +99,52 @@ export async function getDatabase(): Promise<DatabaseSchema> {
 // Campaign Operations
 export async function getCampaigns(): Promise<EvaluationCampaign[]> {
   const db = await getDatabase();
-  return db.campaigns;
+  return db.campaigns.map((c) => ({
+    ...c,
+    formIds: c.formIds && c.formIds.length > 0 ? c.formIds : (c.formId ? [c.formId] : []),
+  }));
 }
 
 export async function getCampaignByCode(code: string): Promise<EvaluationCampaign | null> {
   const db = await getDatabase();
   const normalized = code.trim().toUpperCase();
-  return db.campaigns.find((c) => c.code.toUpperCase() === normalized) || null;
+  const found = db.campaigns.find((c) => c.code.toUpperCase() === normalized);
+  if (!found) return null;
+  return {
+    ...found,
+    formIds: found.formIds && found.formIds.length > 0 ? found.formIds : (found.formId ? [found.formId] : []),
+  };
 }
 
 export async function saveCampaign(campaign: EvaluationCampaign): Promise<EvaluationCampaign> {
   const db = await getDatabase();
-  const index = db.campaigns.findIndex((c) => c.id === campaign.id || c.code === campaign.code);
+  const formIds = campaign.formIds && campaign.formIds.length > 0
+    ? campaign.formIds
+    : (campaign.formId ? [campaign.formId] : []);
+  const normalizedCampaign: EvaluationCampaign = {
+    ...campaign,
+    formIds,
+    formId: formIds[0] || campaign.formId || '',
+  };
+  const index = db.campaigns.findIndex((c) => c.id === normalizedCampaign.id || c.code === normalizedCampaign.code);
   if (index >= 0) {
-    db.campaigns[index] = { ...campaign, updatedAt: new Date().toISOString() };
+    db.campaigns[index] = { ...normalizedCampaign, updatedAt: new Date().toISOString() };
   } else {
-    db.campaigns.unshift(campaign);
+    db.campaigns.unshift(normalizedCampaign);
   }
   await writeToDiskOrBlob(db);
-  return campaign;
+  return normalizedCampaign;
+}
+
+export async function getFormsForCampaign(campaign: EvaluationCampaign): Promise<FormSchema[]> {
+  const db = await getDatabase();
+  const formIds = campaign.formIds && campaign.formIds.length > 0 
+    ? campaign.formIds 
+    : (campaign.formId ? [campaign.formId] : []);
+  
+  return formIds
+    .map(id => db.forms.find(f => f.id === id || f.code === id))
+    .filter((f): f is FormSchema => Boolean(f));
 }
 
 export async function toggleCampaignStatus(code: string): Promise<EvaluationCampaign | null> {

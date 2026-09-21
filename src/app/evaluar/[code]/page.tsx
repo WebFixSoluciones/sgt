@@ -33,6 +33,8 @@ export default function WorkerEvaluationPage() {
   // Campaign & Form Data
   const [campaign, setCampaign] = useState<EvaluationCampaign | null>(null);
   const [form, setForm] = useState<FormSchema | null>(null);
+  const [formsList, setFormsList] = useState<FormSchema[]>([]);
+  const [activeFormIndex, setActiveFormIndex] = useState(0);
   const [pageLoading, setPageLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -67,7 +69,9 @@ export default function WorkerEvaluationPage() {
         const data = await res.json();
         if (data.success) {
           setCampaign(data.data.campaign);
-          setForm(data.data.form);
+          const loadedForms = data.data.forms || (data.data.form ? [data.data.form] : []);
+          setFormsList(loadedForms);
+          setForm(loadedForms[0] || data.data.form);
         } else {
           setErrorMsg(data.error || 'No se pudo cargar la evaluación.');
         }
@@ -80,16 +84,18 @@ export default function WorkerEvaluationPage() {
     fetchCampaignData();
   }, [code]);
 
+  const activeForm = formsList[activeFormIndex] || form;
+
   // 2. Build Sections based on 'page_break' fields
   const sections: Section[] = useMemo(() => {
-    if (!form || !form.fields) return [];
+    if (!activeForm || !activeForm.fields) return [];
     const secList: Section[] = [];
     let currentSec: Section = {
       title: 'Información General',
       fields: [],
     };
 
-    for (const field of form.fields) {
+    for (const field of activeForm.fields) {
       if (field.type === 'page_break') {
         if (currentSec.fields.length > 0) {
           secList.push(currentSec);
@@ -303,6 +309,39 @@ export default function WorkerEvaluationPage() {
         alert(`Por favor responda a la pregunta obligatoria: "${f.label}"`);
         return;
       }
+    }
+
+    // If this evaluation contains multiple forms and there are more forms pending:
+    if (activeFormIndex < formsList.length - 1) {
+      try {
+        setIsSavingDraft(true);
+        await fetch('/api/sesiones', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save_draft',
+            evaluationCode: code,
+            workerCode,
+            answers,
+            currentFieldIndex: 0,
+            currentSectionTitle: formsList[activeFormIndex + 1]?.title || 'Siguiente Formulario',
+          }),
+        });
+
+        const nextFormTitle = formsList[activeFormIndex + 1]?.title || 'Siguiente Formulario';
+        setTransitionMsg(`¡Cuestionario completado! Avanzando al siguiente formulario: ${nextFormTitle}...`);
+        setTimeout(() => {
+          setActiveFormIndex((prev) => prev + 1);
+          setCurrentSectionIndex(0);
+          setTransitionMsg(null);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 1500);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsSavingDraft(false);
+      }
+      return;
     }
 
     try {
@@ -569,9 +608,16 @@ export default function WorkerEvaluationPage() {
                 alt="SGT"
                 className="h-7 w-auto object-contain hidden sm:block"
               />
-              <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate">
-                {currentSection?.title || 'Evaluación'}
-              </h1>
+              <div className="flex flex-col min-w-0">
+                {formsList.length > 1 && (
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider truncate">
+                    Formulario {activeFormIndex + 1} de {formsList.length}: {activeForm?.title}
+                  </span>
+                )}
+                <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate">
+                  {currentSection?.title || 'Evaluación'}
+                </h1>
+              </div>
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
@@ -739,6 +785,25 @@ export default function WorkerEvaluationPage() {
             >
               <span>Siguiente Sección</span>
               <ArrowRight className="w-4 h-4" />
+            </button>
+          ) : activeFormIndex < formsList.length - 1 ? (
+            <button
+              type="button"
+              onClick={handleFinalSubmit}
+              disabled={isSavingDraft}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors inline-flex items-center gap-2 shadow-xs disabled:opacity-50"
+            >
+              {isSavingDraft ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Cargando...</span>
+                </>
+              ) : (
+                <>
+                  <span>Siguiente Formulario: {formsList[activeFormIndex + 1]?.title}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           ) : (
             <button

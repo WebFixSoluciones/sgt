@@ -46,7 +46,8 @@ export interface EvaluationCampaign {
   code: string; // Used in URL: /evaluar/[code]
   title: string;
   company: string;
-  formId: string;
+  formId?: string; // Backward compatibility
+  formIds: string[]; // List of form IDs assigned to this evaluation
   expectedParticipants: number;
   status: 'active' | 'inactive';
   groupId?: string; // Links chained evaluations
@@ -63,6 +64,7 @@ export interface WorkerSubmission {
   evaluationCode: string;
   workerCode: string; // e.g. "5555"
   status: 'in_progress' | 'completed';
+  currentFormIndex?: number; // 0, 1, 2...
   currentFieldIndex: number;
   currentSectionTitle: string;
   answers: Record<string, string | number>; // fieldId -> stored value

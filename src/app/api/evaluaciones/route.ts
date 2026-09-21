@@ -14,11 +14,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, title, company, formId, expectedParticipants, groupId, nextEvaluationCode } = body;
+    const { code, title, company, formId, formIds, expectedParticipants, groupId, nextEvaluationCode } = body;
 
-    if (!code || !title || !company || !formId) {
+    const resolvedFormIds: string[] = Array.isArray(formIds) && formIds.length > 0
+      ? formIds
+      : (formId ? [formId] : []);
+
+    if (!code || !title || !company || resolvedFormIds.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Faltan campos obligatorios (código, título, empresa, formulario)' },
+        { success: false, error: 'Faltan campos obligatorios (código, título, empresa y al menos un formulario seleccionado)' },
         { status: 400 }
       );
     }
@@ -28,7 +32,8 @@ export async function POST(req: NextRequest) {
       code: code.trim().toUpperCase(),
       title: title.trim(),
       company: company.trim(),
-      formId,
+      formId: resolvedFormIds[0],
+      formIds: resolvedFormIds,
       expectedParticipants: Number(expectedParticipants) || 100,
       status: 'active',
       groupId: groupId || undefined,

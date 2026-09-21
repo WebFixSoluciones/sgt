@@ -3,44 +3,41 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Plus,
+  PlusCircle,
+  FileText,
+  BarChart3,
   Search,
   Copy,
   Check,
-  FileSpreadsheet,
-  FileText,
-  BarChart3,
-  Edit,
+  ClipboardList,
+  Sparkles,
   ExternalLink,
-  ChevronLeft,
   ChevronRight,
   Eye,
-  Trash2,
-  RefreshCw,
-  Files,
   Layers,
+  Building2,
+  Calendar,
+  Users,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema } from '@/lib/types';
 import AdminEvaluationWizard from '@/components/admin/AdminEvaluationWizard';
 
-export default function AdminFormsPage() {
+export default function AdminDashboardPage() {
   const [campaigns, setCampaigns] = useState<EvaluationCampaign[]>([]);
   const [forms, setForms] = useState<FormSchema[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterTab, setFilterTab] = useState<'all' | 'active' | 'inactive'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [bulkAction, setBulkAction] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  // New Campaign Wizard State
+  // Wizard state
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardInitialData, setWizardInitialData] = useState<Partial<EvaluationCampaign> | null>(null);
 
-  // Duplicate / Template Modal State
-  const [duplicateSource, setDuplicateSource] = useState<EvaluationCampaign | null>(null);
-
-  const fetchCampaigns = async () => {
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
       const res = await fetch('/api/evaluaciones');
@@ -62,7 +59,7 @@ export default function AdminFormsPage() {
   };
 
   useEffect(() => {
-    fetchCampaigns();
+    fetchDashboardData();
   }, []);
 
   const handleToggleStatus = async (code: string) => {
@@ -91,364 +88,341 @@ export default function AdminFormsPage() {
     setTimeout(() => setCopiedCode(null), 2500);
   };
 
-  const handleBulkApply = async () => {
-    if (!bulkAction || selectedIds.length === 0) return;
+  const activeCampaigns = campaigns.filter((c) => c.status === 'active');
+  const totalSubmissions = campaigns.reduce((acc, c) => acc + (c.submissionsCount || 0), 0);
 
-    if (bulkAction === 'activate' || bulkAction === 'deactivate') {
-      const targetStatus = bulkAction === 'activate' ? 'active' : 'inactive';
-      for (const id of selectedIds) {
-        const camp = campaigns.find((c) => c.id === id);
-        if (camp && camp.status !== targetStatus) {
-          await handleToggleStatus(camp.code);
-        }
-      }
-      setSelectedIds([]);
-      setBulkAction('');
-    }
-  };
-
-  const handleDuplicate = (camp: EvaluationCampaign) => {
-    setWizardInitialData({
-      title: `${camp.title} (COPIA)`,
-      code: `${camp.code}-COPIA`,
-      company: camp.company,
-      formId: camp.formId,
-      expectedParticipants: camp.expectedParticipants,
-      nextEvaluationCode: camp.nextEvaluationCode,
-    });
-    setWizardOpen(true);
-  };
-
-  // Filtered lists
   const filteredCampaigns = campaigns.filter((c) => {
-    if (filterTab === 'active' && c.status !== 'active') return false;
-    if (filterTab === 'inactive' && c.status !== 'inactive') return false;
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      return (
-        c.title.toLowerCase().includes(term) ||
-        c.code.toLowerCase().includes(term) ||
-        c.company.toLowerCase().includes(term)
-      );
-    }
-    return true;
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      c.title.toLowerCase().includes(term) ||
+      c.code.toLowerCase().includes(term) ||
+      c.company.toLowerCase().includes(term)
+    );
   });
 
-  const countAll = campaigns.length;
-  const countActive = campaigns.filter((c) => c.status === 'active').length;
-  const countInactive = campaigns.filter((c) => c.status === 'inactive').length;
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Top Header matching Screenshot 1 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Formularios</h1>
-          <button
-            onClick={() => {
-              setWizardInitialData(null);
-              setWizardOpen(true);
-            }}
-            className="px-3.5 py-1.5 bg-[#2271b1] hover:bg-[#135e96] text-white text-sm font-medium rounded transition-colors shadow-sm inline-flex items-center gap-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Añadir nuevo</span>
-          </button>
-        </div>
+    <div className="w-full px-6 sm:px-8 py-6 space-y-8 animate-fade-in-slide">
+      {/* 1. TOP WELCOME BANNER: Bienvenido Prevención SGT */}
+      <div className="bg-gradient-to-r from-slate-900 via-[#0b1b36] to-[#0061fe] rounded-2xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-white/5 backdrop-blur-3xl transform skew-x-12 translate-x-10 pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-semibold tracking-wide text-blue-200 backdrop-blur-xs">
+              <Sparkles className="w-3.5 h-3.5 text-blue-300" />
+              <span>Plataforma Oficial de Salud y Prevención</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Bienvenido Prevención SGT
+            </h1>
+            <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
+              Gestor centralizado de cuestionarios ocupacionales (FPSICO 4.0, LIPS-60, Estrés OIT y Trabajo Nocturno). Administre evaluaciones, diseñe plantillas y consulte informes ejecutivos en tiempo real.
+            </p>
+          </div>
 
-        {/* Search matching Screenshot 1 */}
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="Buscar formularios"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-3 py-1.5 border border-slate-300 rounded text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#2271b1] w-56 sm:w-64"
-          />
-          <button
-            type="button"
-            className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded transition-colors"
-          >
-            Buscar formularios
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Tabs matching Screenshot 1 */}
-      <div className="flex items-center gap-2 text-sm text-slate-600 mb-4 pb-2 border-b border-slate-200">
-        <button
-          onClick={() => setFilterTab('all')}
-          className={`hover:text-[#2271b1] transition-colors ${
-            filterTab === 'all' ? 'text-[#2271b1] font-semibold' : ''
-          }`}
-        >
-          Todos <span className="text-slate-400 font-normal">({countAll})</span>
-        </button>
-        <span className="text-slate-300">|</span>
-        <button
-          onClick={() => setFilterTab('active')}
-          className={`hover:text-[#2271b1] transition-colors ${
-            filterTab === 'active' ? 'text-[#2271b1] font-semibold' : ''
-          }`}
-        >
-          Activos <span className="text-slate-400 font-normal">({countActive})</span>
-        </button>
-        <span className="text-slate-300">|</span>
-        <button
-          onClick={() => setFilterTab('inactive')}
-          className={`hover:text-[#2271b1] transition-colors ${
-            filterTab === 'inactive' ? 'text-[#2271b1] font-semibold' : ''
-          }`}
-        >
-          Inactivos <span className="text-slate-400 font-normal">({countInactive})</span>
-        </button>
-        <span className="text-slate-300">|</span>
-        <span className="text-slate-400">
-          Papelera <span className="font-normal">(0)</span>
-        </span>
-      </div>
-
-      {/* Bulk actions and count header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-        <div className="flex items-center gap-2">
-          <select
-            value={bulkAction}
-            onChange={(e) => setBulkAction(e.target.value)}
-            className="px-2.5 py-1.5 border border-slate-300 rounded text-sm text-slate-700 bg-white focus:outline-none focus:border-[#2271b1]"
-          >
-            <option value="">Acciones en lote</option>
-            <option value="activate">Activar seleccionados</option>
-            <option value="deactivate">Desactivar seleccionados</option>
-          </select>
-          <button
-            onClick={handleBulkApply}
-            disabled={!bulkAction || selectedIds.length === 0}
-            className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded transition-colors disabled:opacity-50"
-          >
-            Aplicar
-          </button>
-        </div>
-
-        <div className="text-xs text-slate-500 font-medium">
-          {filteredCampaigns.length} elementos
+          {/* Quick Metrics Pills */}
+          <div className="flex flex-wrap sm:flex-nowrap gap-3 shrink-0">
+            <div className="px-4 py-3 bg-white/10 rounded-xl backdrop-blur-xs border border-white/10 text-center min-w-[110px]">
+              <div className="text-2xl font-black text-white">{activeCampaigns.length}</div>
+              <div className="text-[11px] text-blue-200 uppercase tracking-wider font-medium">Evaluaciones Activas</div>
+            </div>
+            <div className="px-4 py-3 bg-white/10 rounded-xl backdrop-blur-xs border border-white/10 text-center min-w-[110px]">
+              <div className="text-2xl font-black text-white">{forms.length}</div>
+              <div className="text-[11px] text-blue-200 uppercase tracking-wider font-medium">Formularios Base</div>
+            </div>
+            <div className="px-4 py-3 bg-white/10 rounded-xl backdrop-blur-xs border border-white/10 text-center min-w-[110px]">
+              <div className="text-2xl font-black text-emerald-400">{totalSubmissions}</div>
+              <div className="text-[11px] text-blue-200 uppercase tracking-wider font-medium">Respuestas</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Data Table matching Screenshot 1 */}
-      <div className="bg-white border border-slate-200 rounded overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/75 text-slate-600 font-medium text-xs">
-                <th className="py-3 px-3 w-8 text-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.length === filteredCampaigns.length && filteredCampaigns.length > 0}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedIds(filteredCampaigns.map((c) => c.id));
-                      } else {
-                        setSelectedIds([]);
-                      }
-                    }}
-                    className="rounded border-slate-300 text-[#2271b1] focus:ring-0"
-                  />
-                </th>
-                <th className="py-3 px-3 w-28">Estado</th>
-                <th className="py-3 px-4">Título</th>
-                <th className="py-3 px-3 text-center w-24">Código / ID</th>
-                <th className="py-3 px-3 text-right w-24">Entradas</th>
-                <th className="py-3 px-3 text-right w-24">Visitas</th>
-                <th className="py-3 px-3 text-right w-24">Conversión</th>
-                <th className="py-3 px-4 text-center w-48">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
+      {/* 2. THE 3 PROMINENT DIRECT ACTION CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Card 1: CREAR EVALUACIÓN */}
+        <div
+          onClick={() => {
+            setWizardInitialData(null);
+            setWizardOpen(true);
+          }}
+          className="group relative bg-white border border-slate-200 hover:border-blue-500 rounded-2xl p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between"
+        >
+          <div className="space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+              <ClipboardList className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Campaña por Empresa</span>
+              <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors mt-0.5">
+                CREAR EVALUACIÓN
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Asistente guiado para configurar una nueva evaluación por empresa, agrupando uno o varios formularios (FPSICO, Estrés, LIPS-60).
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-blue-600">
+            <span>Iniciar Asistente</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </div>
+
+        {/* Card 2: CREAR FORMULARIO */}
+        <Link
+          href="/admin/formularios/nuevo"
+          className="group relative bg-white border border-slate-200 hover:border-indigo-500 rounded-2xl p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between"
+        >
+          <div className="space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Constructor de Preguntas</span>
+              <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mt-0.5">
+                CREAR FORMULARIO
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Diseñe una nueva plantilla de preguntas personalizada con el constructor visual centrado, limpio y libre de ruido.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-indigo-600">
+            <span>Abrir Constructor</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </Link>
+
+        {/* Card 3: VER RESULTADOS */}
+        <Link
+          href="/admin/resultados"
+          className="group relative bg-white border border-slate-200 hover:border-emerald-500 rounded-2xl p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between"
+        >
+          <div className="space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+              <BarChart3 className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Módulo de Informes</span>
+              <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-600 transition-colors mt-0.5">
+                VER RESULTADOS
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Consulte gráficos y niveles de riesgo de cada evaluación, con descargas directas en PDF, Excel multi-hoja y TXT FPSICO 4.0.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-emerald-600">
+            <span>Explorar Resultados</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </Link>
+      </div>
+
+      {/* 3. EVALUACIONES ACTIVAS Y RECIENTES TABLE (FULL-WIDTH, FLUID SPACING) */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+        {/* Table Header Bar */}
+        <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-blue-600" />
+              <span>Evaluaciones y Procesos de Empresas</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Supervisión de cuestionarios aplicados, códigos de acceso y respuestas registradas
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative w-full sm:w-64">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar empresa o código..."
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                setWizardInitialData(null);
+                setWizardOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0061fe] hover:bg-[#0052d9] text-white text-xs font-semibold rounded-lg transition-colors shadow-xs shrink-0"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Nueva Evaluación</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Table Content */}
+        {loading ? (
+          <div className="p-12 text-center text-slate-400 text-xs">Cargando evaluaciones...</div>
+        ) : filteredCampaigns.length === 0 ? (
+          <div className="p-12 text-center text-slate-500 text-xs space-y-2">
+            <ClipboardList className="w-8 h-8 text-slate-300 mx-auto" />
+            <p className="font-semibold text-slate-700">No se encontraron evaluaciones.</p>
+            <p>Haga clic en "+ Nueva Evaluación" para crear la primera campaña de evaluación.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs divide-y divide-slate-100">
+              <thead className="bg-[#f8fafc] text-slate-500 font-semibold uppercase text-[11px] tracking-wider">
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-slate-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-slate-400" />
-                    Cargando evaluaciones...
-                  </td>
+                  <th className="py-3.5 px-5">Estado</th>
+                  <th className="py-3.5 px-5">Evaluación / Empresa</th>
+                  <th className="py-3.5 px-5">Código de Acceso</th>
+                  <th className="py-3.5 px-5">Formularios que la Componen</th>
+                  <th className="py-3.5 px-5 text-center">Respuestas</th>
+                  <th className="py-3.5 px-5 text-right">Acciones</th>
                 </tr>
-              ) : filteredCampaigns.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-400">
-                    No se encontraron formularios o evaluaciones.
-                  </td>
-                </tr>
-              ) : (
-                filteredCampaigns.map((camp) => {
-                  const conversion =
-                    camp.visits > 0 ? ((camp.submissionsCount / camp.visits) * 100).toFixed(1) : '0';
-                  const isChecked = selectedIds.includes(camp.id);
-                  const isFpsico = camp.formId === 'form-fpsico-40' || camp.code.includes('PSI');
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {filteredCampaigns.map((camp) => {
+                  const isActive = camp.status === 'active';
+                  // Resolve assigned forms titles
+                  const assignedFormIds = camp.formIds && camp.formIds.length > 0
+                    ? camp.formIds
+                    : (camp.formId ? [camp.formId] : []);
+                  const assignedForms = forms.filter((f) => assignedFormIds.includes(f.id));
 
                   return (
-                    <tr
-                      key={camp.id}
-                      className={`hover:bg-blue-50/30 transition-colors ${
-                        isChecked ? 'bg-blue-50/50' : ''
-                      }`}
-                    >
-                      {/* Checkbox */}
-                      <td className="py-3.5 px-3 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedIds([...selectedIds, camp.id]);
-                            } else {
-                              setSelectedIds(selectedIds.filter((id) => id !== camp.id));
-                            }
-                          }}
-                          className="rounded border-slate-300 text-[#2271b1] focus:ring-0"
-                        />
-                      </td>
-
-                      {/* Estado Pill Toggle */}
-                      <td className="py-3.5 px-3">
+                    <tr key={camp.id} className="hover:bg-slate-50/70 transition-colors group">
+                      {/* Estado */}
+                      <td className="py-4 px-5">
                         <button
-                          type="button"
                           onClick={() => handleToggleStatus(camp.code)}
-                          title="Click para cambiar estado"
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-all ${
-                            camp.status === 'active'
+                          title="Clic para cambiar estado"
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                            isActive
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
                               : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
                           }`}
                         >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              camp.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'
-                            }`}
-                          />
-                          <span>{camp.status === 'active' ? 'Activos' : 'Inactivos'}</span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                          <span>{isActive ? 'Activa' : 'Inactiva'}</span>
                         </button>
                       </td>
 
-                      {/* Título */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-[#135e96] hover:underline cursor-pointer">
-                          <Link href={`/admin/respuestas/${camp.code}`}>
+                      {/* Título & Empresa */}
+                      <td className="py-4 px-5">
+                        <div>
+                          <Link
+                            href={`/admin/resultados?code=${camp.code}`}
+                            className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors text-xs sm:text-sm hover:underline"
+                          >
                             {camp.title}
                           </Link>
+                          <div className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-0.5">
+                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{camp.company}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
-                          <span>{camp.company}</span>
-                          {camp.nextEvaluationCode && (
-                            <span className="inline-flex items-center gap-1 text-[11px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
-                              <Layers className="w-3 h-3" />
-                              Encadenada $\rightarrow$ {camp.nextEvaluationCode}
+                      </td>
+
+                      {/* Código de Acceso */}
+                      <td className="py-4 px-5">
+                        <div className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
+                          <span className="font-mono font-bold text-slate-800 tracking-wide">
+                            {camp.code}
+                          </span>
+                          <button
+                            onClick={() => copyEvaluationLink(camp.code)}
+                            title="Copiar enlace del trabajador"
+                            className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
+                          >
+                            {copiedCode === camp.code ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+
+                      {/* Formularios que la componen */}
+                      <td className="py-4 px-5">
+                        <div className="flex flex-wrap gap-1.5 max-w-sm">
+                          {assignedForms.length > 0 ? (
+                            assignedForms.map((f) => (
+                              <span
+                                key={f.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-md text-[10px] font-medium"
+                              >
+                                <FileText className="w-3 h-3 text-blue-500" />
+                                <span className="truncate max-w-[140px]">{f.title}</span>
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">
+                              {camp.formId || 'Sin formularios asignados'}
                             </span>
                           )}
                         </div>
                       </td>
 
-                      {/* ID / Código */}
-                      <td className="py-3.5 px-3 text-center font-mono text-xs text-slate-600 font-medium">
-                        {camp.code}
+                      {/* Respuestas */}
+                      <td className="py-4 px-5 text-center">
+                        <div className="font-bold text-slate-900 text-sm">
+                          {camp.submissionsCount || 0}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          de {camp.expectedParticipants || 100} esperados
+                        </div>
                       </td>
 
-                      {/* Entradas */}
-                      <td className="py-3.5 px-3 text-right font-medium text-slate-800">
-                        {camp.submissionsCount}
-                      </td>
-
-                      {/* Visitas */}
-                      <td className="py-3.5 px-3 text-right text-slate-600">
-                        {camp.visits}
-                      </td>
-
-                      {/* Conversión */}
-                      <td className="py-3.5 px-3 text-right font-medium text-slate-700">
-                        {conversion}%
-                      </td>
-
-                      {/* Acciones Rápidas */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {/* Copiar enlace */}
-                          <button
-                            type="button"
-                            onClick={() => copyEvaluationLink(camp.code)}
-                            title="Copiar enlace directo de evaluación"
-                            className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                          >
-                            {copiedCode === camp.code ? (
-                              <Check className="w-4 h-4 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-4 h-4" />
-                            )}
-                          </button>
-
-                          {/* Ver respuestas */}
+                      {/* Acciones */}
+                      <td className="py-4 px-5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <Link
-                            href={`/admin/respuestas/${camp.code}`}
-                            title="Ver respuestas individuales"
-                            className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Link>
-
-                          {/* Gráficos e Informes */}
-                          <Link
-                            href={`/admin/informes/${camp.code}`}
-                            title="Gráficos y Analítica"
-                            className="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                            href={`/admin/resultados?code=${camp.code}`}
+                            title="Ver Gráficos y Descargas"
+                            className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors border border-emerald-200"
                           >
                             <BarChart3 className="w-4 h-4" />
                           </Link>
 
-                          {/* Descargar Excel */}
+                          <Link
+                            href={`/admin/respuestas/${camp.code}`}
+                            title="Ver tabla de respuestas detalladas"
+                            className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors border border-slate-200"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+
                           <a
-                            href={`/api/exportar/excel?code=${camp.code}`}
-                            download
-                            title="Descargar Excel completo (.xlsx)"
-                            className="p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors"
+                            href={`/evaluar/${camp.code}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Abrir como trabajador"
+                            className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-lg transition-colors"
                           >
-                            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                            <ExternalLink className="w-4 h-4" />
                           </a>
-
-                          {/* Descargar TXT FPSICO 4.0 */}
-                          {isFpsico && (
-                            <a
-                              href={`/api/exportar/fpsico?code=${camp.code}`}
-                              download
-                              title="Descargar TXT listo para FPSICO 4.0"
-                              className="p-1.5 text-slate-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors"
-                            >
-                              <FileText className="w-4 h-4 text-purple-600" />
-                            </a>
-                          )}
-
-                          {/* Duplicar / Plantilla */}
-                          <button
-                            type="button"
-                            onClick={() => handleDuplicate(camp)}
-                            title="Duplicar / Guardar como plantilla"
-                            className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
-                          >
-                            <Files className="w-4 h-4" />
-                          </button>
                         </div>
                       </td>
                     </tr>
                   );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Asistente de Creación Paso a Paso */}
+      {/* Creation Wizard Modal */}
       <AdminEvaluationWizard
         isOpen={wizardOpen}
         onClose={() => setWizardOpen(false)}
-        onSuccess={async () => {
-          await fetchCampaigns();
+        onSuccess={(newCamp) => {
+          fetchDashboardData();
         }}
         existingCampaigns={campaigns}
         forms={forms}

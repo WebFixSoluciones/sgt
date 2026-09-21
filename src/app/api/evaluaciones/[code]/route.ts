@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCampaignByCode, getFormById, incrementCampaignVisits, getSubmissions } from '@/lib/storage';
+import { getCampaignByCode, getFormById, incrementCampaignVisits, getSubmissions, getFormsForCampaign } from '@/lib/storage';
 
 export async function GET(
   req: NextRequest,
@@ -19,7 +19,8 @@ export async function GET(
       await incrementCampaignVisits(code);
     }
 
-    const form = await getFormById(campaign.formId);
+    const forms = await getFormsForCampaign(campaign);
+    const form = forms[0] || (campaign.formId ? await getFormById(campaign.formId) : null);
     const submissions = await getSubmissions(code);
 
     return NextResponse.json({
@@ -27,6 +28,7 @@ export async function GET(
       data: {
         campaign,
         form,
+        forms,
         submissionsCount: submissions.filter((s) => s.status === 'completed').length,
         totalEntries: submissions.length,
       },
