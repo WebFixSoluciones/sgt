@@ -116,9 +116,6 @@ export default function AdminDashboardPage() {
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Bienvenido Prevención SGT
             </h1>
-            <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Gestor centralizado de cuestionarios ocupacionales (FPSICO 4.0, LIPS-60, Estrés OIT y Trabajo Nocturno). Administre evaluaciones, diseñe plantillas y consulte informes ejecutivos en tiempo real.
-            </p>
           </div>
 
           {/* Quick Metrics Pills */}
@@ -158,9 +155,6 @@ export default function AdminDashboardPage() {
               <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors mt-0.5">
                 CREAR EVALUACIÓN
               </h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Asistente guiado para configurar una nueva evaluación por empresa, agrupando uno o varios formularios (FPSICO, Estrés, LIPS-60).
-              </p>
             </div>
           </div>
 
@@ -184,9 +178,6 @@ export default function AdminDashboardPage() {
               <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mt-0.5">
                 CREAR FORMULARIO
               </h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Diseñe una nueva plantilla de preguntas personalizada con el constructor visual centrado, limpio y libre de ruido.
-              </p>
             </div>
           </div>
 
@@ -210,9 +201,6 @@ export default function AdminDashboardPage() {
               <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-600 transition-colors mt-0.5">
                 VER RESULTADOS
               </h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Consulte gráficos y niveles de riesgo de cada evaluación, con descargas directas en PDF, Excel multi-hoja y TXT FPSICO 4.0.
-              </p>
             </div>
           </div>
 
@@ -232,9 +220,6 @@ export default function AdminDashboardPage() {
               <ClipboardList className="w-5 h-5 text-blue-600" />
               <span>Evaluaciones y Procesos de Empresas</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Supervisión de cuestionarios aplicados, códigos de acceso y respuestas registradas
-            </p>
           </div>
 
           <div className="flex items-center gap-3">

@@ -216,9 +216,6 @@ export default function AdminResultadosPage() {
               <BarChart3 className="w-7 h-7 text-emerald-600" />
               <span>Asistente de Resultados e Informes Oficiales</span>
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Seleccione cualquier evaluación para consultar sus gráficos de riesgo psicométrico y descargar los informes oficiales.
-            </p>
           </div>
 
           {/* Quick link to view responses table */}

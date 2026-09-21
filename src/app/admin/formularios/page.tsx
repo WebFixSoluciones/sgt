@@ -58,9 +58,6 @@ export default function AdminFormulariosPage() {
             <FileText className="w-7 h-7 text-indigo-600" />
             <span>Catálogo de Formularios y Plantillas Maestras</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Administre y diseñe los cuestionarios base que se utilizarán para conformar las evaluaciones de las empresas.
-          </p>
         </div>
 
         <Link

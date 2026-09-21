@@ -110,9 +110,6 @@ export default function AdminEvaluacionesPage() {
             <ClipboardList className="w-7 h-7 text-blue-600" />
             <span>Gestión de Evaluaciones por Empresa</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Administre los procesos de evaluación activos, configure los formularios asignados y consulte respuestas.
-          </p>
         </div>
 
         <button
