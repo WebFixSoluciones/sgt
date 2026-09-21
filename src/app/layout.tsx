@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import '@/styles/globals.css';
-import Navbar from '@/components/Navbar';
 
 export const metadata: Metadata = {
-  title: 'SGT Evaluaciones | Prevención Laboral',
-  description: 'Gestor de evaluaciones psicosociales, estrés laboral y cuestionarios de salud ocupacional.',
+  title: 'SGT Prevención | Gestor de Evaluaciones',
+  description: 'Sistema de evaluación de riesgos psicosociales y prevención laboral SGT.',
 };
 
 export default function RootLayout({
@@ -14,11 +13,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-        <Navbar />
-        <main className="flex-1">
-          {children}
-        </main>
+      <body className="min-h-screen bg-[#fafbfc] text-slate-900 font-sans antialiased">
+        {children}
       </body>
     </html>
   );

@@ -8,18 +8,24 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
         brand: {
           50: "#eff6ff",
           100: "#dbeafe",
-          500: "#2563eb",
-          600: "#1d4ed8",
-          700: "#1e40af",
-          800: "#1e3a8a",
-          900: "#172554",
+          500: "#0061fe",
+          600: "#0052d9",
+          700: "#0043b3",
+          800: "#00348c",
+          900: "#002566",
         }
+      },
+      boxShadow: {
+        xs: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
       },
     },
   },

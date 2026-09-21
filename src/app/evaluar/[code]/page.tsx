@@ -420,8 +420,17 @@ export default function WorkerEvaluationPage() {
         )}
 
         <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm space-y-6">
-          {/* Header */}
-          <div className="border-b border-slate-100 pb-4">
+          {/* Header with SGT Logo */}
+          <div className="border-b border-slate-100 pb-4 text-center">
+            <div className="flex justify-center mb-3">
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+                <img
+                  src="/logo-sgt.jpg"
+                  alt="SGT Corp. Prevención S.A."
+                  className="h-12 w-auto object-contain"
+                />
+              </div>
+            </div>
             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[11px] font-semibold uppercase tracking-wider mb-2">
               <Building2 className="w-3.5 h-3.5" />
               <span>{campaign.company}</span>
@@ -508,12 +517,21 @@ export default function WorkerEvaluationPage() {
 
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Top Floating / Sticky Progress Header */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs sticky top-20 z-10">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600 mb-2">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-900">{campaign.company}</span>
-              <span className="text-slate-300">•</span>
-              <span className="font-mono text-slate-500">COD: {workerCode}</span>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs sticky top-4 z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-600 mb-2.5">
+            <div className="flex items-center gap-3">
+              <img
+                src="/logo-sgt.jpg"
+                alt="SGT"
+                className="h-7 w-auto object-contain hidden sm:block"
+              />
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900">{campaign.company}</span>
+                <span className="text-slate-300">•</span>
+                <span className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[11px] font-semibold">
+                  COD: {workerCode}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               {isSavingDraft && (
