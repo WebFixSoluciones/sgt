@@ -207,63 +207,31 @@ export default function AdminResultadosPage() {
   return (
     <div className="w-full px-6 sm:px-8 py-6 space-y-6">
       {/* ========================================================================= */}
-      {/* 1. TOP HEADER & ASSISTANT SELECTOR */}
+      {/* 1. TOP UNIFIED HEADER: TÍTULO, CÓDIGO, SELECTOR Y ACCIONES DIRECTAS */}
       {/* ========================================================================= */}
-      <div className="print:hidden space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-              <BarChart3 className="w-7 h-7 text-emerald-600" />
-              <span>Asistente de Resultados e Informes Oficiales</span>
-            </h1>
-          </div>
+      <div className="print:hidden bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        {/* Left: Code badge, Company, Switcher & Title */}
+        <div className="space-y-1.5 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg">
+              {campaign?.code || 'CÓDIGO'}
+            </span>
+            <span className="text-xs font-semibold text-slate-500">
+              {campaign?.company}
+            </span>
 
-          {/* Quick link to view responses table */}
-          {campaign && (
-            <Link
-              href={`/admin/respuestas/${campaign.code}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-colors shadow-xs shrink-0"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-              <span>Ver Tabla de Entradas</span>
-            </Link>
-          )}
-        </div>
-
-        {/* Evaluation Selector Dropdown / Search */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs relative">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Evaluación Seleccionada:
-              </span>
-              {campaign ? (
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-xl">
-                  <Building2 className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs font-bold text-blue-900">{campaign.company}</span>
-                  <span className="text-xs text-slate-400">•</span>
-                  <span className="text-xs font-medium text-slate-700">{campaign.title}</span>
-                  <span className="text-[11px] font-mono font-bold text-blue-700 bg-white px-1.5 py-0.5 rounded border border-blue-200">
-                    {campaign.code}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-xs text-slate-400 italic">Cargando evaluación...</span>
-              )}
-            </div>
-
-            {/* Change Evaluation Trigger */}
-            <div className="relative">
+            {/* Compact Cambiar Evaluación Dropdown */}
+            <div className="relative inline-block">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="w-full sm:w-auto inline-flex items-center justify-between gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition-colors"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors"
               >
                 <span>Cambiar de Evaluación</span>
-                <ChevronDown className="w-4 h-4 text-slate-500" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-2">
+                <div className="absolute left-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-2">
                   <div className="relative">
                     <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
@@ -304,28 +272,27 @@ export default function AdminResultadosPage() {
               )}
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* ========================================================================= */}
-      {/* 2. THE PROMINENT DOWNLOAD TOOLBAR */}
-      {/* ========================================================================= */}
-      <div className="print:hidden bg-gradient-to-r from-slate-900 to-[#1e293b] rounded-2xl p-5 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Centro de Descargas Oficiales</span>
-            <span className="text-xs text-slate-400">• Formatos Verificados</span>
-          </div>
-          <h2 className="text-base font-bold text-white">
-            Descargue los Resultados de {campaign?.company || 'la Empresa'}
-          </h2>
-          <p className="text-xs text-slate-300">
-            Exportación completa con baremos, respuestas por trabajador y archivos compatibles con software oficial.
-          </p>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            {campaign?.title || 'Resultados de la Evaluación'}
+          </h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
-          {/* 1. DESCARGAR PDF */}
+        {/* Right: The 4 Action Buttons: VER ENTRADAS, PDF, EXCEL, FPSICO TXT */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {/* 1. VER ENTRADAS */}
+          {campaign && (
+            <Link
+              href={`/admin/respuestas/${campaign.code}`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all shadow-xs hover:border-blue-400 hover:text-blue-700"
+              title="Ver listado individual de respuestas de trabajadores"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+              <span>VER ENTRADAS</span>
+            </Link>
+          )}
+
+          {/* 2. DESCARGAR PDF */}
           <button
             onClick={handleDownloadPdf}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
@@ -335,7 +302,7 @@ export default function AdminResultadosPage() {
             <span>DESCARGAR PDF</span>
           </button>
 
-          {/* 2. DESCARGAR EXCEL */}
+          {/* 3. DESCARGAR EXCEL */}
           <button
             onClick={handleDownloadExcel}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
@@ -345,7 +312,7 @@ export default function AdminResultadosPage() {
             <span>DESCARGAR EXCEL</span>
           </button>
 
-          {/* 3. DESCARGAR FPSICO (TXT) */}
+          {/* 4. DESCARGAR FPSICO (TXT) */}
           {hasFpsico && (
             <button
               onClick={handleDownloadTxt}
@@ -363,8 +330,8 @@ export default function AdminResultadosPage() {
       {/* 3. PRINTABLE REPORT CONTAINER (USED IN SCREEN & IN WINDOW.PRINT()) */}
       {/* ========================================================================= */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs space-y-8 print:border-none print:shadow-none print:p-0">
-        {/* REPORT HEADER (VISIBLE BOTH IN SCREEN AND PDF PRINT) */}
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-slate-200">
+        {/* REPORT HEADER (VISIBLE ONLY IN PRINT / PDF) */}
+        <div className="hidden print:flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-slate-200">
           <div className="flex items-center gap-4">
             <img src="/logo-sgt.jpg" alt="Prevención SGT" className="h-12 w-auto object-contain" />
             <div>
