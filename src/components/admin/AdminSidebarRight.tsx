@@ -218,6 +218,14 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
       {/* Top Bar for Admin */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 h-16 flex items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-3">
+          {/* Mobile left sidebar drawer toggle */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+
           <Link href="/admin" className="flex items-center gap-3">
             <img
               src="/logo-sgt.jpg"
@@ -233,41 +241,28 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
           </Link>
         </div>
 
-        {/* Right Header: Quick buttons + Mobile Menu Toggle */}
+        {/* Right Header: Quick action button */}
         <div className="flex items-center gap-2">
           <Link
             href="/admin/formularios/nuevo"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0061fe] hover:bg-[#0052d9] text-white text-xs font-medium rounded-lg transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0061fe] hover:bg-[#0052d9] text-white text-xs font-medium rounded-lg transition-colors shadow-xs"
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span>Crear Formulario</span>
           </Link>
-
-          {/* Mobile right sidebar drawer toggle */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
         </div>
       </header>
 
-      {/* Main Body with Content on Left/Center and Dropbox Sidebar on the Right */}
+      {/* Main Body with Dropbox Sidebar on the Left and Content on the Right */}
       <div className="flex-1 flex w-full">
-        {/* Main Content Area */}
-        <main className="flex-1 min-w-0 overflow-y-auto">
-          {children}
-        </main>
-
-        {/* Dropbox-style Sidebar on the Right (Desktop) */}
-        <aside className="w-72 bg-white border-l border-slate-200 p-5 shrink-0 hidden lg:block sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto shadow-xs">
+        {/* Dropbox-style Sidebar on the Left (Desktop) */}
+        <aside className="w-72 bg-white border-r border-slate-200 p-5 shrink-0 hidden lg:block sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto shadow-xs">
           {sidebarContent}
         </aside>
 
-        {/* Mobile Right Drawer */}
+        {/* Mobile Left Drawer */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden bg-black/40 backdrop-blur-xs flex justify-end">
+          <div className="fixed inset-0 z-50 lg:hidden bg-black/40 backdrop-blur-xs flex justify-start animate-fade-in-slide">
             <div className="w-72 bg-white h-full p-5 shadow-2xl overflow-y-auto">
               <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                 <span className="text-xs font-bold text-slate-900">Menú Administrador</span>
@@ -282,6 +277,11 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
             </div>
           </div>
         )}
+
+        {/* Main Content Area */}
+        <main className="flex-1 min-w-0 overflow-y-auto">
+          {children}
+        </main>
       </div>
     </div>
   );
