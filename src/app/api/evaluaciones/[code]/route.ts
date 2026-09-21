@@ -13,6 +13,10 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Evaluación no encontrada' }, { status: 404 });
     }
 
+    if (campaign.status === 'trash' || campaign.isTrash) {
+      return NextResponse.json({ success: false, error: 'Esta evaluación se encuentra en la papelera o no está disponible.' }, { status: 404 });
+    }
+
     // Increment visits when accessed
     const searchParams = req.nextUrl.searchParams;
     if (searchParams.get('track') === '1') {

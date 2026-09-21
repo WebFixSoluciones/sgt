@@ -22,6 +22,7 @@ import {
   AlertCircle,
   ArrowRight,
   FileSpreadsheet,
+  Trash2,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema } from '@/lib/types';
 import AdminEvaluationWizard from '@/components/admin/AdminEvaluationWizard';
@@ -88,10 +89,38 @@ export default function AdminDashboardPage() {
     setTimeout(() => setCopiedCode(null), 2500);
   };
 
-  const activeCampaigns = campaigns.filter((c) => c.status === 'active');
-  const totalSubmissions = campaigns.reduce((acc, c) => acc + (c.submissionsCount || 0), 0);
+  const handleTrashCampaign = async (code: string, title: string) => {
+    if (!confirm(`¿Enviar la evaluación "${title}" (${code}) a la papelera? Podrá restaurarla cuando lo necesite.`)) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/evaluaciones', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, action: 'trash' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCampaigns((prev) =>
+          prev.map((c) =>
+            c.code === code ? { ...c, status: 'trash', isTrash: true } : c
+          )
+        );
+      } else {
+        alert(data.error || 'Error al enviar a papelera');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error de conexión al mover a papelera');
+    }
+  };
 
-  const filteredCampaigns = campaigns.filter((c) => {
+  const nonTrashCampaigns = campaigns.filter((c) => c.status !== 'trash' && !c.isTrash);
+  const activeCampaigns = nonTrashCampaigns.filter((c) => c.status === 'active');
+  const totalSubmissions = nonTrashCampaigns.reduce((acc, c) => acc + (c.submissionsCount || 0), 0);
+  const trashCampaignsCount = campaigns.filter((c) => c.status === 'trash' || c.isTrash).length;
+
+  const filteredCampaigns = nonTrashCampaigns.filter((c) => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
@@ -233,6 +262,16 @@ export default function AdminDashboardPage() {
                 className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               />
             </div>
+
+            {trashCampaignsCount > 0 && (
+              <Link
+                href="/admin/evaluaciones?tab=trash"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold transition-colors shrink-0"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Papelera ({trashCampaignsCount})</span>
+              </Link>
+            )}
 
             <button
               onClick={() => {
@@ -391,6 +430,14 @@ export default function AdminDashboardPage() {
                           >
                             <ExternalLink className="w-4 h-4" />
                           </a>
+
+                          <button
+                            onClick={() => handleTrashCampaign(camp.code, camp.title)}
+                            title="Enviar a papelera"
+                            className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors border border-transparent hover:border-rose-200"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>

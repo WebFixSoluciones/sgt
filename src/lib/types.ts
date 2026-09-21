@@ -49,7 +49,9 @@ export interface EvaluationCampaign {
   formId?: string; // Backward compatibility
   formIds: string[]; // List of form IDs assigned to this evaluation
   expectedParticipants: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'trash';
+  isTrash?: boolean;
+  trashedAt?: string;
   groupId?: string; // Links chained evaluations
   groupOrder?: number; // 1, 2, 3...
   nextEvaluationCode?: string; // Auto-transition to next survey

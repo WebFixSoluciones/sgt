@@ -158,6 +158,57 @@ export async function toggleCampaignStatus(code: string): Promise<EvaluationCamp
   return campaign;
 }
 
+export async function trashCampaign(code: string): Promise<EvaluationCampaign | null> {
+  const db = await getDatabase();
+  const campaign = db.campaigns.find((c) => c.code.toUpperCase() === code.trim().toUpperCase());
+  if (!campaign) return null;
+  campaign.status = 'trash';
+  campaign.isTrash = true;
+  campaign.trashedAt = getEcuadorISOString();
+  campaign.updatedAt = getEcuadorISOString();
+  await writeToDiskOrBlob(db);
+  return campaign;
+}
+
+export async function restoreCampaign(code: string): Promise<EvaluationCampaign | null> {
+  const db = await getDatabase();
+  const campaign = db.campaigns.find((c) => c.code.toUpperCase() === code.trim().toUpperCase());
+  if (!campaign) return null;
+  campaign.status = 'active';
+  campaign.isTrash = false;
+  campaign.trashedAt = undefined;
+  campaign.updatedAt = getEcuadorISOString();
+  await writeToDiskOrBlob(db);
+  return campaign;
+}
+
+export async function deleteCampaignPermanently(code: string): Promise<boolean> {
+  const db = await getDatabase();
+  const norm = code.trim().toUpperCase();
+  const initialCount = db.campaigns.length;
+  db.campaigns = db.campaigns.filter((c) => c.code.toUpperCase() !== norm);
+  db.submissions = db.submissions.filter((s) => s.evaluationCode.toUpperCase() !== norm);
+  const deleted = db.campaigns.length < initialCount;
+  if (deleted) {
+    await writeToDiskOrBlob(db);
+  }
+  return deleted;
+}
+
+export async function emptyTrashCampaigns(): Promise<number> {
+  const db = await getDatabase();
+  const trashedCodes = db.campaigns
+    .filter((c) => c.status === 'trash' || c.isTrash === true)
+    .map((c) => c.code.toUpperCase());
+
+  if (trashedCodes.length === 0) return 0;
+
+  db.campaigns = db.campaigns.filter((c) => !trashedCodes.includes(c.code.toUpperCase()));
+  db.submissions = db.submissions.filter((s) => !trashedCodes.includes(s.evaluationCode.toUpperCase()));
+  await writeToDiskOrBlob(db);
+  return trashedCodes.length;
+}
+
 export async function incrementCampaignVisits(code: string): Promise<void> {
   const db = await getDatabase();
   const campaign = db.campaigns.find((c) => c.code.toUpperCase() === code.trim().toUpperCase());

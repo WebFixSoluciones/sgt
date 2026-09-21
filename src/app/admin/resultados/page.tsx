@@ -66,9 +66,10 @@ export default function AdminResultadosPage() {
         const res = await fetch('/api/evaluaciones');
         const data = await res.json();
         if (data.success && data.data.length > 0) {
-          setCampaigns(data.data);
-          if (!selectedCode) {
-            setSelectedCode(data.data[0].code);
+          const nonTrash = data.data.filter((c: EvaluationCampaign) => c.status !== 'trash' && !c.isTrash);
+          setCampaigns(nonTrash);
+          if (!selectedCode && nonTrash.length > 0) {
+            setSelectedCode(nonTrash[0].code);
           }
         }
       } catch (err) {
