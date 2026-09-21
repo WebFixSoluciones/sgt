@@ -1,0 +1,252 @@
+import fs from 'fs';
+import path from 'path';
+import { FormSchema, EvaluationCampaign, WorkerSubmission, EvaluationGroup } from './types';
+import { initialForms, initialCampaigns, initialGroups, initialSubmissions } from './seed-data';
+
+interface DatabaseSchema {
+  forms: FormSchema[];
+  campaigns: EvaluationCampaign[];
+  submissions: WorkerSubmission[];
+  groups: EvaluationGroup[];
+}
+
+const DATA_DIR = path.join(process.cwd(), 'data');
+const DB_FILE = path.join(DATA_DIR, 'db.json');
+
+// In-memory cache for speed
+let memDb: DatabaseSchema | null = null;
+
+function getInitialDb(): DatabaseSchema {
+  return {
+    forms: initialForms,
+    campaigns: initialCampaigns,
+    submissions: initialSubmissions,
+    groups: initialGroups,
+  };
+}
+
+async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
+  // Check if Vercel Blob is configured
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      const { list } = await import('@vercel/blob');
+      const blobs = await list({ prefix: 'db.json' });
+      if (blobs.blobs.length > 0) {
+        const response = await fetch(blobs.blobs[0].url, { cache: 'no-store' });
+        if (response.ok) {
+          const data = await response.json();
+          return data;
+        }
+      }
+    } catch (e) {
+      console.warn('Vercel Blob read error, falling back to local:', e);
+    }
+  }
+
+  // Local filesystem fallback
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    if (fs.existsSync(DB_FILE)) {
+      const content = fs.readFileSync(DB_FILE, 'utf-8');
+      return JSON.parse(content);
+    } else {
+      const initial = getInitialDb();
+      fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
+      return initial;
+    }
+  } catch (err) {
+    console.error('Error reading local DB:', err);
+    return getInitialDb();
+  }
+}
+
+async function writeToDiskOrBlob(db: DatabaseSchema): Promise<void> {
+  memDb = db;
+
+  // Local write
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+  } catch (e) {
+    console.warn('Could not write to local file (read-only environment):', e);
+  }
+
+  // Vercel Blob write if token exists
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      const { put } = await import('@vercel/blob');
+      await put('db.json', JSON.stringify(db, null, 2), {
+        access: 'public',
+        addRandomSuffix: false,
+      });
+    } catch (e) {
+      console.error('Error writing to Vercel Blob:', e);
+    }
+  }
+}
+
+export async function getDatabase(): Promise<DatabaseSchema> {
+  if (!memDb) {
+    memDb = await readFromDiskOrBlob();
+  }
+  return memDb;
+}
+
+// Campaign Operations
+export async function getCampaigns(): Promise<EvaluationCampaign[]> {
+  const db = await getDatabase();
+  return db.campaigns;
+}
+
+export async function getCampaignByCode(code: string): Promise<EvaluationCampaign | null> {
+  const db = await getDatabase();
+  const normalized = code.trim().toUpperCase();
+  return db.campaigns.find((c) => c.code.toUpperCase() === normalized) || null;
+}
+
+export async function saveCampaign(campaign: EvaluationCampaign): Promise<EvaluationCampaign> {
+  const db = await getDatabase();
+  const index = db.campaigns.findIndex((c) => c.id === campaign.id || c.code === campaign.code);
+  if (index >= 0) {
+    db.campaigns[index] = { ...campaign, updatedAt: new Date().toISOString() };
+  } else {
+    db.campaigns.unshift(campaign);
+  }
+  await writeToDiskOrBlob(db);
+  return campaign;
+}
+
+export async function toggleCampaignStatus(code: string): Promise<EvaluationCampaign | null> {
+  const db = await getDatabase();
+  const campaign = db.campaigns.find((c) => c.code.toUpperCase() === code.trim().toUpperCase());
+  if (!campaign) return null;
+  campaign.status = campaign.status === 'active' ? 'inactive' : 'active';
+  campaign.updatedAt = new Date().toISOString();
+  await writeToDiskOrBlob(db);
+  return campaign;
+}
+
+export async function incrementCampaignVisits(code: string): Promise<void> {
+  const db = await getDatabase();
+  const campaign = db.campaigns.find((c) => c.code.toUpperCase() === code.trim().toUpperCase());
+  if (campaign) {
+    campaign.visits = (campaign.visits || 0) + 1;
+    await writeToDiskOrBlob(db);
+  }
+}
+
+// Form Schema Operations
+export async function getForms(): Promise<FormSchema[]> {
+  const db = await getDatabase();
+  return db.forms;
+}
+
+export async function getFormById(id: string): Promise<FormSchema | null> {
+  const db = await getDatabase();
+  return db.forms.find((f) => f.id === id || f.code === id) || null;
+}
+
+export async function saveForm(form: FormSchema): Promise<FormSchema> {
+  const db = await getDatabase();
+  const index = db.forms.findIndex((f) => f.id === form.id);
+  if (index >= 0) {
+    db.forms[index] = { ...form, updatedAt: new Date().toISOString() };
+  } else {
+    db.forms.unshift(form);
+  }
+  await writeToDiskOrBlob(db);
+  return form;
+}
+
+// Submission / Save & Resume Operations
+export async function getSubmissions(evaluationCode?: string): Promise<WorkerSubmission[]> {
+  const db = await getDatabase();
+  if (!evaluationCode) return db.submissions;
+  return db.submissions.filter((s) => s.evaluationCode.toUpperCase() === evaluationCode.toUpperCase());
+}
+
+export async function getSubmission(
+  evaluationCode: string,
+  workerCode: string
+): Promise<WorkerSubmission | null> {
+  const db = await getDatabase();
+  const evalCodeNorm = evaluationCode.trim().toUpperCase();
+  const workerCodeNorm = workerCode.trim().toUpperCase();
+  return (
+    db.submissions.find(
+      (s) =>
+        s.evaluationCode.toUpperCase() === evalCodeNorm &&
+        s.workerCode.toUpperCase() === workerCodeNorm
+    ) || null
+  );
+}
+
+export async function saveSubmission(submission: WorkerSubmission): Promise<WorkerSubmission> {
+  const db = await getDatabase();
+  const index = db.submissions.findIndex(
+    (s) =>
+      s.id === submission.id ||
+      (s.evaluationCode.toUpperCase() === submission.evaluationCode.toUpperCase() &&
+        s.workerCode.toUpperCase() === submission.workerCode.toUpperCase())
+  );
+
+  submission.updatedAt = new Date().toISOString();
+
+  if (index >= 0) {
+    db.submissions[index] = submission;
+  } else {
+    db.submissions.unshift(submission);
+  }
+
+  // Update submission count on campaign if completed
+  if (submission.status === 'completed') {
+    const campaign = db.campaigns.find(
+      (c) => c.code.toUpperCase() === submission.evaluationCode.toUpperCase()
+    );
+    if (campaign) {
+      const completedCount = db.submissions.filter(
+        (s) => s.evaluationCode.toUpperCase() === campaign.code.toUpperCase() && s.status === 'completed'
+      ).length;
+      campaign.submissionsCount = completedCount;
+    }
+  }
+
+  await writeToDiskOrBlob(db);
+  return submission;
+}
+
+export async function resetSubmission(evaluationCode: string, workerCode: string): Promise<WorkerSubmission | null> {
+  const db = await getDatabase();
+  const index = db.submissions.findIndex(
+    (s) =>
+      s.evaluationCode.toUpperCase() === evaluationCode.trim().toUpperCase() &&
+      s.workerCode.toUpperCase() === workerCode.trim().toUpperCase()
+  );
+  if (index >= 0) {
+    const existing = db.submissions[index];
+    const reset: WorkerSubmission = {
+      ...existing,
+      status: 'in_progress',
+      currentFieldIndex: 0,
+      currentSectionTitle: '',
+      answers: {},
+      startedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      completedAt: undefined,
+    };
+    db.submissions[index] = reset;
+    await writeToDiskOrBlob(db);
+    return reset;
+  }
+  return null;
+}
+
+// Evaluation Groups Operations
+export async function getGroups(): Promise<EvaluationGroup[]> {
+  const db = await getDatabase();
+  return db.groups;
+}
