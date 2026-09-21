@@ -16,9 +16,13 @@ import {
   Download,
   BarChart3,
   Calendar,
+  RotateCcw,
+  Upload,
+  ShieldAlert,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema, WorkerSubmission } from '@/lib/types';
 import { formatEcuadorDateTime } from '@/lib/date-utils';
+import EvaluationBackupModal from '@/components/admin/EvaluationBackupModal';
 
 export default function RespuestasPage() {
   const params = useParams();
@@ -32,26 +36,40 @@ export default function RespuestasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubmission, setSelectedSubmission] = useState<WorkerSubmission | null>(null);
 
-  useEffect(() => {
+  // Backup & Clear Modal state
+  const [backupModalOpen, setBackupModalOpen] = useState(false);
+  const [backupModalTab, setBackupModalTab] = useState<'limpiar' | 'restaurar'>('limpiar');
+
+  const fetchResponses = async () => {
     if (!code) return;
-    const fetchResponses = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`/api/respuestas/${code}`);
-        const data = await res.json();
-        if (data.success) {
-          setCampaign(data.data.campaign);
-          setForm(data.data.form);
-          setSubmissions(data.data.submissions);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/respuestas/${code}`);
+      const data = await res.json();
+      if (data.success) {
+        setCampaign(data.data.campaign);
+        setForm(data.data.form);
+        setSubmissions(data.data.submissions);
       }
-    };
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchResponses();
   }, [code]);
+
+  const handleOpenBackupModal = (tab: 'limpiar' | 'restaurar' = 'limpiar') => {
+    setBackupModalTab(tab);
+    setBackupModalOpen(true);
+  };
+
+  const handleBackupSuccess = () => {
+    fetchResponses();
+  };
 
   const filteredSubmissions = submissions.filter((s) => {
     if (!searchTerm) return true;
@@ -120,6 +138,28 @@ export default function RespuestasPage() {
               <span>Descargar TXT (FPSICO 4.0)</span>
             </a>
           )}
+
+          {/* Limpiar a 0 con Seguro */}
+          <button
+            type="button"
+            onClick={() => handleOpenBackupModal('limpiar')}
+            className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs sm:text-sm font-semibold rounded transition-colors inline-flex items-center gap-1.5 shadow-xs"
+            title="Descargar copia de seguridad y reiniciar las respuestas a 0"
+          >
+            <RotateCcw className="w-4 h-4 text-rose-600" />
+            <span>Limpiar a 0</span>
+          </button>
+
+          {/* Cargar Respaldo */}
+          <button
+            type="button"
+            onClick={() => handleOpenBackupModal('restaurar')}
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs sm:text-sm font-medium rounded transition-colors inline-flex items-center gap-1.5 shadow-xs"
+            title="Cargar archivo .json para restaurar respuestas"
+          >
+            <Upload className="w-4 h-4 text-blue-600" />
+            <span>Cargar Respaldo</span>
+          </button>
         </div>
       </div>
 
@@ -298,6 +338,22 @@ export default function RespuestasPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Backup, Clear & Restore Modal */}
+      {campaign && (
+        <EvaluationBackupModal
+          isOpen={backupModalOpen}
+          onClose={() => setBackupModalOpen(false)}
+          campaign={{
+            code: campaign.code,
+            title: campaign.title,
+            company: campaign.company,
+            submissionsCount: submissions.length,
+          }}
+          initialTab={backupModalTab}
+          onSuccess={handleBackupSuccess}
+        />
       )}
     </div>
   );

@@ -344,6 +344,68 @@ export async function resetSubmission(evaluationCode: string, workerCode: string
   return null;
 }
 
+export async function clearCampaignSubmissions(
+  code: string
+): Promise<{ deletedCount: number; campaign: EvaluationCampaign | null }> {
+  const db = await getDatabase();
+  const norm = code.trim().toUpperCase();
+  const campaign = db.campaigns.find((c) => c.code.toUpperCase() === norm) || null;
+
+  const initialCount = db.submissions.length;
+  db.submissions = db.submissions.filter((s) => s.evaluationCode.toUpperCase() !== norm);
+  const deletedCount = initialCount - db.submissions.length;
+
+  if (campaign) {
+    campaign.submissionsCount = 0;
+    campaign.visits = 0;
+    campaign.updatedAt = getEcuadorISOString();
+  }
+
+  await writeToDiskOrBlob(db);
+  return { deletedCount, campaign };
+}
+
+export async function restoreCampaignSubmissions(
+  code: string,
+  submissions: WorkerSubmission[]
+): Promise<{ restoredCount: number; campaign: EvaluationCampaign | null }> {
+  const db = await getDatabase();
+  const norm = code.trim().toUpperCase();
+  const campaign = db.campaigns.find((c) => c.code.toUpperCase() === norm) || null;
+
+  // Remove current submissions for this campaign to avoid duplications
+  db.submissions = db.submissions.filter((s) => s.evaluationCode.toUpperCase() !== norm);
+
+  // Sanitize and link incoming submissions
+  const sanitized: WorkerSubmission[] = submissions.map((s, idx) => ({
+    id: s.id || `sub-restored-${Date.now()}-${idx + 1}`,
+    evaluationCode: norm,
+    workerCode: s.workerCode || `TRAB-${idx + 1}`,
+    status: s.status === 'completed' || s.status === 'in_progress' ? s.status : 'completed',
+    currentFormIndex: s.currentFormIndex ?? 0,
+    currentFieldIndex: s.currentFieldIndex ?? 0,
+    currentSectionTitle: s.currentSectionTitle || '',
+    answers: s.answers || {},
+    ip: s.ip || '127.0.0.1',
+    userAgent: s.userAgent || 'Respaldo Restaurado',
+    startedAt: s.startedAt || getEcuadorISOString(),
+    updatedAt: s.updatedAt || getEcuadorISOString(),
+    completedAt: s.completedAt || (s.status === 'completed' ? getEcuadorISOString() : undefined),
+  }));
+
+  // Add restored submissions
+  db.submissions.unshift(...sanitized);
+
+  if (campaign) {
+    const completedCount = sanitized.filter((s) => s.status === 'completed').length;
+    campaign.submissionsCount = completedCount > 0 ? completedCount : sanitized.length;
+    campaign.updatedAt = getEcuadorISOString();
+  }
+
+  await writeToDiskOrBlob(db);
+  return { restoredCount: sanitized.length, campaign };
+}
+
 // Evaluation Groups Operations
 export async function getGroups(): Promise<EvaluationGroup[]> {
   const db = await getDatabase();

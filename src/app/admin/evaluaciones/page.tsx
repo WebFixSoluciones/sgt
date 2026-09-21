@@ -18,10 +18,13 @@ import {
   Trash2,
   RotateCcw,
   AlertTriangle,
+  ShieldAlert,
+  Upload,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema } from '@/lib/types';
 import { formatEcuadorDateTime } from '@/lib/date-utils';
 import AdminEvaluationWizard from '@/components/admin/AdminEvaluationWizard';
+import EvaluationBackupModal from '@/components/admin/EvaluationBackupModal';
 
 export default function AdminEvaluacionesPage() {
   const searchParams = useSearchParams();
@@ -37,6 +40,21 @@ export default function AdminEvaluacionesPage() {
   // Wizard state
   const [wizardOpen, setWizardOpen] = useState(searchParams.get('crear') === '1');
   const [wizardInitialData, setWizardInitialData] = useState<Partial<EvaluationCampaign> | null>(null);
+
+  // Backup & Clear Modal state
+  const [backupModalOpen, setBackupModalOpen] = useState(false);
+  const [backupModalCampaign, setBackupModalCampaign] = useState<EvaluationCampaign | null>(null);
+  const [backupModalTab, setBackupModalTab] = useState<'limpiar' | 'restaurar'>('limpiar');
+
+  const handleOpenBackupModal = (campaign: EvaluationCampaign, tab: 'limpiar' | 'restaurar' = 'limpiar') => {
+    setBackupModalCampaign(campaign);
+    setBackupModalTab(tab);
+    setBackupModalOpen(true);
+  };
+
+  const handleBackupSuccess = (action: 'cleared' | 'restored', count: number) => {
+    fetchCampaignsData();
+  };
 
   const fetchCampaignsData = async () => {
     try {
@@ -507,6 +525,27 @@ export default function AdminEvaluacionesPage() {
                         <div className="text-[10px] text-slate-400">
                           de {camp.expectedParticipants || 100} esperados
                         </div>
+                        {!isTrashItem && (
+                          <div className="mt-1 flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => handleOpenBackupModal(camp, camp.submissionsCount > 0 ? 'limpiar' : 'restaurar')}
+                              title={camp.submissionsCount > 0 ? "Limpiar a 0 (con respaldo obligatorio)" : "Cargar respaldo (.json)"}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+                            >
+                              {camp.submissionsCount > 0 ? (
+                                <>
+                                  <RotateCcw className="w-2.5 h-2.5 text-amber-600" />
+                                  <span>Limpiar a 0</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="w-2.5 h-2.5 text-blue-600" />
+                                  <span>Restaurar</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </td>
 
                       {/* Acciones */}
@@ -550,6 +589,14 @@ export default function AdminEvaluacionesPage() {
                               <Eye className="w-4 h-4" />
                             </Link>
 
+                            <button
+                              onClick={() => handleOpenBackupModal(camp, camp.submissionsCount > 0 ? 'limpiar' : 'restaurar')}
+                              title="Limpiar entradas (con seguro) o Restaurar Respaldo"
+                              className="p-1.5 hover:bg-amber-50 text-slate-400 hover:text-amber-700 rounded-lg transition-colors border border-transparent hover:border-amber-200"
+                            >
+                              <ShieldAlert className="w-4 h-4" />
+                            </button>
+
                             <a
                               href={`/evaluar/${camp.code}`}
                               target="_blank"
@@ -589,6 +636,15 @@ export default function AdminEvaluacionesPage() {
         existingCampaigns={campaigns}
         forms={forms}
         initialData={wizardInitialData}
+      />
+
+      {/* Backup, Clear & Restore Modal */}
+      <EvaluationBackupModal
+        isOpen={backupModalOpen}
+        onClose={() => setBackupModalOpen(false)}
+        campaign={backupModalCampaign}
+        initialTab={backupModalTab}
+        onSuccess={handleBackupSuccess}
       />
     </div>
   );

@@ -84,3 +84,15 @@ export interface EvaluationGroup {
   evaluationCodes: string[]; // Ordered list of evaluation codes
   createdAt: string;
 }
+
+export interface EvaluationBackupData {
+  version: string;
+  backupType: 'sgt_evaluation_submissions_backup';
+  evaluationCode: string;
+  campaignTitle: string;
+  company: string;
+  exportedAt: string;
+  totalSubmissions: number;
+  completedSubmissions: number;
+  submissions: WorkerSubmission[];
+}
