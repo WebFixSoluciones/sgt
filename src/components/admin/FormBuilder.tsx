@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -16,18 +16,24 @@ import {
   FileText,
   SplitSquareVertical,
   ArrowLeft,
-  HelpCircle,
-  Sparkles,
   ChevronDown,
   Layers,
-  Settings2,
-  X
+  ChevronRight,
+  Eye,
 } from 'lucide-react';
 import { FormSchema, FormField, FormFieldOption, FormFieldType } from '@/lib/types';
 
 interface FormBuilderProps {
   initialForm: FormSchema;
   isNew?: boolean;
+}
+
+interface FormSection {
+  id: string; // The id of the page_break field, or 'sec_initial'
+  title: string;
+  pageBreakField?: FormField;
+  fields: FormField[];
+  startIndex: number;
 }
 
 export default function FormBuilder({ initialForm, isNew = false }: FormBuilderProps) {
@@ -39,11 +45,10 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Batch presets modal state
-  const [batchFieldId, setBatchFieldId] = useState<string | null>(null);
-  const [batchText, setBatchText] = useState('');
+  // Selected Section in Navigator ('all' = show full form, or section id = focus that section)
+  const [selectedSectionFilter, setSelectedSectionFilter] = useState<string>('all');
 
-  // Update whole form properties (title, description, company)
+  // Update whole form properties (title, description, company, category)
   const updateFormMeta = (updates: Partial<FormSchema>) => {
     setForm((prev) => ({ ...prev, ...updates }));
   };
@@ -56,8 +61,48 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
     }));
   };
 
-  // Add new field (can insert at end or after active index)
-  const handleAddField = (type: FormFieldType, insertAfterIndex?: number) => {
+  // Compute Structured Sections based on 'page_break' fields
+  const sections: FormSection[] = useMemo(() => {
+    const secList: FormSection[] = [];
+    let currentSec: FormSection = {
+      id: 'sec_initial',
+      title: 'Sección 1: Datos Generales',
+      fields: [],
+      startIndex: 0,
+    };
+
+    form.fields.forEach((field, index) => {
+      if (field.type === 'page_break') {
+        if (currentSec.fields.length > 0 || currentSec.pageBreakField) {
+          secList.push(currentSec);
+        }
+        currentSec = {
+          id: field.id,
+          title: field.sectionTitle || field.label || `Sección ${secList.length + 1}`,
+          pageBreakField: field,
+          fields: [],
+          startIndex: index,
+        };
+      } else {
+        currentSec.fields.push(field);
+      }
+    });
+
+    if (currentSec.fields.length > 0 || currentSec.pageBreakField || secList.length === 0) {
+      secList.push(currentSec);
+    }
+
+    return secList;
+  }, [form.fields]);
+
+  // Current active section object
+  const activeSection = useMemo(() => {
+    if (selectedSectionFilter === 'all') return null;
+    return sections.find((s) => s.id === selectedSectionFilter) || sections[0] || null;
+  }, [sections, selectedSectionFilter]);
+
+  // Add new field into active section or at the end
+  const handleAddField = (type: FormFieldType) => {
     const newId = `field_${Date.now()}`;
     const newField: FormField = {
       id: newId,
@@ -80,23 +125,84 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
 
     setForm((prev) => {
       const newFields = [...prev.fields];
-      if (typeof insertAfterIndex === 'number' && insertAfterIndex >= 0) {
-        newFields.splice(insertAfterIndex + 1, 0, newField);
+
+      if (selectedSectionFilter !== 'all' && activeSection) {
+        // Find position of the last item in this section
+        const lastSectionField = activeSection.fields[activeSection.fields.length - 1];
+        if (lastSectionField) {
+          const insertIdx = newFields.findIndex((f) => f.id === lastSectionField.id);
+          newFields.splice(insertIdx + 1, 0, newField);
+        } else if (activeSection.pageBreakField) {
+          const pbIdx = newFields.findIndex((f) => f.id === activeSection.pageBreakField?.id);
+          newFields.splice(pbIdx + 1, 0, newField);
+        } else {
+          newFields.push(newField);
+        }
       } else {
         newFields.push(newField);
       }
+
       return { ...prev, fields: newFields };
     });
 
     setActiveFieldId(newId);
 
-    // Smooth scroll into the newly added field
+    // Smooth scroll into newly created field
     setTimeout(() => {
       const el = document.getElementById(`builder-field-${newId}`);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }, 100);
+  };
+
+  // Add a brand new Section (page_break)
+  const handleAddNewSection = () => {
+    const newSecId = `sec_${Date.now()}`;
+    const nextNum = sections.length + 1;
+    const defaultTitle = `Sección ${nextNum}: Nueva Sección`;
+
+    const newPageBreak: FormField = {
+      id: newSecId,
+      type: 'page_break',
+      label: defaultTitle,
+      sectionTitle: defaultTitle,
+      required: false,
+      order: form.fields.length,
+    };
+
+    setForm((prev) => ({
+      ...prev,
+      fields: [...prev.fields, newPageBreak],
+    }));
+
+    setSelectedSectionFilter(newSecId);
+    setActiveFieldId(newSecId);
+  };
+
+  // Update Section Title
+  const handleUpdateSectionTitle = (sec: FormSection, newTitle: string) => {
+    if (sec.pageBreakField) {
+      updateFormField(sec.pageBreakField.id, {
+        sectionTitle: newTitle,
+        label: newTitle,
+      });
+    } else {
+      // If initial section without page_break, we create an explicit page_break at start
+      const firstPb: FormField = {
+        id: `sec_pb_${Date.now()}`,
+        type: 'page_break',
+        label: newTitle,
+        sectionTitle: newTitle,
+        required: false,
+        order: 0,
+      };
+      setForm((prev) => ({
+        ...prev,
+        fields: [firstPb, ...prev.fields],
+      }));
+      setSelectedSectionFilter(firstPb.id);
+    }
   };
 
   // Duplicate field
@@ -127,9 +233,12 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
     if (activeFieldId === fieldId) {
       setActiveFieldId(null);
     }
+    if (selectedSectionFilter === fieldId) {
+      setSelectedSectionFilter('all');
+    }
   };
 
-  // Option Operations
+  // Options operations
   const handleAddOption = (fieldId: string) => {
     const field = form.fields.find((f) => f.id === fieldId);
     if (!field || !field.options) return;
@@ -245,29 +354,46 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
     }
   };
 
+  // Filtered fields to display on canvas based on section navigator
+  const fieldsToDisplay = useMemo(() => {
+    if (selectedSectionFilter === 'all') {
+      return form.fields;
+    }
+    if (!activeSection) return form.fields;
+
+    // Show the page break (if any) plus all fields belonging to this section
+    const list: FormField[] = [];
+    if (activeSection.pageBreakField) {
+      list.push(activeSection.pageBreakField);
+    }
+    return [...list, ...activeSection.fields];
+  }, [form.fields, selectedSectionFilter, activeSection]);
+
+  const totalQuestionsCount = form.fields.filter((f) => f.type !== 'page_break').length;
+
   return (
-    <div className="min-h-screen bg-[#fcfdfe] flex flex-col pb-24">
-      {/* Top Clean Sticky Bar: Centrado y sin ruido */}
-      <div className="bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-16 z-30 px-4 sm:px-8 py-3.5 shadow-2xs">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col pb-24">
+      {/* Top Clean Sticky Bar */}
+      <div className="bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-16 z-30 px-4 sm:px-6 py-3 shadow-2xs">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <Link
-              href="/admin"
+              href="/admin/formularios"
               className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors inline-flex items-center gap-1 text-xs font-semibold shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Volver</span>
+              <span className="hidden sm:inline">Formularios</span>
             </Link>
             <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-            <span className="text-xs text-slate-400 font-medium truncate">
-              {isNew ? 'Nuevo Formulario' : 'Editando Formulario'} • {form.fields.length} campos
+            <span className="text-xs text-slate-500 font-medium truncate">
+              {isNew ? 'Nuevo Formulario' : form.title} • {totalQuestionsCount} preguntas • {sections.length} secciones
             </span>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
             {savedSuccess && (
               <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 animate-fade-in-slide">
-                <Check className="w-4 h-4" /> Guardado
+                <Check className="w-4 h-4" /> Guardado con éxito
               </span>
             )}
             <button
@@ -282,398 +408,533 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
         </div>
       </div>
 
-      {/* Main Centered Document Canvas (Totalmente centrado y oxigenado) */}
-      <div className="max-w-4xl w-full mx-auto px-4 sm:px-8 pt-8 space-y-8 animate-fade-in-slide">
-        
-        {/* Form Title & Description Card: Limpio, minimalista y editable */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xs hover:border-slate-300 transition-all space-y-3">
-          <input
-            type="text"
-            value={form.title}
-            onChange={(e) => updateFormMeta({ title: e.target.value })}
-            placeholder="Título del Formulario o Evaluación..."
-            className="w-full text-2xl sm:text-3xl font-bold text-slate-900 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-1 transition-colors"
-          />
-
-          <textarea
-            rows={2}
-            value={form.description || ''}
-            onChange={(e) => updateFormMeta({ description: e.target.value })}
-            placeholder="Añada una descripción o instrucciones para los evaluados..."
-            className="w-full text-sm text-slate-600 placeholder:text-slate-400 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-1 transition-colors resize-none"
-          />
-
-          <div className="pt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1 rounded-lg">
-              <span className="font-semibold text-slate-700">Empresa:</span>
-              <input
-                type="text"
-                value={form.company || ''}
-                onChange={(e) => updateFormMeta({ company: e.target.value })}
-                placeholder="Ej. PREVENCIÓN SGT"
-                className="bg-transparent text-xs text-slate-800 font-medium focus:outline-none w-36"
-              />
+      {/* Main Workspace: Left Sidebar + Right Canvas */}
+      <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 pt-5 flex flex-col md:flex-row items-start gap-6">
+        {/* ========================================================================= */}
+        {/* BARRA IZQUIERDA: OPCIONES PARA AÑADIR + NAVEGADOR DE SECCIONES */}
+        {/* ========================================================================= */}
+        <aside className="w-full md:w-72 lg:w-80 shrink-0 md:sticky md:top-28 md:max-h-[calc(100vh-8rem)] flex flex-col gap-4">
+          {/* BLOQUE 1: OPCIONES PARA AÑADIR CAMPOS */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                Añadir Campos
+              </span>
+              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                Tipos
+              </span>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1 rounded-lg">
-              <span className="font-semibold text-slate-700">Categoría:</span>
-              <select
-                value={form.category || 'general'}
-                onChange={(e) => updateFormMeta({ category: e.target.value as any })}
-                className="bg-transparent text-xs text-slate-800 font-medium focus:outline-none"
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleAddField('radio')}
+                className="flex flex-col items-center justify-center p-2.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 hover:border-blue-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
               >
-                <option value="psicosocial">Psicosocial (FPSICO)</option>
-                <option value="lips60">Cuestionario LIPS-60</option>
-                <option value="estres">Estrés Laboral</option>
-                <option value="nocturno">Trabajo Nocturno</option>
-                <option value="general">General / Personalizado</option>
-              </select>
+                <CircleDot className="w-4 h-4 text-blue-600 mb-1 group-hover:scale-110 transition-transform" />
+                <span>Opción Única</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAddField('checkbox')}
+                className="flex flex-col items-center justify-center p-2.5 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
+              >
+                <CheckSquare className="w-4 h-4 text-indigo-600 mb-1 group-hover:scale-110 transition-transform" />
+                <span>Casillas</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAddField('select')}
+                className="flex flex-col items-center justify-center p-2.5 bg-slate-50 hover:bg-amber-50 hover:text-amber-700 border border-slate-200 hover:border-amber-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
+              >
+                <ListFilter className="w-4 h-4 text-amber-600 mb-1 group-hover:scale-110 transition-transform" />
+                <span>Desplegable</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAddField('text')}
+                className="flex flex-col items-center justify-center p-2.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
+              >
+                <AlignLeft className="w-4 h-4 text-emerald-600 mb-1 group-hover:scale-110 transition-transform" />
+                <span>Texto Corto</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAddField('textarea')}
+                className="col-span-2 flex items-center justify-center gap-2 p-2 bg-slate-50 hover:bg-purple-50 hover:text-purple-700 border border-slate-200 hover:border-purple-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
+              >
+                <FileText className="w-4 h-4 text-purple-600" />
+                <span>Párrafo / Observaciones</span>
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Fields List: Cards amplias, limpias y centradas */}
-        <div className="space-y-5">
-          {form.fields.map((field, fieldIndex) => {
-            const isSelected = activeFieldId === field.id;
+          {/* BLOQUE 2: NAVEGADOR DE SECCIONES */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex-1 flex flex-col min-h-0 space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-blue-600" />
+                <span className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">
+                  Navegador Secciones
+                </span>
+              </div>
 
-            // Render: Section Break (Salto de Página)
-            if (field.type === 'page_break') {
-              return (
-                <div
-                  key={field.id}
-                  id={`builder-field-${field.id}`}
-                  onClick={() => setActiveFieldId(field.id)}
-                  className="py-4 my-2 animate-fade-in-slide"
-                >
-                  <div className="relative flex items-center justify-between gap-3">
-                    <div className="flex-1 border-t-2 border-dashed border-blue-200" />
-                    
-                    <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-4 py-1.5 rounded-full text-xs font-bold text-blue-900 shadow-xs">
-                      <SplitSquareVertical className="w-4 h-4 text-blue-600 shrink-0" />
-                      <input
-                        type="text"
-                        value={field.sectionTitle || field.label}
-                        onChange={(e) =>
-                          updateFormField(field.id, {
-                            sectionTitle: e.target.value,
-                            label: e.target.value,
-                          })
-                        }
-                        placeholder="Nombre de la Sección..."
-                        className="bg-transparent border-none focus:outline-none font-bold text-blue-900 text-xs w-56 sm:w-72 text-center"
-                      />
-                    </div>
+              <button
+                type="button"
+                onClick={handleAddNewSection}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#0061fe] hover:bg-[#0052d9] text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                title="Crear una nueva sección para navegación siguiente-siguiente"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Sección</span>
+              </button>
+            </div>
 
-                    <div className="flex-1 border-t-2 border-dashed border-blue-200" />
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteField(field.id)}
-                      title="Eliminar salto de sección"
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-
-            // Render: Question Card
-            return (
-              <div
-                key={field.id}
-                id={`builder-field-${field.id}`}
-                onClick={() => setActiveFieldId(field.id)}
-                className={`bg-white rounded-2xl p-6 sm:p-7 transition-all duration-150 border ${
-                  isSelected
-                    ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md'
-                    : 'border-slate-200/90 hover:border-slate-300 shadow-xs'
+            {/* Toggle: Ver Todas vs Filtrar Sección */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs">
+              <button
+                type="button"
+                onClick={() => setSelectedSectionFilter('all')}
+                className={`flex-1 py-1 px-2 rounded-md font-semibold transition-all text-center ${
+                  selectedSectionFilter === 'all'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {/* Question Header: Enunciado y Tipo de Campo */}
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
-                  <div className="flex-1 min-w-0">
-                    <input
-                      type="text"
-                      value={field.label}
-                      onChange={(e) => updateFormField(field.id, { label: e.target.value })}
-                      placeholder="Escriba la pregunta aquí..."
-                      className="w-full text-base sm:text-lg font-semibold text-slate-900 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-1 transition-colors"
-                    />
+                Ver Todas ({form.fields.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedSectionFilter === 'all' && sections.length > 0) {
+                    setSelectedSectionFilter(sections[0].id);
+                  }
+                }}
+                className={`flex-1 py-1 px-2 rounded-md font-semibold transition-all text-center ${
+                  selectedSectionFilter !== 'all'
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Por Sección
+              </button>
+            </div>
 
-                    {/* Optional Question Description */}
-                    <input
-                      type="text"
-                      value={field.description || ''}
-                      onChange={(e) => updateFormField(field.id, { description: e.target.value })}
-                      placeholder="+ Añadir descripción o nota aclaratoria (opcional)..."
-                      className="w-full text-xs text-slate-500 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-1 mt-1 transition-colors"
-                    />
-                  </div>
+            {/* Sections List */}
+            <div className="overflow-y-auto space-y-1.5 max-h-72 md:max-h-[300px] pr-1">
+              {sections.map((sec, idx) => {
+                const isActive = selectedSectionFilter === sec.id;
+                const qCount = sec.fields.filter((f) => f.type !== 'page_break').length;
 
-                  {/* Field Type Selector */}
-                  <div className="flex items-center gap-2 self-start shrink-0">
-                    <select
-                      value={field.type}
-                      onChange={(e) => {
-                        const newType = e.target.value as FormFieldType;
-                        updateFormField(field.id, {
-                          type: newType,
-                          options:
-                            (newType === 'radio' || newType === 'select' || newType === 'checkbox') &&
-                            (!field.options || field.options.length === 0)
-                              ? [
-                                  { id: 'opt_1', label: '1. Siempre o casi siempre', value: '1' },
-                                  { id: 'opt_2', label: '2. A menudo', value: '2' },
-                                  { id: 'opt_3', label: '3. A veces', value: '3' },
-                                  { id: 'opt_4', label: '4. Nunca o casi nunca', value: '4' },
-                                ]
-                              : field.options,
-                        });
-                      }}
-                      className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 focus:outline-none focus:border-blue-600 transition-colors"
-                    >
-                      <option value="radio">Opción Única (Radio)</option>
-                      <option value="checkbox">Casillas (Checkbox)</option>
-                      <option value="select">Desplegable (Select)</option>
-                      <option value="text">Texto Corto</option>
-                      <option value="textarea">Párrafo / Observaciones</option>
-                    </select>
+                return (
+                  <div
+                    key={sec.id}
+                    onClick={() => {
+                      setSelectedSectionFilter(sec.id);
+                      // If in 'all' view, scroll smoothly to this section
+                      const el = document.getElementById(`builder-section-${sec.id}`);
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
+                    className={`p-2.5 rounded-xl cursor-pointer text-xs transition-all border ${
+                      isActive
+                        ? 'bg-blue-50/80 border-blue-300 text-blue-900 font-semibold shadow-2xs'
+                        : 'bg-slate-50/60 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-bold text-blue-700 shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span className="font-semibold text-slate-800 truncate">
+                          {sec.title}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white text-slate-600 border border-slate-200 shrink-0">
+                        {qCount} {qCount === 1 ? 'preg' : 'pregs'}
+                      </span>
+                    </div>
                   </div>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+
+        {/* ========================================================================= */}
+        {/* CANVAS PRINCIPAL (DERECHA): CABECERA COMPACTA Y LISTA DE PREGUNTAS */}
+        {/* ========================================================================= */}
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* CABECERA COMPACTA DEL FORMULARIO (SIN ESPACIO MUERTO) */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => updateFormMeta({ title: e.target.value })}
+                placeholder="Título de la Evaluación..."
+                className="flex-1 text-lg sm:text-xl font-bold text-slate-900 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-0.5 transition-colors"
+              />
+
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-xs">
+                  <span className="font-semibold text-slate-500">Empresa:</span>
+                  <input
+                    type="text"
+                    value={form.company || ''}
+                    onChange={(e) => updateFormMeta({ company: e.target.value })}
+                    placeholder="Empresa..."
+                    className="bg-transparent text-xs text-slate-800 font-bold focus:outline-none w-32"
+                  />
                 </div>
 
-                {/* Question Options List (For Radio, Checkbox, Select) */}
-                {(field.type === 'radio' || field.type === 'checkbox' || field.type === 'select') && (
-                  <div className="space-y-2.5 pt-2 border-t border-slate-100">
-                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">
-                      <span>Opciones de respuesta</span>
-                      <div className="flex items-center gap-3">
-                        <span className="hidden sm:inline">Valor Numérico</span>
-                        {/* Quick preset button */}
-                        <div className="relative group">
-                          <button
-                            type="button"
-                            className="text-blue-600 hover:text-blue-700 font-medium normal-case flex items-center gap-1"
-                          >
-                            <Sparkles className="w-3 h-3" />
-                            <span>Escalas rápidas</span>
-                            <ChevronDown className="w-3 h-3" />
-                          </button>
-                          <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 hidden group-hover:block z-20 space-y-1">
-                            <button
-                              type="button"
-                              onClick={() => applyPreset(field.id, 'frecuencia_4')}
-                              className="w-full text-left px-2.5 py-1.5 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors font-medium"
-                            >
-                              Frecuencia (1 a 4)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => applyPreset(field.id, 'binaria')}
-                              className="w-full text-left px-2.5 py-1.5 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors font-medium"
-                            >
-                              Sí / No (0 y 1)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => applyPreset(field.id, 'estres_6')}
-                              className="w-full text-left px-2.5 py-1.5 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors font-medium"
-                            >
-                              Estrés OIT (1 a 6)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => applyPreset(field.id, 'antiguedad_3')}
-                              className="w-full text-left px-2.5 py-1.5 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors font-medium"
-                            >
-                              Antigüedad (3 rangos)
-                            </button>
-                          </div>
+                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-xs">
+                  <span className="font-semibold text-slate-500">Cat:</span>
+                  <select
+                    value={form.category || 'general'}
+                    onChange={(e) => updateFormMeta({ category: e.target.value as any })}
+                    className="bg-transparent text-xs text-slate-800 font-medium focus:outline-none"
+                  >
+                    <option value="psicosocial">Psicosocial</option>
+                    <option value="lips60">LIPS-60</option>
+                    <option value="estres">Estrés</option>
+                    <option value="nocturno">Nocturno</option>
+                    <option value="general">General</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <input
+              type="text"
+              value={form.description || ''}
+              onChange={(e) => updateFormMeta({ description: e.target.value })}
+              placeholder="Descripción breve o instrucciones para los evaluados..."
+              className="w-full text-xs text-slate-500 placeholder:text-slate-400 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-0.5 transition-colors"
+            />
+          </div>
+
+          {/* SECTION HEADER BANNER (IF FILTERED BY SECTION) */}
+          {selectedSectionFilter !== 'all' && activeSection && (
+            <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 px-4 flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <SplitSquareVertical className="w-4 h-4 text-blue-600 shrink-0" />
+                <span className="font-bold text-blue-900">Editando Sección:</span>
+                <input
+                  type="text"
+                  value={activeSection.title}
+                  onChange={(e) => handleUpdateSectionTitle(activeSection, e.target.value)}
+                  className="bg-white border border-blue-200 px-2.5 py-1 rounded-lg font-bold text-blue-950 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-[200px]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-[11px] font-semibold text-blue-700">
+                  {activeSection.fields.filter((f) => f.type !== 'page_break').length} preguntas en esta pantalla
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSectionFilter('all')}
+                  className="px-2.5 py-1 bg-white hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  Ver Todas las Secciones
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* LISTA DE CAMPOS Y PREGUNTAS */}
+          <div className="space-y-4">
+            {fieldsToDisplay.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200 space-y-2">
+                <Layers className="w-8 h-8 text-slate-300 mx-auto" />
+                <p className="font-semibold text-slate-700">Esta sección no tiene preguntas aún.</p>
+                <p>Use la barra izquierda para añadir preguntas (Opción Única, Casillas, Texto, etc.).</p>
+              </div>
+            ) : (
+              fieldsToDisplay.map((field, fieldIndex) => {
+                const isSelected = activeFieldId === field.id;
+
+                // RENDER: Salto de Sección (page_break)
+                if (field.type === 'page_break') {
+                  return (
+                    <div
+                      key={field.id}
+                      id={`builder-section-${field.id}`}
+                      onClick={() => setActiveFieldId(field.id)}
+                      className="py-2 my-1"
+                    >
+                      <div className="relative flex items-center justify-between gap-3">
+                        <div className="flex-1 border-t-2 border-dashed border-blue-200" />
+
+                        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-4 py-1.5 rounded-full text-xs font-bold text-blue-900 shadow-xs">
+                          <SplitSquareVertical className="w-4 h-4 text-blue-600 shrink-0" />
+                          <input
+                            type="text"
+                            value={field.sectionTitle || field.label}
+                            onChange={(e) =>
+                              updateFormField(field.id, {
+                                sectionTitle: e.target.value,
+                                label: e.target.value,
+                              })
+                            }
+                            placeholder="Nombre de la Sección..."
+                            className="bg-transparent border-none focus:outline-none font-bold text-blue-900 text-xs w-60 sm:w-80 text-center"
+                          />
                         </div>
+
+                        <div className="flex-1 border-t-2 border-dashed border-blue-200" />
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteField(field.id)}
+                          title="Eliminar salto de sección"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // RENDER: Pregunta Normal
+                return (
+                  <div
+                    key={field.id}
+                    id={`builder-field-${field.id}`}
+                    onClick={() => setActiveFieldId(field.id)}
+                    className={`bg-white rounded-2xl p-5 sm:p-6 transition-all duration-150 border ${
+                      isSelected
+                        ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md'
+                        : 'border-slate-200/90 hover:border-slate-300 shadow-xs'
+                    }`}
+                  >
+                    {/* Header de la Pregunta: Enunciado y Tipo */}
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <input
+                          type="text"
+                          value={field.label}
+                          onChange={(e) => updateFormField(field.id, { label: e.target.value })}
+                          placeholder="Escriba la pregunta aquí..."
+                          className="w-full text-sm sm:text-base font-bold text-slate-900 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-1 transition-colors"
+                        />
+
+                        {/* Descripción opcional */}
+                        <input
+                          type="text"
+                          value={field.description || ''}
+                          onChange={(e) => updateFormField(field.id, { description: e.target.value })}
+                          placeholder="+ Añadir descripción o nota aclaratoria (opcional)..."
+                          className="w-full text-xs text-slate-500 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-0.5 mt-0.5 transition-colors"
+                        />
+                      </div>
+
+                      {/* Selector de Tipo de Campo */}
+                      <div className="flex items-center gap-2 self-start shrink-0">
+                        <select
+                          value={field.type}
+                          onChange={(e) => {
+                            const newType = e.target.value as FormFieldType;
+                            updateFormField(field.id, {
+                              type: newType,
+                              options:
+                                (newType === 'radio' || newType === 'select' || newType === 'checkbox') &&
+                                (!field.options || field.options.length === 0)
+                                  ? [
+                                      { id: 'opt_1', label: '1. Siempre o casi siempre', value: '1' },
+                                      { id: 'opt_2', label: '2. A menudo', value: '2' },
+                                      { id: 'opt_3', label: '3. A veces', value: '3' },
+                                      { id: 'opt_4', label: '4. Nunca o casi nunca', value: '4' },
+                                    ]
+                                  : field.options,
+                            });
+                          }}
+                          className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 focus:outline-none focus:border-blue-600 transition-colors"
+                        >
+                          <option value="radio">Opción Única (Radio)</option>
+                          <option value="checkbox">Casillas (Checkbox)</option>
+                          <option value="select">Desplegable (Select)</option>
+                          <option value="text">Texto Corto</option>
+                          <option value="textarea">Párrafo / Observaciones</option>
+                        </select>
                       </div>
                     </div>
 
-                    {/* Option Rows */}
-                    <div className="space-y-2">
-                      {field.options?.map((opt, optIdx) => (
-                        <div key={opt.id} className="flex items-center gap-2 group/opt">
-                          {/* Option Bullet / Radio preview */}
-                          <div className="w-4 h-4 rounded-full border border-slate-300 shrink-0 flex items-center justify-center">
-                            {field.type === 'radio' && <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />}
+                    {/* Opciones de Respuesta (para radio, checkbox, select) */}
+                    {(field.type === 'radio' || field.type === 'checkbox' || field.type === 'select') && (
+                      <div className="space-y-2 pt-2 border-t border-slate-100">
+                        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">
+                          <span>Opciones de Respuesta</span>
+                          <div className="flex items-center gap-3">
+                            <span className="hidden sm:inline">Valor Numérico</span>
+                            <div className="relative group/preset">
+                              <button
+                                type="button"
+                                className="text-blue-600 hover:text-blue-700 font-bold inline-flex items-center gap-1 text-[11px]"
+                              >
+                                <span>Escalas Rápidas ▾</span>
+                              </button>
+                              <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-lg z-20 p-2 hidden group-hover/preset:block space-y-1">
+                                <button
+                                  type="button"
+                                  onClick={() => applyPreset(field.id, 'frecuencia_4')}
+                                  className="w-full text-left px-2 py-1 text-xs text-slate-700 hover:bg-slate-100 rounded"
+                                >
+                                  Frecuencia 4 (Siempre... Nunca)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => applyPreset(field.id, 'binaria')}
+                                  className="w-full text-left px-2 py-1 text-xs text-slate-700 hover:bg-slate-100 rounded"
+                                >
+                                  Binaria (0. No / 1. Sí)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => applyPreset(field.id, 'estres_6')}
+                                  className="w-full text-left px-2 py-1 text-xs text-slate-700 hover:bg-slate-100 rounded"
+                                >
+                                  Escala Estrés 6 Puntos
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => applyPreset(field.id, 'antiguedad_3')}
+                                  className="w-full text-left px-2 py-1 text-xs text-slate-700 hover:bg-slate-100 rounded"
+                                >
+                                  Antigüedad (3 tramos)
+                                </button>
+                              </div>
+                            </div>
                           </div>
+                        </div>
 
-                          {/* Etiqueta */}
-                          <input
-                            type="text"
-                            value={opt.label}
-                            onChange={(e) =>
-                              handleUpdateOption(field.id, optIdx, 'label', e.target.value)
-                            }
-                            placeholder={`Opción ${optIdx + 1}`}
-                            className="flex-1 px-3 py-1.5 bg-slate-50/70 border border-slate-200 hover:border-slate-300 focus:border-blue-600 focus:bg-white rounded-lg text-xs sm:text-sm text-slate-800 transition-colors focus:outline-none"
-                          />
+                        {/* Options Rows */}
+                        <div className="space-y-1.5">
+                          {field.options?.map((opt, optIdx) => (
+                            <div key={opt.id} className="flex items-center gap-2 group/opt">
+                              <span className="text-slate-400">
+                                {field.type === 'radio' && <CircleDot className="w-3.5 h-3.5" />}
+                                {field.type === 'checkbox' && <CheckSquare className="w-3.5 h-3.5" />}
+                                {field.type === 'select' && <ListFilter className="w-3.5 h-3.5" />}
+                              </span>
 
-                          {/* Valor Numérico */}
-                          <input
-                            type="text"
-                            value={opt.value}
-                            onChange={(e) =>
-                              handleUpdateOption(field.id, optIdx, 'value', e.target.value)
-                            }
-                            placeholder="Val"
-                            title="Valor numérico exportable a Excel y FPSICO"
-                            className="w-16 px-2 py-1.5 bg-slate-50/70 border border-slate-200 hover:border-slate-300 focus:border-blue-600 focus:bg-white rounded-lg text-xs font-mono text-center text-slate-700 transition-colors focus:outline-none"
-                          />
+                              <input
+                                type="text"
+                                value={opt.label}
+                                onChange={(e) =>
+                                  handleUpdateOption(field.id, optIdx, 'label', e.target.value)
+                                }
+                                placeholder={`Opción ${optIdx + 1}`}
+                                className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                              />
 
-                          {/* Delete Option */}
+                              <input
+                                type="text"
+                                value={opt.value}
+                                onChange={(e) =>
+                                  handleUpdateOption(field.id, optIdx, 'value', e.target.value)
+                                }
+                                placeholder="Valor"
+                                title="Valor numérico ponderado para cálculo psicométrico"
+                                className="w-14 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-center text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                              />
+
+                              {field.options && field.options.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveOption(field.id, optIdx)}
+                                  className="p-1 text-slate-300 hover:text-rose-600 transition-colors"
+                                  title="Eliminar opción"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="pt-1">
                           <button
                             type="button"
-                            onClick={() => handleRemoveOption(field.id, optIdx)}
-                            className="p-1 text-slate-300 hover:text-rose-600 rounded transition-colors"
-                            title="Eliminar opción"
+                            onClick={() => handleAddOption(field.id)}
+                            className="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Añadir opción</span>
                           </button>
                         </div>
-                      ))}
+                      </div>
+                    )}
+
+                    {/* Preview texto */}
+                    {field.type === 'text' && (
+                      <div className="pt-2 border-t border-slate-100">
+                        <input
+                          type="text"
+                          disabled
+                          placeholder="Espacio para respuesta de texto corto del trabajador..."
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50/60 text-slate-400"
+                        />
+                      </div>
+                    )}
+
+                    {/* Preview textarea */}
+                    {field.type === 'textarea' && (
+                      <div className="pt-2 border-t border-slate-100">
+                        <textarea
+                          disabled
+                          rows={2}
+                          placeholder="Espacio para observaciones o respuesta larga..."
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50/60 text-slate-400 resize-none"
+                        />
+                      </div>
+                    )}
+
+                    {/* Toolbar inferior de la tarjeta: Obligatoria, Duplicar, Eliminar */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={field.required}
+                          onChange={(e) => updateFormField(field.id, { required: e.target.checked })}
+                          className="rounded text-blue-600 focus:ring-0 w-3.5 h-3.5"
+                        />
+                        <span className="font-medium text-slate-700">Obligatoria *</span>
+                      </label>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDuplicateField(field, fieldIndex)}
+                          className="px-2 py-1 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors inline-flex items-center gap-1 font-medium"
+                          title="Duplicar pregunta"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Duplicar</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteField(field.id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          title="Eliminar pregunta"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-
-                    {/* Add Option Button */}
-                    <div className="pt-1">
-                      <button
-                        type="button"
-                        onClick={() => handleAddOption(field.id)}
-                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 py-1 inline-flex items-center gap-1 transition-colors"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Añadir opción</span>
-                      </button>
-                    </div>
                   </div>
-                )}
-
-                {/* Text Field Preview */}
-                {field.type === 'text' && (
-                  <div className="pt-2 border-t border-slate-100">
-                    <input
-                      type="text"
-                      disabled
-                      placeholder="Espacio para respuesta de texto corto del trabajador..."
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-lg text-xs bg-slate-50/60 text-slate-400"
-                    />
-                  </div>
-                )}
-
-                {/* Textarea Field Preview */}
-                {field.type === 'textarea' && (
-                  <div className="pt-2 border-t border-slate-100">
-                    <textarea
-                      disabled
-                      rows={2}
-                      placeholder="Espacio para observaciones o respuesta larga..."
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-lg text-xs bg-slate-50/60 text-slate-400 resize-none"
-                    />
-                  </div>
-                )}
-
-                {/* Card Bottom Toolbar: Obligatorio, Duplicar, Eliminar */}
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={field.required}
-                      onChange={(e) => updateFormField(field.id, { required: e.target.checked })}
-                      className="rounded text-blue-600 focus:ring-0 w-3.5 h-3.5"
-                    />
-                    <span className="font-medium text-slate-700">Obligatoria *</span>
-                  </label>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleDuplicateField(field, fieldIndex)}
-                      className="px-2.5 py-1 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors inline-flex items-center gap-1 font-medium"
-                      title="Duplicar pregunta"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Duplicar</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteField(field.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                      title="Eliminar pregunta"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Centered Add Field Bar: Oxigenado y con iconos claros */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-center gap-2.5">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">
-            + Añadir:
-          </span>
-
-          <button
-            type="button"
-            onClick={() => handleAddField('radio')}
-            className="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-colors inline-flex items-center gap-1.5 shadow-2xs"
-          >
-            <CircleDot className="w-3.5 h-3.5 text-blue-600" />
-            <span>Opción Única</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleAddField('checkbox')}
-            className="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-colors inline-flex items-center gap-1.5 shadow-2xs"
-          >
-            <CheckSquare className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Casillas</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleAddField('select')}
-            className="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-colors inline-flex items-center gap-1.5 shadow-2xs"
-          >
-            <ListFilter className="w-3.5 h-3.5 text-amber-600" />
-            <span>Desplegable</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleAddField('text')}
-            className="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-colors inline-flex items-center gap-1.5 shadow-2xs"
-          >
-            <AlignLeft className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Texto Corto</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleAddField('textarea')}
-            className="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-colors inline-flex items-center gap-1.5 shadow-2xs"
-          >
-            <FileText className="w-3.5 h-3.5 text-purple-600" />
-            <span>Observaciones</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleAddField('page_break')}
-            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl text-xs font-bold text-blue-800 transition-colors inline-flex items-center gap-1.5 shadow-2xs"
-          >
-            <SplitSquareVertical className="w-3.5 h-3.5 text-blue-600" />
-            <span>Salto de Sección</span>
-          </button>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
     </div>
