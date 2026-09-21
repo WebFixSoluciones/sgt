@@ -373,33 +373,82 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col pb-24">
-      {/* Top Clean Sticky Bar */}
-      <div className="bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-16 z-30 px-4 sm:px-6 py-3 shadow-2xs">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+      {/* Top Clean Sticky Bar: Directly at top-0, ZERO gap above */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-20 px-4 sm:px-6 py-2.5 shadow-2xs">
+        <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Left: Volver + Título editable + Métricas */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <Link
               href="/admin/formularios"
               className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors inline-flex items-center gap-1 text-xs font-semibold shrink-0"
+              title="Volver al catálogo de formularios"
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Formularios</span>
             </Link>
-            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-            <span className="text-xs text-slate-500 font-medium truncate">
-              {isNew ? 'Nuevo Formulario' : form.title} • {totalQuestionsCount} preguntas • {sections.length} secciones
-            </span>
+
+            <div className="h-5 w-px bg-slate-200 shrink-0" />
+
+            {/* Título editable directamente en el encabezado */}
+            <div className="min-w-0 flex-1">
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => updateFormMeta({ title: e.target.value })}
+                placeholder="Nombre del Formulario o Evaluación..."
+                className="w-full text-base sm:text-lg font-bold text-slate-900 placeholder:text-slate-300 border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-white rounded-lg px-2 py-0.5 focus:outline-none transition-colors truncate"
+              />
+            </div>
+
+            <div className="hidden xl:flex items-center gap-2 text-xs text-slate-400 font-medium shrink-0">
+              <span>•</span>
+              <span>{totalQuestionsCount} preguntas</span>
+              <span>•</span>
+              <span>{sections.length} secciones</span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          {/* Center / Right: Empresa, Categoría y Guardar */}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
+            {/* Empresa */}
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-xs">
+              <span className="font-semibold text-slate-500 text-[11px]">Empresa:</span>
+              <input
+                type="text"
+                value={form.company || ''}
+                onChange={(e) => updateFormMeta({ company: e.target.value })}
+                placeholder="Empresa..."
+                className="bg-transparent text-xs text-slate-800 font-bold focus:outline-none w-28 sm:w-36"
+              />
+            </div>
+
+            {/* Categoría */}
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-xs">
+              <span className="font-semibold text-slate-500 text-[11px]">Cat:</span>
+              <select
+                value={form.category || 'general'}
+                onChange={(e) => updateFormMeta({ category: e.target.value as any })}
+                className="bg-transparent text-xs text-slate-800 font-medium focus:outline-none"
+              >
+                <option value="psicosocial">Psicosocial</option>
+                <option value="lips60">LIPS-60</option>
+                <option value="estres">Estrés</option>
+                <option value="nocturno">Nocturno</option>
+                <option value="general">General</option>
+              </select>
+            </div>
+
             {savedSuccess && (
               <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 animate-fade-in-slide">
                 <Check className="w-4 h-4" /> Guardado con éxito
               </span>
             )}
+
+            {/* Botón Guardar */}
             <button
               onClick={handleSaveForm}
               disabled={saving}
-              className="px-4 py-2 bg-[#0061fe] hover:bg-[#0052d9] text-white text-xs sm:text-sm font-semibold rounded-xl transition-colors inline-flex items-center gap-2 shadow-xs disabled:opacity-50"
+              className="px-4 py-2 bg-[#0061fe] hover:bg-[#0052d9] text-white text-xs sm:text-sm font-semibold rounded-xl transition-colors inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
               <span>{saving ? 'Guardando...' : 'Guardar Formulario'}</span>
@@ -409,11 +458,11 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
       </div>
 
       {/* Main Workspace: Left Sidebar + Right Canvas */}
-      <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 pt-5 flex flex-col md:flex-row items-start gap-6">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-4 flex flex-col md:flex-row items-start gap-5">
         {/* ========================================================================= */}
         {/* BARRA IZQUIERDA: OPCIONES PARA AÑADIR + NAVEGADOR DE SECCIONES */}
         {/* ========================================================================= */}
-        <aside className="w-full md:w-72 lg:w-80 shrink-0 md:sticky md:top-28 md:max-h-[calc(100vh-8rem)] flex flex-col gap-4">
+        <aside className="w-full md:w-72 lg:w-80 shrink-0 md:sticky md:top-16 md:max-h-[calc(100vh-6rem)] flex flex-col gap-4">
           {/* BLOQUE 1: OPCIONES PARA AÑADIR CAMPOS */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
@@ -568,55 +617,17 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
         </aside>
 
         {/* ========================================================================= */}
-        {/* CANVAS PRINCIPAL (DERECHA): CABECERA COMPACTA Y LISTA DE PREGUNTAS */}
+        {/* CANVAS PRINCIPAL (DERECHA): DESCRIPCIÓN, SECCIÓN ACTIVA Y PREGUNTAS */}
         {/* ========================================================================= */}
         <div className="flex-1 min-w-0 space-y-4">
-          {/* CABECERA COMPACTA DEL FORMULARIO (SIN ESPACIO MUERTO) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-2.5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <input
-                type="text"
-                value={form.title}
-                onChange={(e) => updateFormMeta({ title: e.target.value })}
-                placeholder="Título de la Evaluación..."
-                className="flex-1 text-lg sm:text-xl font-bold text-slate-900 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-0.5 transition-colors"
-              />
-
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-xs">
-                  <span className="font-semibold text-slate-500">Empresa:</span>
-                  <input
-                    type="text"
-                    value={form.company || ''}
-                    onChange={(e) => updateFormMeta({ company: e.target.value })}
-                    placeholder="Empresa..."
-                    className="bg-transparent text-xs text-slate-800 font-bold focus:outline-none w-32"
-                  />
-                </div>
-
-                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-xs">
-                  <span className="font-semibold text-slate-500">Cat:</span>
-                  <select
-                    value={form.category || 'general'}
-                    onChange={(e) => updateFormMeta({ category: e.target.value as any })}
-                    className="bg-transparent text-xs text-slate-800 font-medium focus:outline-none"
-                  >
-                    <option value="psicosocial">Psicosocial</option>
-                    <option value="lips60">LIPS-60</option>
-                    <option value="estres">Estrés</option>
-                    <option value="nocturno">Nocturno</option>
-                    <option value="general">General</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
+          {/* DESCRIPCIÓN DEL FORMULARIO (COMPACTA Y LIMPIA) */}
+          <div className="bg-white border border-slate-200 rounded-xl p-3 px-4 shadow-2xs">
             <input
               type="text"
               value={form.description || ''}
               onChange={(e) => updateFormMeta({ description: e.target.value })}
-              placeholder="Descripción breve o instrucciones para los evaluados..."
-              className="w-full text-xs text-slate-500 placeholder:text-slate-400 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-0.5 transition-colors"
+              placeholder="+ Añadir descripción general o instrucciones de la evaluación para los evaluados..."
+              className="w-full text-xs text-slate-600 placeholder:text-slate-400 border-none focus:outline-none py-0.5"
             />
           </div>
 
