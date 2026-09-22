@@ -19,12 +19,52 @@ import {
 } from 'lucide-react';
 import { FormSchema } from '@/lib/types';
 import Portal from '@/components/common/Portal';
+import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
 
 export default function AdminFormulariosPage() {
   const [forms, setForms] = useState<FormSchema[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'templates' | 'companies' | 'all'>('templates');
+
+  // Custom Centered Dialog state
+  const [dialogState, setDialogState] = useState<{
+    isOpen: boolean;
+    type?: DialogType;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string | null;
+    isLoading?: boolean;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
+
+  const showConfirm = (opts: {
+    type?: DialogType;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => Promise<void> | void;
+  }) => {
+    setDialogState({
+      isOpen: true,
+      cancelText: 'Cancelar',
+      ...opts,
+    });
+  };
+
+  const showAlert = (title: string, message: string, type: DialogType = 'info') => {
+    setDialogState({
+      isOpen: true,
+      type,
+      title,
+      message,
+      confirmText: 'Entendido',
+      cancelText: null,
+      onConfirm: () => setDialogState(null),
+    });
+  };
 
   // Duplication Modal State
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
@@ -124,36 +164,40 @@ export default function AdminFormulariosPage() {
       }
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'Error al duplicar formulario');
+      showAlert('Error al duplicar', err.message || 'Error al duplicar formulario', 'danger');
     } finally {
       setIsDuplicating(false);
     }
   };
 
   // Delete Custom Form
-  const handleDeleteCustomForm = async (form: FormSchema) => {
+  const handleDeleteCustomForm = (form: FormSchema) => {
     if (isMasterForm(form)) {
-      alert('Las plantillas maestras del sistema no pueden eliminarse.');
+      showAlert('Acción no permitida', 'Las plantillas maestras del sistema están protegidas y no pueden eliminarse.', 'warning');
       return;
     }
 
-    if (!confirm(`¿Eliminar el formulario "${form.title}"?\n\nEsta acción no se puede deshacer.`)) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/formularios/${form.id}`, {
-        method: 'DELETE',
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Error al eliminar formulario');
-      }
-      setForms((prev) => prev.filter((f) => f.id !== form.id));
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || 'Error al eliminar formulario');
-    }
+    showConfirm({
+      type: 'danger',
+      title: '¿Eliminar formulario?',
+      message: `¿Está seguro de eliminar el formulario "${form.title}"?\n\nEsta acción no se puede deshacer.`,
+      confirmText: 'Eliminar Formulario',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/formularios/${form.id}`, {
+            method: 'DELETE',
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Error al eliminar formulario');
+          }
+          setForms((prev) => prev.filter((f) => f.id !== form.id));
+        } catch (err: any) {
+          console.error(err);
+          showAlert('Error al eliminar', err.message || 'Error al eliminar formulario', 'danger');
+        }
+      },
+    });
   };
 
   return (
@@ -569,6 +613,32 @@ export default function AdminFormulariosPage() {
           </div>
         </div>
         </Portal>
+      )}
+
+      {/* Centered Modern Alert & Confirm Dialog */}
+      {dialogState && (
+        <ConfirmDialog
+          isOpen={dialogState.isOpen}
+          type={dialogState.type}
+          title={dialogState.title}
+          message={dialogState.message}
+          confirmText={dialogState.confirmText}
+          cancelText={dialogState.cancelText}
+          isLoading={dialogState.isLoading}
+          onConfirm={async () => {
+            if (dialogState.onConfirm) {
+              setDialogState((prev) => (prev ? { ...prev, isLoading: true } : null));
+              try {
+                await dialogState.onConfirm();
+              } finally {
+                setDialogState(null);
+              }
+            } else {
+              setDialogState(null);
+            }
+          }}
+          onCancel={() => setDialogState(null)}
+        />
       )}
     </div>
   );

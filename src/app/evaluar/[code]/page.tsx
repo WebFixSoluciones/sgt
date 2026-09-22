@@ -19,6 +19,7 @@ import {
 import { EvaluationCampaign, FormSchema, FormField } from '@/lib/types';
 import ResumePromptModal from '@/components/worker/ResumePromptModal';
 import CompletedNotice from '@/components/worker/CompletedNotice';
+import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
 
 interface Section {
   title: string;
@@ -93,6 +94,30 @@ export default function WorkerEvaluationPage() {
     totalForms: number;
     countdown: number;
   } | null>(null);
+
+  // Modern Centered Alert Dialog
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    type?: DialogType;
+    title: string;
+    message: string;
+    confirmText?: string;
+  } | null>(null);
+
+  const showAlert = (
+    title: string,
+    message: string,
+    type: DialogType = 'warning',
+    confirmText: string = 'Entendido'
+  ) => {
+    setAlertDialog({
+      isOpen: true,
+      type,
+      title,
+      message,
+      confirmText,
+    });
+  };
 
   // Countdown timer for chained evaluation transition
   useEffect(() => {
@@ -387,7 +412,7 @@ export default function WorkerEvaluationPage() {
       setIsLoggedIn(true);
     } catch (e) {
       console.error(e);
-      alert('Error al reiniciar la evaluación.');
+      showAlert('Error al reiniciar', 'No fue posible reiniciar la evaluación en este momento.', 'danger');
     }
   };
 
@@ -547,8 +572,11 @@ export default function WorkerEvaluationPage() {
         }
       }, 200);
 
-      alert(
-        `Para finalizar la evaluación es obligatorio responder todas las preguntas. Aún faltan ${missingInActiveForm.length} pregunta(s) por responder. Le hemos ubicado en la primera pregunta pendiente.`
+      showAlert(
+        'Preguntas requeridas pendientes',
+        `Para finalizar la evaluación es obligatorio responder todas las preguntas.\n\nAún faltan ${missingInActiveForm.length} pregunta(s) por responder. Le hemos situado en la primera pregunta pendiente.`,
+        'warning',
+        'Continuar respondiendo'
       );
       return;
     }
@@ -615,7 +643,12 @@ export default function WorkerEvaluationPage() {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }
-        alert(data.error || 'Error al finalizar evaluación. Asegúrese de haber completado todas las preguntas.');
+        showAlert(
+          'Validación de cuestionario',
+          data.error || 'Asegúrese de haber completado todas las preguntas requeridas para poder finalizar.',
+          'warning',
+          'Revisar preguntas'
+        );
         return;
       }
 
@@ -642,7 +675,11 @@ export default function WorkerEvaluationPage() {
       }
     } catch (err) {
       console.error(err);
-      alert('Error en el servidor al finalizar.');
+      showAlert(
+        'Error de conexión',
+        'Ocurrió un error en el servidor al enviar la evaluación. Por favor intente nuevamente.',
+        'danger'
+      );
     } finally {
       setIsFinalSubmitting(false);
     }
@@ -978,6 +1015,18 @@ export default function WorkerEvaluationPage() {
             </button>
           </form>
         </div>
+
+        {alertDialog && (
+          <ConfirmDialog
+            isOpen={alertDialog.isOpen}
+            type={alertDialog.type}
+            title={alertDialog.title}
+            message={alertDialog.message}
+            confirmText={alertDialog.confirmText}
+            cancelText={null}
+            onConfirm={() => setAlertDialog(null)}
+          />
+        )}
       </div>
     );
   }
@@ -1364,6 +1413,18 @@ export default function WorkerEvaluationPage() {
           )}
         </div>
       </footer>
+
+      {alertDialog && (
+        <ConfirmDialog
+          isOpen={alertDialog.isOpen}
+          type={alertDialog.type}
+          title={alertDialog.title}
+          message={alertDialog.message}
+          confirmText={alertDialog.confirmText}
+          cancelText={null}
+          onConfirm={() => setAlertDialog(null)}
+        />
+      )}
     </div>
   );
 }

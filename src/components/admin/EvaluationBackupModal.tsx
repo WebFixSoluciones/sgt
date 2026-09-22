@@ -16,6 +16,7 @@ import {
   Info,
 } from 'lucide-react';
 import { formatEcuadorDateTime, getEcuadorISOString } from '@/lib/date-utils';
+import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
 
 interface EvaluationBackupModalProps {
   isOpen: boolean;
@@ -65,6 +66,18 @@ export default function EvaluationBackupModal({
   const [restoreSuccess, setRestoreSuccess] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Modern Centered Alert Dialog
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    type?: DialogType;
+    title: string;
+    message: string;
+  } | null>(null);
+
+  const showAlert = (title: string, message: string, type: DialogType = 'danger') => {
+    setAlertDialog({ isOpen: true, title, message, type });
+  };
 
   // Reset state whenever modal opens or campaign changes
   useEffect(() => {
@@ -138,7 +151,7 @@ export default function EvaluationBackupModal({
       setDownloadedFileName(filename);
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'Error al descargar el respaldo');
+      showAlert('Error al descargar respaldo', err.message || 'No fue posible generar y descargar el archivo de respaldo.', 'danger');
     } finally {
       setDownloadingBackup(false);
     }
@@ -164,7 +177,7 @@ export default function EvaluationBackupModal({
       }
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'Error al limpiar la evaluación');
+      showAlert('Error al limpiar evaluación', err.message || 'No se pudieron limpiar las respuestas de la evaluación.', 'danger');
     } finally {
       setIsClearing(false);
     }
@@ -255,7 +268,7 @@ export default function EvaluationBackupModal({
       }
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'Error al restaurar respuestas');
+      showAlert('Error al restaurar', err.message || 'No fue posible restaurar las respuestas desde el archivo proporcionado.', 'danger');
     } finally {
       setIsRestoring(false);
     }
@@ -640,6 +653,18 @@ export default function EvaluationBackupModal({
           </button>
         </div>
       </div>
+
+      {alertDialog && (
+        <ConfirmDialog
+          isOpen={alertDialog.isOpen}
+          type={alertDialog.type}
+          title={alertDialog.title}
+          message={alertDialog.message}
+          confirmText="Entendido"
+          cancelText={null}
+          onConfirm={() => setAlertDialog(null)}
+        />
+      )}
     </div>,
     document.body
   );

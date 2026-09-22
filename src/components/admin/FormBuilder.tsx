@@ -22,6 +22,7 @@ import {
   Eye,
 } from 'lucide-react';
 import { FormSchema, FormField, FormFieldOption, FormFieldType } from '@/lib/types';
+import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
 
 interface FormBuilderProps {
   initialForm: FormSchema;
@@ -44,6 +45,18 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
   );
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Modern Centered Alert Dialog
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    type?: DialogType;
+    title: string;
+    message: string;
+  } | null>(null);
+
+  const showAlert = (title: string, message: string, type: DialogType = 'danger') => {
+    setAlertDialog({ isOpen: true, title, message, type });
+  };
 
   // Selected Section in Navigator ('all' = show full form, or section id = focus that section)
   const [selectedSectionFilter, setSelectedSectionFilter] = useState<string>('all');
@@ -358,11 +371,11 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
           setForm(data.data);
         }
       } else {
-        alert(data.error || 'Error al guardar el formulario');
+        showAlert('Error al guardar', data.error || 'No fue posible guardar el formulario.', 'danger');
       }
     } catch (err) {
       console.error(err);
-      alert('Error de conexión en el servidor al guardar.');
+      showAlert('Error de conexión', 'Ocurrió un error en el servidor al intentar guardar el formulario.', 'danger');
     } finally {
       setSaving(false);
     }
@@ -978,6 +991,18 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
           </div>
         </div>
       </div>
+
+      {alertDialog && (
+        <ConfirmDialog
+          isOpen={alertDialog.isOpen}
+          type={alertDialog.type}
+          title={alertDialog.title}
+          message={alertDialog.message}
+          confirmText="Entendido"
+          cancelText={null}
+          onConfirm={() => setAlertDialog(null)}
+        />
+      )}
     </div>
   );
 }

@@ -26,6 +26,7 @@ import { formatEcuadorDateTime } from '@/lib/date-utils';
 import AdminEvaluationWizard from '@/components/admin/AdminEvaluationWizard';
 import EvaluationBackupModal from '@/components/admin/EvaluationBackupModal';
 import EditEvaluationModal from '@/components/admin/EditEvaluationModal';
+import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
 
 export default function AdminEvaluacionesPage() {
   const searchParams = useSearchParams();
@@ -37,6 +38,45 @@ export default function AdminEvaluacionesPage() {
   const [filterTab, setFilterTab] = useState<'all' | 'active' | 'inactive' | 'trash'>(initialTab);
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Custom Centered Dialog state
+  const [dialogState, setDialogState] = useState<{
+    isOpen: boolean;
+    type?: DialogType;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string | null;
+    isLoading?: boolean;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
+
+  const showConfirm = (opts: {
+    type?: DialogType;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => Promise<void> | void;
+  }) => {
+    setDialogState({
+      isOpen: true,
+      cancelText: 'Cancelar',
+      ...opts,
+    });
+  };
+
+  const showAlert = (title: string, message: string, type: DialogType = 'info') => {
+    setDialogState({
+      isOpen: true,
+      type,
+      title,
+      message,
+      confirmText: 'Entendido',
+      cancelText: null,
+      onConfirm: () => setDialogState(null),
+    });
+  };
 
   // Edit Evaluation Modal state
   const [editingCampaign, setEditingCampaign] = useState<EvaluationCampaign | null>(null);
@@ -109,38 +149,42 @@ export default function AdminEvaluacionesPage() {
     }
   };
 
-  const handleTrashCampaign = async (code: string, title: string) => {
-    if (!confirm(`¿Enviar la evaluación "${title}" (${code}) a la papelera? Podrá restaurarla cuando lo necesite.`)) {
-      return;
-    }
-    try {
-      const res = await fetch('/api/evaluaciones', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, action: 'trash' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setCampaigns((prev) =>
-          prev.map((c) =>
-            c.code === code
-              ? {
-                  ...c,
-                  status: 'trash',
-                  isTrash: true,
-                  trashedAt: data.data?.trashedAt || new Date().toISOString(),
-                }
-              : c
-          )
-        );
-        fetchCampaignsData();
-      } else {
-        alert(data.error || 'Error al enviar a papelera');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error de conexión al mover a papelera');
-    }
+  const handleTrashCampaign = (code: string, title: string) => {
+    showConfirm({
+      type: 'warning',
+      title: '¿Enviar a la papelera?',
+      message: `¿Desea enviar la evaluación "${title}" (${code}) a la papelera?\n\nPodrá restaurarla en cualquier momento desde la pestaña de Papelera.`,
+      confirmText: 'Mover a Papelera',
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/evaluaciones', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, action: 'trash' }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            setCampaigns((prev) =>
+              prev.map((c) =>
+                c.code === code
+                  ? {
+                      ...c,
+                      status: 'trash',
+                      isTrash: true,
+                      trashedAt: data.data?.trashedAt || new Date().toISOString(),
+                    }
+                  : c
+              )
+            );
+            fetchCampaignsData();
+          } else {
+            showAlert('No se pudo enviar a papelera', data.error || 'Ocurrió un error inesperado.', 'danger');
+          }
+        } catch (err) {
+          showAlert('Error de conexión', 'No fue posible conectar con el servidor para mover a papelera.', 'danger');
+        }
+      },
+    });
   };
 
   const handleRestoreCampaign = async (code: string, title: string) => {
@@ -166,62 +210,61 @@ export default function AdminEvaluacionesPage() {
         );
         fetchCampaignsData();
       } else {
-        alert(data.error || 'Error al restaurar evaluación');
+        showAlert('Error al restaurar', data.error || 'No se pudo restaurar la evaluación.', 'danger');
       }
     } catch (err) {
-      console.error(err);
-      alert('Error de conexión al restaurar evaluación');
+      showAlert('Error de conexión', 'No fue posible conectar con el servidor para restaurar la evaluación.', 'danger');
     }
   };
 
-  const handleDeletePermanently = async (code: string, title: string) => {
-    if (
-      !confirm(
-        `¿Está seguro de eliminar definitivamente la evaluación "${title}" (${code})?\n\nEsta acción eliminará todos los datos y respuestas de forma IRREVERSIBLE.`
-      )
-    ) {
-      return;
-    }
-    try {
-      const res = await fetch(`/api/evaluaciones?code=${encodeURIComponent(code)}`, {
-        method: 'DELETE',
-      });
-      const data = await res.json();
-      if (data.success) {
-        setCampaigns((prev) => prev.filter((c) => c.code !== code));
-        fetchCampaignsData();
-      } else {
-        alert(data.error || 'Error al eliminar definitivamente');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error de conexión al eliminar definitivamente');
-    }
+  const handleDeletePermanently = (code: string, title: string) => {
+    showConfirm({
+      type: 'danger',
+      title: '¿Eliminar definitivamente?',
+      message: `¿Está completamente seguro de eliminar la evaluación "${title}" (${code})?\n\nEsta acción eliminará de forma IRREVERSIBLE todas las respuestas, registros y estadísticas asociadas.`,
+      confirmText: 'Eliminar Definitivamente',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/evaluaciones?code=${encodeURIComponent(code)}`, {
+            method: 'DELETE',
+          });
+          const data = await res.json();
+          if (data.success) {
+            setCampaigns((prev) => prev.filter((c) => c.code !== code));
+            fetchCampaignsData();
+          } else {
+            showAlert('Error al eliminar', data.error || 'No se pudo eliminar definitivamente.', 'danger');
+          }
+        } catch (err) {
+          showAlert('Error de conexión', 'No fue posible conectar con el servidor para eliminar.', 'danger');
+        }
+      },
+    });
   };
 
-  const handleEmptyTrash = async () => {
-    if (
-      !confirm(
-        '¿Está seguro de vaciar la papelera?\n\nSe eliminarán de forma permanente e irreversible todas las evaluaciones en papelera y sus respuestas asociadas.'
-      )
-    ) {
-      return;
-    }
-    try {
-      const res = await fetch('/api/evaluaciones?action=empty_trash', {
-        method: 'DELETE',
-      });
-      const data = await res.json();
-      if (data.success) {
-        setCampaigns((prev) => prev.filter((c) => c.status !== 'trash' && !c.isTrash));
-        fetchCampaignsData();
-      } else {
-        alert(data.error || 'Error al vaciar papelera');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error de conexión al vaciar papelera');
-    }
+  const handleEmptyTrash = () => {
+    showConfirm({
+      type: 'danger',
+      title: '¿Vaciar la papelera?',
+      message: '¿Está seguro de vaciar la papelera?\n\nSe eliminarán de forma permanente e irreversible todas las evaluaciones que se encuentran en papelera y todas sus respuestas asociadas.',
+      confirmText: 'Vaciar Papelera',
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/evaluaciones?action=empty_trash', {
+            method: 'DELETE',
+          });
+          const data = await res.json();
+          if (data.success) {
+            setCampaigns((prev) => prev.filter((c) => c.status !== 'trash' && !c.isTrash));
+            fetchCampaignsData();
+          } else {
+            showAlert('Error al vaciar', data.error || 'No se pudo vaciar la papelera.', 'danger');
+          }
+        } catch (err) {
+          showAlert('Error de conexión', 'No fue posible conectar con el servidor para vaciar la papelera.', 'danger');
+        }
+      },
+    });
   };
 
   const copyEvaluationLink = (code: string) => {
@@ -660,6 +703,32 @@ export default function AdminEvaluacionesPage() {
         existingCampaigns={campaigns}
         onSuccess={handleEditSuccess}
       />
+
+      {/* Centered Modern Alert & Confirm Dialog */}
+      {dialogState && (
+        <ConfirmDialog
+          isOpen={dialogState.isOpen}
+          type={dialogState.type}
+          title={dialogState.title}
+          message={dialogState.message}
+          confirmText={dialogState.confirmText}
+          cancelText={dialogState.cancelText}
+          isLoading={dialogState.isLoading}
+          onConfirm={async () => {
+            if (dialogState.onConfirm) {
+              setDialogState((prev) => (prev ? { ...prev, isLoading: true } : null));
+              try {
+                await dialogState.onConfirm();
+              } finally {
+                setDialogState(null);
+              }
+            } else {
+              setDialogState(null);
+            }
+          }}
+          onCancel={() => setDialogState(null)}
+        />
+      )}
     </div>
   );
 }
