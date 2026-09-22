@@ -239,7 +239,7 @@ export default function AdminFormulariosPage() {
         </div>
       </div>
 
-      {/* Grid of Forms */}
+      {/* Grid or Table of Forms */}
       {loading ? (
         <div className="p-12 text-center text-slate-400 text-xs">Cargando catálogo de formularios...</div>
       ) : filteredForms.length === 0 ? (
@@ -248,11 +248,139 @@ export default function AdminFormulariosPage() {
           <p className="font-semibold text-slate-700">No se encontraron formularios en esta sección.</p>
           {activeTab === 'companies' && (
             <p className="text-slate-400 text-[11px]">
-              Al crear una evaluación para una empresa en el Asistente, se generará automáticamente su formulario independiente.
+              Al crear una evaluación para una empresa en el Asistente, se generará automáticamente su formulario independiente y aparecerá en esta tabla.
             </p>
           )}
         </div>
+      ) : activeTab === 'companies' || activeTab === 'all' ? (
+        /* TABLE VIEW FOR COMPANY FORMS AND ALL FORMS */
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs divide-y divide-slate-100">
+              <thead className="bg-[#f8fafc] text-slate-500 font-semibold uppercase text-[11px] tracking-wider">
+                <tr>
+                  <th className="py-3.5 px-5">Empresa / Tipo</th>
+                  <th className="py-3.5 px-5">Formulario & Cuestionario</th>
+                  <th className="py-3.5 px-5 text-center">Preguntas</th>
+                  <th className="py-3.5 px-5">Fecha</th>
+                  <th className="py-3.5 px-5 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {filteredForms.map((form) => {
+                  const questionCount = form.fields.filter((f) => f.type !== 'page_break').length;
+                  const isMaster = isMasterForm(form);
+                  const formattedDate = form.createdAt
+                    ? new Date(form.createdAt).toLocaleDateString('es-EC', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })
+                    : '-';
+
+                  return (
+                    <tr
+                      key={form.id}
+                      className="hover:bg-slate-50/70 transition-colors group"
+                    >
+                      {/* Empresa / Tipo */}
+                      <td className="py-4 px-5">
+                        {isMaster ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Plantilla Maestra</span>
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-bold shrink-0 border border-blue-100">
+                              <Building2 className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <span className="font-bold text-slate-900 block text-xs">
+                                {form.company || 'Empresa'}
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                Formulario Personalizado
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Título & Descripción */}
+                      <td className="py-4 px-5 max-w-xs sm:max-w-md">
+                        <div>
+                          <Link
+                            href={`/admin/formularios/${form.id}`}
+                            className="font-bold text-slate-900 hover:text-blue-600 transition-colors block text-xs"
+                          >
+                            {form.title}
+                          </Link>
+                          <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                            {form.description ||
+                              (isMaster
+                                ? 'Plantilla canónica estándar de preguntas para evaluaciones laborales.'
+                                : `Formulario adaptado exclusivamente para ${form.company || 'la empresa'}.`)}
+                          </p>
+                        </div>
+                      </td>
+
+                      {/* Preguntas */}
+                      <td className="py-4 px-5 text-center">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">
+                          {questionCount} preguntas
+                        </span>
+                      </td>
+
+                      {/* Fecha */}
+                      <td className="py-4 px-5 whitespace-nowrap text-slate-500 text-xs">
+                        {formattedDate}
+                      </td>
+
+                      {/* Acciones */}
+                      <td className="py-4 px-5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Duplicar */}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDuplicateModal(form)}
+                            title="Duplicar como nueva plantilla o formulario"
+                            className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-lg text-xs font-semibold transition-colors"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Eliminar (solo para formularios de empresas) */}
+                          {!isMaster && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCustomForm(form)}
+                              title="Eliminar este formulario personalizado"
+                              className="p-1.5 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-lg text-xs font-semibold transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
+                          {/* Editar */}
+                          <Link
+                            href={`/admin/formularios/${form.id}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0061fe] hover:bg-[#0052d9] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>Editar</span>
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
+        /* CARDS VIEW FOR MASTER TEMPLATES */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredForms.map((form) => {
             const questionCount = form.fields.filter((f) => f.type !== 'page_break').length;
@@ -270,17 +398,10 @@ export default function AdminFormulariosPage() {
                       <FileText className="w-5 h-5 text-blue-600" />
                     </div>
 
-                    {isMaster ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                        <Sparkles className="w-3 h-3" />
-                        <span>Plantilla Maestra</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 truncate max-w-[170px]" title={form.company || 'Personalizado'}>
-                        <Building2 className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{form.company || 'Empresa'}</span>
-                      </span>
-                    )}
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                      <Sparkles className="w-3 h-3" />
+                      <span>Plantilla Maestra</span>
+                    </span>
                   </div>
 
                   {/* Title & Description */}
@@ -289,9 +410,7 @@ export default function AdminFormulariosPage() {
                       {form.title}
                     </h3>
                     <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
-                      {form.description || (isMaster
-                        ? 'Plantilla canónica estándar de preguntas para evaluaciones laborales.'
-                        : `Formulario adaptado exclusivamente para ${form.company || 'la evaluación'}.`)}
+                      {form.description || 'Plantilla canónica estándar de preguntas para evaluaciones laborales.'}
                     </p>
                   </div>
                 </div>
@@ -312,18 +431,6 @@ export default function AdminFormulariosPage() {
                     >
                       <Copy className="w-3.5 h-3.5" />
                     </button>
-
-                    {/* Eliminar (solo formularios personalizados de empresas) */}
-                    {!isMaster && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteCustomForm(form)}
-                        title="Eliminar este formulario personalizado"
-                        className="p-1.5 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-lg text-xs font-semibold transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
 
                     {/* Editar en Constructor */}
                     <Link
