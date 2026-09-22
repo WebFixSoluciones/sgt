@@ -29,7 +29,7 @@ const DB_FILE = IS_SERVERLESS ? SERVERLESS_DB_FILE : LOCAL_DB_FILE;
 // In-memory cache for speed with TTL invalidation
 let memDb: DatabaseSchema | null = null;
 let lastDbReadTime = 0;
-const CACHE_TTL_MS = 1500; // 1.5s cache for serverless concurrency
+const CACHE_TTL_MS = 15000; // 15s in-memory cache for ultra-fast queries
 
 function getInitialDb(): DatabaseSchema {
   return {
@@ -80,19 +80,21 @@ export async function writeToBlobOnly(db: DatabaseSchema): Promise<{ success: bo
       });
     }
 
-    // Cleanup older snapshots keeping the 2 most recent for safety
-    try {
-      const allBlobs = await list({ token });
-      const olderDbBlobs = allBlobs.blobs
-        .filter((b) => b.pathname.startsWith('db') && b.pathname.endsWith('.json') && b.pathname !== newSnapshotName)
-        .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
-        .slice(2);
-      if (olderDbBlobs.length > 0) {
-        await del(olderDbBlobs.map((b) => b.url), { token });
+    // Non-blocking background cleanup: do NOT await list and del in the user request!
+    (async () => {
+      try {
+        const allBlobs = await list({ token });
+        const olderDbBlobs = allBlobs.blobs
+          .filter((b) => b.pathname.startsWith('db') && b.pathname.endsWith('.json') && b.pathname !== newSnapshotName)
+          .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+          .slice(2);
+        if (olderDbBlobs.length > 0) {
+          await del(olderDbBlobs.map((b) => b.url), { token });
+        }
+      } catch (cleanupErr) {
+        console.warn('[STORAGE] Blob history background cleanup note:', cleanupErr);
       }
-    } catch (cleanupErr) {
-      console.warn('[STORAGE] Blob history cleanup note:', cleanupErr);
-    }
+    })().catch(() => {});
 
     return { success: true, url: blobResult?.url || blobResult?.downloadUrl };
   } catch (e: any) {
@@ -103,6 +105,21 @@ export async function writeToBlobOnly(db: DatabaseSchema): Promise<{ success: bo
 
 async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
   const token = getBlobToken();
+
+  // 0. Fast local disk check (reads in < 1ms if modified recently)
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const stat = fs.statSync(DB_FILE);
+      const ageMs = Date.now() - stat.mtimeMs;
+      if (ageMs < CACHE_TTL_MS) {
+        const content = fs.readFileSync(DB_FILE, 'utf-8');
+        const parsed = JSON.parse(content);
+        if (parsed && Array.isArray(parsed.campaigns) && Array.isArray(parsed.forms)) {
+          return parsed;
+        }
+      }
+    }
+  } catch (e) {}
 
   // 1. Check if Vercel Blob is configured (Cloud Database)
   if (token) {
@@ -148,6 +165,11 @@ async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
         }
 
         if (data && Array.isArray(data.campaigns) && Array.isArray(data.forms)) {
+          // Update local DB_FILE for immediate sub-millisecond local reads
+          try {
+            if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+            fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+          } catch (writeErr) {}
           return data;
         }
       }

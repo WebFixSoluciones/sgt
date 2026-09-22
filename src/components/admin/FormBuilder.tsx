@@ -55,10 +55,12 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
 
   // Update a specific field
   const updateFormField = (fieldId: string, updates: Partial<FormField>) => {
-    setForm((prev) => ({
-      ...prev,
-      fields: prev.fields.map((f) => (f.id === fieldId ? { ...f, ...updates } : f)),
-    }));
+    React.startTransition(() => {
+      setForm((prev) => ({
+        ...prev,
+        fields: prev.fields.map((f) => (f.id === fieldId ? { ...f, ...updates } : f)),
+      }));
+    });
   };
 
   // Compute Structured Sections based on 'page_break' fields
@@ -226,16 +228,18 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
 
   // Delete field
   const handleDeleteField = (fieldId: string) => {
-    setForm((prev) => ({
-      ...prev,
-      fields: prev.fields.filter((f) => f.id !== fieldId),
-    }));
-    if (activeFieldId === fieldId) {
-      setActiveFieldId(null);
-    }
-    if (selectedSectionFilter === fieldId) {
-      setSelectedSectionFilter('all');
-    }
+    React.startTransition(() => {
+      setForm((prev) => ({
+        ...prev,
+        fields: prev.fields.filter((f) => f.id !== fieldId),
+      }));
+      if (activeFieldId === fieldId) {
+        setActiveFieldId(null);
+      }
+      if (selectedSectionFilter === fieldId) {
+        setSelectedSectionFilter('all');
+      }
+    });
   };
 
   // Options operations
@@ -606,12 +610,15 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                   <div
                     key={sec.id}
                     onClick={() => {
-                      setSelectedSectionFilter(sec.id);
-                      // If in 'all' view, scroll smoothly to this section
-                      const el = document.getElementById(`builder-section-${sec.id}`);
-                      if (el) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
+                      React.startTransition(() => {
+                        setSelectedSectionFilter(sec.id);
+                      });
+                      requestAnimationFrame(() => {
+                        const el = document.getElementById(`builder-section-${sec.id}`);
+                        if (el) {
+                          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      });
                     }}
                     className={`p-2.5 rounded-xl cursor-pointer text-xs transition-all border ${
                       isActive
