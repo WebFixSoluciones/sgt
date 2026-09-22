@@ -17,19 +17,35 @@ export async function GET(req: NextRequest) {
     }
 
     const forms = await getFormsForCampaign(campaign);
-    const form = forms.find((f) => f.id === 'form-fpsico-40' || f.title.toLowerCase().includes('fpsico'))
-      || (campaign.formId ? await getFormById(campaign.formId) : forms[0]);
+    const form = forms.find(
+      (f) =>
+        f.id === 'form-fpsico-40' ||
+        f.title.toLowerCase().includes('fpsico') ||
+        f.title.toLowerCase().includes('psico')
+    ) || (campaign.formId ? await getFormById(campaign.formId) : forms[0]);
 
     if (!form) {
-      return NextResponse.json({ success: false, error: 'Formulario FPSICO no encontrado en esta evaluación' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Formulario no encontrado en esta evaluación' }, { status: 404 });
     }
 
     const submissions = await getSubmissions(code);
 
     // Filter question fields (non-pagebreaks, non-demographic, non-observaciones)
-    const fpsicoFieldIds = form.fields
+    let fpsicoFieldIds = form.fields
       .filter((f) => f.type !== 'page_break' && f.id.startsWith('q'))
       .map((f) => f.id);
+
+    if (fpsicoFieldIds.length === 0) {
+      fpsicoFieldIds = form.fields
+        .filter(
+          (f) =>
+            f.type !== 'page_break' &&
+            !['puesto', 'agrupacion_puestos', 'horario', 'horarios', 'antiguedad', 'observaciones'].includes(
+              f.id.toLowerCase()
+            )
+        )
+        .map((f) => f.id);
+    }
 
     const txtContent = generateFpsicoTxt(submissions, fpsicoFieldIds);
 

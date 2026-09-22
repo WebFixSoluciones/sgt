@@ -94,7 +94,7 @@ export default function InformesPage() {
   const isFpsico = campaign?.formId === 'form-fpsico-40' || campaign?.code.includes('PSI');
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="w-full px-6 sm:px-8 py-6 space-y-6 animate-fade-in-slide">
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
@@ -123,21 +123,21 @@ export default function InformesPage() {
             href={`/api/exportar/excel?code=${code}`}
             download
             className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium rounded transition-colors inline-flex items-center gap-1.5 shadow-xs"
+            title="Descargar informe en Microsoft Excel"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Descargar Excel</span>
           </a>
 
-          {isFpsico && (
-            <a
-              href={`/api/exportar/fpsico?code=${code}`}
-              download
-              className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm font-medium rounded transition-colors inline-flex items-center gap-1.5 shadow-xs"
-            >
-              <FileText className="w-4 h-4" />
-              <span>Descargar TXT FPSICO 4.0</span>
-            </a>
-          )}
+          <a
+            href={`/api/exportar/fpsico?code=${code}`}
+            download
+            className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm font-medium rounded transition-colors inline-flex items-center gap-1.5 shadow-xs"
+            title="Descargar archivo plano .TXT compatible con el software oficial INSST FPSICO 4.0"
+          >
+            <FileText className="w-4 h-4" />
+            <span>FPSICO TXT</span>
+          </a>
         </div>
       </div>
 

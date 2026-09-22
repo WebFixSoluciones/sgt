@@ -21,6 +21,8 @@ import {
   AlertCircle,
   PlusCircle,
   Edit,
+  ChevronDown,
+  RotateCcw,
 } from 'lucide-react';
 import type { EvaluationCampaign, FormSchema } from '@/lib/types';
 
@@ -46,6 +48,7 @@ export default function AdminEvaluationWizard({
 
   // Form fields
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
+  const [selectedCompanyFormId, setSelectedCompanyFormId] = useState<string>('');
   const [company, setCompany] = useState('');
   const [title, setTitle] = useState('');
   const [code, setCode] = useState('');
@@ -77,6 +80,27 @@ export default function AdminEvaluationWizard({
     };
   }, [isOpen]);
 
+  // Helper to distinguish master templates from company-specific forms
+  const isMasterTemplate = (f: FormSchema) => {
+    return f.isTemplate !== false && (!f.company || f.company.trim() === '');
+  };
+
+  // Master templates only (displayed in Step 1 cards grid)
+  const templateForms = useMemo(() => {
+    return forms.filter(isMasterTemplate);
+  }, [forms]);
+
+  // Company-specific forms (displayed in copy-from-company dropdown)
+  const companyForms = useMemo(() => {
+    return forms.filter((f) => !isMasterTemplate(f));
+  }, [forms]);
+
+  // Selected company form object
+  const selectedCompanyForm = useMemo(() => {
+    if (!selectedCompanyFormId) return null;
+    return companyForms.find((f) => f.id === selectedCompanyFormId) || null;
+  }, [companyForms, selectedCompanyFormId]);
+
   // Prepopulate or initialize
   useEffect(() => {
     if (isOpen) {
@@ -85,6 +109,15 @@ export default function AdminEvaluationWizard({
           ? initialData.formIds
           : (initialData.formId ? [initialData.formId] : (forms[0]?.id ? [forms[0].id] : []));
         setSelectedFormIds(initialFormIds);
+
+        // Check if initial form is a company form
+        const isComp = companyForms.some((cf) => initialFormIds.includes(cf.id));
+        if (isComp && initialFormIds[0]) {
+          setSelectedCompanyFormId(initialFormIds[0]);
+        } else {
+          setSelectedCompanyFormId('');
+        }
+
         setCompany(initialData.company || '');
         setTitle(initialData.title || '');
         setCode(initialData.code || '');
@@ -97,7 +130,9 @@ export default function AdminEvaluationWizard({
           setNextEvaluationCode('');
         }
       } else {
-        setSelectedFormIds(forms[0]?.id ? [forms[0].id] : []);
+        const defaultTemplateId = forms.find(isMasterTemplate)?.id || forms[0]?.id;
+        setSelectedFormIds(defaultTemplateId ? [defaultTemplateId] : []);
+        setSelectedCompanyFormId('');
         setCompany('');
         setTitle('');
         setCode('');
@@ -110,9 +145,16 @@ export default function AdminEvaluationWizard({
       setErrorMsg('');
       setCopiedLink(false);
     }
-  }, [isOpen, initialData, forms]);
+  }, [isOpen, initialData, forms, companyForms]);
 
   const toggleFormSelection = (id: string) => {
+    // If a company form was previously selected, clear it and select this master template
+    if (selectedCompanyFormId) {
+      setSelectedCompanyFormId('');
+      setSelectedFormIds([id]);
+      return;
+    }
+
     setSelectedFormIds((prev) => {
       if (prev.includes(id)) {
         if (prev.length === 1) return prev; // Keep at least one selected
@@ -123,6 +165,23 @@ export default function AdminEvaluationWizard({
     });
   };
 
+  const handleSelectCompanyForm = (formId: string) => {
+    if (!formId) {
+      handleClearCompanyForm();
+      return;
+    }
+    setSelectedCompanyFormId(formId);
+    setSelectedFormIds([formId]);
+  };
+
+  const handleClearCompanyForm = () => {
+    setSelectedCompanyFormId('');
+    const defaultTemplateId = forms.find(isMasterTemplate)?.id || forms[0]?.id;
+    if (defaultTemplateId) {
+      setSelectedFormIds([defaultTemplateId]);
+    }
+  };
+
   // Selected forms objects
   const selectedForms = useMemo(() => {
     return forms.filter((f) => selectedFormIds.includes(f.id));
@@ -131,17 +190,6 @@ export default function AdminEvaluationWizard({
   const totalQuestions = useMemo(() => {
     return selectedForms.reduce((acc, f) => acc + (f.fields?.filter((field) => field.type !== 'page_break').length || 0), 0);
   }, [selectedForms]);
-
-  // Sorted forms: Master templates first, then custom forms
-  const sortedForms = useMemo(() => {
-    return [...forms].sort((a, b) => {
-      const aIsMaster = a.isTemplate !== false && (!a.company || a.company.trim() === '');
-      const bIsMaster = b.isTemplate !== false && (!b.company || b.company.trim() === '');
-      if (aIsMaster && !bIsMaster) return -1;
-      if (!aIsMaster && bIsMaster) return 1;
-      return 0;
-    });
-  }, [forms]);
 
   // Primary selected form
   const selectedForm = selectedForms[0] || forms[0];
@@ -409,9 +457,8 @@ export default function AdminEvaluationWizard({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                {sortedForms.map((form) => {
-                  const isSelected = selectedFormIds.includes(form.id);
-                  const isMaster = form.isTemplate !== false && (!form.company || form.company.trim() === '');
+                {templateForms.map((form) => {
+                  const isSelected = !selectedCompanyFormId && selectedFormIds.includes(form.id);
 
                   return (
                     <div
@@ -429,11 +476,9 @@ export default function AdminEvaluationWizard({
                           <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
                             {form.title}
                           </h4>
-                          {!isMaster && form.company && (
-                            <span className="text-[11px] text-blue-600 font-semibold truncate block mt-0.5">
-                              {form.company}
-                            </span>
-                          )}
+                          <span className="text-[11px] text-slate-500 block mt-0.5">
+                            Plantilla Oficial
+                          </span>
                         </div>
                       </div>
 
@@ -448,6 +493,87 @@ export default function AdminEvaluationWizard({
                   );
                 })}
               </div>
+
+              {/* Sección: Copiar cuestionario de una empresa existente */}
+              {companyForms.length > 0 && (
+                <div className="mt-4 pt-3.5 border-t border-slate-100">
+                  <div
+                    className={`p-3.5 sm:p-4 rounded-xl border transition-all ${
+                      selectedCompanyFormId
+                        ? 'bg-blue-50/40 border-blue-200 ring-1 ring-blue-500/20 shadow-xs'
+                        : 'bg-slate-50/70 border-slate-200'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-2.5">
+                      <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                        <span>¿Deseas copiar de una empresa?</span>
+                      </label>
+                      <span className="text-[11px] text-slate-500">
+                        Selecciona un formulario existente adaptado para otra empresa
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <div className="relative flex-1">
+                        <select
+                          value={selectedCompanyFormId}
+                          onChange={(e) => handleSelectCompanyForm(e.target.value)}
+                          className={`w-full appearance-none bg-white border rounded-lg px-3.5 py-2 text-xs sm:text-sm text-slate-800 font-medium focus:outline-none focus:ring-1 pr-9 transition-colors ${
+                            selectedCompanyFormId
+                              ? 'border-blue-500 ring-1 ring-blue-500/30'
+                              : 'border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-blue-600'
+                          }`}
+                        >
+                          <option value="">-- Seleccionar formulario de una empresa --</option>
+                          {companyForms.map((cf) => (
+                            <option key={cf.id} value={cf.id}>
+                              {cf.company ? `[${cf.company}] ` : ''}{cf.title}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-500">
+                          <ChevronDown className="w-4 h-4" />
+                        </div>
+                      </div>
+
+                      {selectedCompanyFormId && (
+                        <button
+                          type="button"
+                          onClick={handleClearCompanyForm}
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition-colors shrink-0"
+                          title="Descartar y volver a las plantillas estándar"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Volver a plantilla base</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {selectedCompanyForm && (
+                      <div className="mt-3 pt-2.5 border-t border-blue-100/80 flex items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2 text-blue-900 min-w-0">
+                          <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span className="truncate">
+                            Formulario asignado:{' '}
+                            <strong className="font-bold text-slate-900">
+                              {selectedCompanyForm.title}
+                            </strong>
+                            {selectedCompanyForm.company && (
+                              <span className="text-blue-700 ml-1 font-medium">
+                                ({selectedCompanyForm.company})
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-600 text-white rounded-md shrink-0">
+                          Copiado de Empresa
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
