@@ -558,6 +558,12 @@ export async function saveSubmission(submission: WorkerSubmission): Promise<Work
   submission.updatedAt = getEcuadorISOString();
 
   if (index >= 0) {
+    const existing = db.submissions[index];
+    // Completed submissions are immutable and cannot be overwritten with draft
+    if (existing.status === 'completed' && submission.status !== 'completed') {
+      console.warn(`[STORAGE] Blocked draft overwrite on completed submission for worker ${submission.workerCode}`);
+      return existing;
+    }
     db.submissions[index] = submission;
   } else {
     db.submissions.unshift(submission);
@@ -589,9 +595,15 @@ export async function resetSubmission(evaluationCode: string, workerCode: string
   );
   if (index >= 0) {
     const existing = db.submissions[index];
+    // A finalized evaluation CANNOT be reset by a worker
+    if (existing.status === 'completed') {
+      console.warn(`[STORAGE] Blocked worker reset on completed submission for worker ${workerCode}`);
+      return null;
+    }
     const reset: WorkerSubmission = {
       ...existing,
       status: 'in_progress',
+      currentFormIndex: 0,
       currentFieldIndex: 0,
       currentSectionTitle: '',
       answers: {},

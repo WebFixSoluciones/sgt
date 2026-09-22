@@ -45,9 +45,20 @@ export default function WorkerEvaluationPage() {
 
   // Status flags
   const [alreadyCompleted, setAlreadyCompleted] = useState(false);
+  const [completedData, setCompletedData] = useState<any>(null);
+  const [checkError, setCheckError] = useState<string | null>(null);
+
+  // Resume state
   const [showResumeModal, setShowResumeModal] = useState(false);
-  const [resumeSectionTitle, setResumeSectionTitle] = useState('');
-  const [savedSectionIndex, setSavedSectionIndex] = useState(0);
+  const [resumeData, setResumeData] = useState<{
+    questionNumber: number;
+    answeredCount: number;
+    totalQuestions: number;
+    questionLabel: string;
+    currentSectionTitle: string;
+    targetSectionIndex: number;
+    firstUnansweredFieldId: string | null;
+  } | null>(null);
 
   // Active survey state
   const [answers, setAnswers] = useState<Record<string, string | number>>({});
@@ -65,7 +76,7 @@ export default function WorkerEvaluationPage() {
     const fetchCampaignData = async () => {
       try {
         setPageLoading(true);
-        const res = await fetch(`/api/evaluaciones/${code}?track=1`);
+        const res = await fetch(`/api/evaluaciones/${code}?track=1`, { cache: 'no-store' });
         const data = await res.json();
         if (data.success) {
           setCampaign(data.data.campaign);
@@ -114,15 +125,16 @@ export default function WorkerEvaluationPage() {
     }
 
     return secList;
-  }, [form]);
+  }, [activeForm]);
 
   // 3. Worker Check / Login
   const handleWorkerCheck = async (targetCode?: string) => {
     const codeToTest = (targetCode || workerCode).trim().toUpperCase();
     if (!codeToTest) {
-      alert('Por favor ingrese su Código de Trabajador.');
+      setCheckError('Por favor ingrese su Código de Trabajador.');
       return;
     }
+    setCheckError(null);
 
     try {
       setIsSubmittingCheck(true);
@@ -138,20 +150,30 @@ export default function WorkerEvaluationPage() {
 
       const data = await res.json();
       if (!data.success) {
-        alert(data.error || 'Error al validar el código.');
+        setCheckError(data.error || 'Error al validar el código.');
         return;
       }
 
-      if (data.status === 'completed') {
+      // If worker already completed this evaluation -> Lock and show exact blocked notice
+      if (data.status === 'completed' || data.alreadyExists) {
+        setCompletedData(data.submission);
+        setWorkerCode(codeToTest);
         setAlreadyCompleted(true);
-        setIsLoggedIn(true);
         return;
       }
 
+      // If worker in progress with answers -> Prompt with exact question number
       if (data.canResume) {
         setAnswers(data.answers || {});
-        setSavedSectionIndex(data.currentFieldIndex || 0);
-        setResumeSectionTitle(data.currentSectionTitle || `Sección ${(data.currentFieldIndex || 0) + 1}`);
+        setResumeData({
+          questionNumber: data.questionNumber || 1,
+          answeredCount: data.answeredCount || 0,
+          totalQuestions: data.totalQuestions || 0,
+          questionLabel: data.questionLabel || '',
+          currentSectionTitle: data.currentSectionTitle || '',
+          targetSectionIndex: data.currentFieldIndex || 0,
+          firstUnansweredFieldId: data.firstUnansweredFieldId || null,
+        });
         setShowResumeModal(true);
       } else {
         setAnswers(data.answers || {});
@@ -160,7 +182,7 @@ export default function WorkerEvaluationPage() {
       }
     } catch (e) {
       console.error(e);
-      alert('Error al verificar sesión.');
+      setCheckError('Error al verificar sesión. Por favor intente nuevamente.');
     } finally {
       setIsSubmittingCheck(false);
     }
@@ -169,19 +191,32 @@ export default function WorkerEvaluationPage() {
   // Auto-login if worker code is in query string (from chained group)
   useEffect(() => {
     const workerParam = searchParams.get('worker');
-    if (workerParam && form && !isLoggedIn && !isSubmittingCheck) {
+    if (workerParam && form && !isLoggedIn && !isSubmittingCheck && !alreadyCompleted) {
       handleWorkerCheck(workerParam);
     }
   }, [searchParams, form]);
 
-  // Save & Resume: Continue
+  // Save & Resume: Continue from where worker stopped
   const handleContinueSaved = () => {
     setShowResumeModal(false);
-    setCurrentSectionIndex(Math.min(savedSectionIndex, Math.max(0, sections.length - 1)));
+    const targetSec = resumeData?.targetSectionIndex ?? 0;
+    setCurrentSectionIndex(Math.min(targetSec, Math.max(0, sections.length - 1)));
     setIsLoggedIn(true);
+
+    // Smooth scroll and highlight the exact pending question
+    if (resumeData?.firstUnansweredFieldId) {
+      const fieldId = resumeData.firstUnansweredFieldId;
+      setActiveFieldId(fieldId);
+      setTimeout(() => {
+        const el = document.getElementById(`field-${fieldId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+    }
   };
 
-  // Save & Resume: Reset
+  // Save & Resume: Reset to start from question 1
   const handleResetSession = async () => {
     try {
       await fetch('/api/sesiones', {
@@ -195,10 +230,12 @@ export default function WorkerEvaluationPage() {
       });
       setAnswers({});
       setCurrentSectionIndex(0);
+      setActiveFieldId(null);
       setShowResumeModal(false);
       setIsLoggedIn(true);
     } catch (e) {
       console.error(e);
+      alert('Error al reiniciar la evaluación.');
     }
   };
 
@@ -300,18 +337,46 @@ export default function WorkerEvaluationPage() {
     }
   };
 
-  // Final Submit
+  // Final Submit with STRICT validation
   const handleFinalSubmit = async () => {
-    // Validate current section
-    const currentFields = sections[currentSectionIndex]?.fields || [];
-    for (const f of currentFields) {
-      if (f.required && (answers[f.id] === undefined || answers[f.id] === '')) {
-        alert(`Por favor responda a la pregunta obligatoria: "${f.label}"`);
-        return;
+    // 1. COMPREHENSIVE VALIDATION: Check that ALL required questions in the active form are answered
+    const missingInActiveForm: { field: FormField; sectionIdx: number; sectionTitle: string }[] = [];
+
+    sections.forEach((sec, sIdx) => {
+      sec.fields.forEach((f) => {
+        if (f.type !== 'page_break' && f.required) {
+          const val = answers[f.id];
+          if (val === undefined || val === null || String(val).trim() === '') {
+            missingInActiveForm.push({ field: f, sectionIdx: sIdx, sectionTitle: sec.title });
+          }
+        }
+      });
+    });
+
+    if (missingInActiveForm.length > 0) {
+      const firstMissing = missingInActiveForm[0];
+      setValidationNotice(`Pregunta requerida pendiente: "${firstMissing.field.label}"`);
+      setActiveFieldId(firstMissing.field.id);
+
+      // If missing question is in another section, jump straight to that section!
+      if (currentSectionIndex !== firstMissing.sectionIdx) {
+        setCurrentSectionIndex(firstMissing.sectionIdx);
       }
+
+      setTimeout(() => {
+        const el = document.getElementById(`field-${firstMissing.field.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 200);
+
+      alert(
+        `Para finalizar la evaluación es obligatorio responder todas las preguntas. Aún faltan ${missingInActiveForm.length} pregunta(s) por responder. Le hemos ubicado en la primera pregunta pendiente.`
+      );
+      return;
     }
 
-    // If this evaluation contains multiple forms and there are more forms pending:
+    // 2. If this evaluation contains multiple forms and there are more forms pending:
     if (activeFormIndex < formsList.length - 1) {
       try {
         setIsSavingDraft(true);
@@ -323,6 +388,7 @@ export default function WorkerEvaluationPage() {
             evaluationCode: code,
             workerCode,
             answers,
+            currentFormIndex: activeFormIndex + 1,
             currentFieldIndex: 0,
             currentSectionTitle: formsList[activeFormIndex + 1]?.title || 'Siguiente Formulario',
           }),
@@ -333,6 +399,7 @@ export default function WorkerEvaluationPage() {
         setTimeout(() => {
           setActiveFormIndex((prev) => prev + 1);
           setCurrentSectionIndex(0);
+          setActiveFieldId(null);
           setTransitionMsg(null);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }, 1500);
@@ -344,6 +411,7 @@ export default function WorkerEvaluationPage() {
       return;
     }
 
+    // 3. Final submission with server-side validation
     try {
       setIsFinalSubmitting(true);
       const res = await fetch('/api/sesiones', {
@@ -354,6 +422,7 @@ export default function WorkerEvaluationPage() {
           evaluationCode: code,
           workerCode,
           answers,
+          currentFormIndex: activeFormIndex,
           currentFieldIndex: currentSectionIndex,
           currentSectionTitle: 'Finalizado',
         }),
@@ -361,7 +430,14 @@ export default function WorkerEvaluationPage() {
 
       const data = await res.json();
       if (!data.success) {
-        alert(data.error || 'Error al enviar evaluación.');
+        if (data.firstMissingFieldId) {
+          setActiveFieldId(data.firstMissingFieldId);
+          const el = document.getElementById(`field-${data.firstMissingFieldId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+        alert(data.error || 'Error al finalizar evaluación. Asegúrese de haber completado todas las preguntas.');
         return;
       }
 
@@ -425,6 +501,13 @@ export default function WorkerEvaluationPage() {
           company={campaign.company}
           evaluationTitle={campaign.title}
           workerCode={workerCode}
+          completedAt={completedData?.completedAt}
+          onResetWorkerCode={() => {
+            setAlreadyCompleted(false);
+            setWorkerCode('');
+            setIsLoggedIn(false);
+            setCheckError(null);
+          }}
         />
       </div>
     );
@@ -484,9 +567,13 @@ export default function WorkerEvaluationPage() {
   if (!isLoggedIn) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center p-4">
-        {showResumeModal && (
+        {showResumeModal && resumeData && (
           <ResumePromptModal
-            currentSectionTitle={resumeSectionTitle}
+            questionNumber={resumeData.questionNumber}
+            answeredCount={resumeData.answeredCount}
+            totalQuestions={resumeData.totalQuestions}
+            questionLabel={resumeData.questionLabel}
+            currentSectionTitle={resumeData.currentSectionTitle}
             onContinue={handleContinueSaved}
             onReset={handleResetSession}
           />
@@ -516,6 +603,13 @@ export default function WorkerEvaluationPage() {
             </p>
           </div>
 
+          {checkError && (
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-semibold flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+              <span>{checkError}</span>
+            </div>
+          )}
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -537,7 +631,10 @@ export default function WorkerEvaluationPage() {
                   required
                   autoFocus
                   value={workerCode}
-                  onChange={(e) => setWorkerCode(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    setWorkerCode(e.target.value.toUpperCase());
+                    setCheckError(null);
+                  }}
                   placeholder="Ej. 5555 o 999999"
                   className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 font-mono tracking-wider uppercase focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                 />
@@ -590,9 +687,13 @@ export default function WorkerEvaluationPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Resume modal if triggered */}
-      {showResumeModal && (
+      {showResumeModal && resumeData && (
         <ResumePromptModal
-          currentSectionTitle={resumeSectionTitle}
+          questionNumber={resumeData.questionNumber}
+          answeredCount={resumeData.answeredCount}
+          totalQuestions={resumeData.totalQuestions}
+          questionLabel={resumeData.questionLabel}
+          currentSectionTitle={resumeData.currentSectionTitle}
           onContinue={handleContinueSaved}
           onReset={handleResetSession}
         />
@@ -653,7 +754,11 @@ export default function WorkerEvaluationPage() {
               <div
                 key={field.id}
                 id={`field-${field.id}`}
-                className="py-6 first:pt-2 last:pb-8 transition-colors"
+                className={`py-6 first:pt-2 last:pb-8 transition-all rounded-xl px-2 sm:px-3 ${
+                  activeFieldId === field.id
+                    ? 'ring-2 ring-blue-500/40 bg-blue-50/20'
+                    : ''
+                }`}
               >
                 {/* Question Label */}
                 <div className="flex items-start justify-between gap-3 mb-3">

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { CheckCircle2, ShieldAlert, ArrowLeft, PhoneCall, Calendar } from 'lucide-react';
+import { ShieldAlert, ArrowLeft, PhoneCall, Calendar, User, Building2, RotateCcw } from 'lucide-react';
 import { formatEcuadorDateTime } from '@/lib/date-utils';
 
 interface CompletedNoticeProps {
@@ -10,6 +10,7 @@ interface CompletedNoticeProps {
   evaluationTitle: string;
   workerCode: string;
   completedAt?: string;
+  onResetWorkerCode?: () => void;
 }
 
 export default function CompletedNotice({
@@ -17,52 +18,96 @@ export default function CompletedNotice({
   evaluationTitle,
   workerCode,
   completedAt,
+  onResetWorkerCode,
 }: CompletedNoticeProps) {
   return (
-    <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl p-8 shadow-sm text-center space-y-6 mx-auto">
-      <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto border border-amber-200">
-        <CheckCircle2 className="w-8 h-8 text-amber-600" />
+    <div className="max-w-md w-full bg-white border border-rose-200 rounded-2xl p-7 sm:p-8 shadow-xl text-center space-y-6 mx-auto animate-in fade-in zoom-in-95 duration-150">
+      {/* Alert Icon */}
+      <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto border border-rose-200 shadow-xs">
+        <ShieldAlert className="w-9 h-9" />
       </div>
 
-      <div>
-        <span className="inline-block px-2.5 py-1 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold uppercase tracking-wider mb-2">
-          Estado: Registrado
+      <div className="space-y-2">
+        <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[11px] font-bold uppercase tracking-wider border border-rose-200">
+          Registro Existente / Finalizado
         </span>
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-          USTED YA COMPLETÓ SU EVALUACIÓN
+        <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-snug">
+          LA EVALUACIÓN CON CÓDIGO DE TRABAJADOR YA EXISTE
         </h2>
-        <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-          Ya se encuentran registradas sus respuestas para la evaluación{' '}
-          <strong className="text-slate-800">{evaluationTitle}</strong> de la empresa{' '}
-          <strong className="text-slate-800">{company}</strong> con el código de trabajador{' '}
-          <span className="font-mono font-bold text-slate-800">{workerCode}</span>.
+        <p className="text-sm font-bold text-rose-600 tracking-tight">
+          Comuníquese con el Evaluador
         </p>
+      </div>
+
+      {/* Details Box */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-700 text-left space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-slate-500 flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5" /> Código Trabajador:
+          </span>
+          <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
+            {workerCode}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-slate-500 flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5" /> Empresa:
+          </span>
+          <span className="font-semibold text-slate-900">{company}</span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-slate-500">Evaluación:</span>
+          <span className="font-medium text-slate-900 truncate max-w-[200px]" title={evaluationTitle}>
+            {evaluationTitle}
+          </span>
+        </div>
+
         {completedAt && (
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-600">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span>Registrado el: <strong className="text-slate-800 font-mono">{formatEcuadorDateTime(completedAt)}</strong></span>
+          <div className="flex items-center justify-between pt-1 border-t border-slate-200">
+            <span className="text-slate-500 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5" /> Finalizado el:
+            </span>
+            <span className="font-mono font-semibold text-slate-800">
+              {formatEcuadorDateTime(completedAt)}
+            </span>
           </div>
         )}
       </div>
 
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs text-slate-600 text-left space-y-2">
-        <div className="flex items-start gap-2">
-          <PhoneCall className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
+      {/* Evaluator Support Callout */}
+      <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-900 text-left space-y-1.5">
+        <div className="flex items-start gap-2 font-medium">
+          <PhoneCall className="w-4 h-4 text-amber-700 mt-0.5 shrink-0" />
           <span>
-            Si considera que esto es un error o necesita actualizar sus datos, por favor comuníquese
-            con el departamento de Recursos Humanos / Salud Ocupacional o el evaluador encargado.
+            Este trabajador ya finalizó su cuestionario satisfactoriamente. Por seguridad y validez de los resultados, no es posible repetir la evaluación. Si requiere autorización para una reevaluación o considera que se trata de un error, comuníquese con el <strong>Evaluador asignado</strong> o con el departamento de Salud Ocupacional / Talento Humano.
           </span>
         </div>
       </div>
 
-      <div className="pt-2">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-blue-600 transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Regresar al inicio</span>
-        </Link>
+      {/* Actions */}
+      <div className="space-y-2 pt-1">
+        {onResetWorkerCode && (
+          <button
+            type="button"
+            onClick={onResetWorkerCode}
+            className="w-full py-2.5 px-4 bg-slate-900 hover:bg-black text-white font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Ingresar otro código de trabajador</span>
+          </button>
+        )}
+
+        <div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-blue-600 transition-colors py-1"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Regresar a la página principal</span>
+          </Link>
+        </div>
       </div>
     </div>
   );
