@@ -7,6 +7,8 @@ import {
   restoreCampaign,
   deleteCampaignPermanently,
   emptyTrashCampaigns,
+  getFormById,
+  cloneFormForCampaign,
 } from '@/lib/storage';
 import { EvaluationCampaign } from '@/lib/types';
 import { getEcuadorISOString } from '@/lib/date-utils';
@@ -23,7 +25,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, title, company, formId, formIds, expectedParticipants, groupId, nextEvaluationCode } = body;
+    const { code, title, company, formId, formIds, expectedParticipants, groupId, nextEvaluationCode, isolateForms = true } = body;
 
     const resolvedFormIds: string[] = Array.isArray(formIds) && formIds.length > 0
       ? formIds
@@ -36,14 +38,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const cleanCode = code.trim().toUpperCase();
+    const cleanTitle = title.trim();
+    const cleanCompany = company.trim();
     const nowEc = getEcuadorISOString();
+
+    // Auto-clone forms so each company evaluation has its own isolated form instance
+    const campaignFormIds: string[] = [];
+    for (const fId of resolvedFormIds) {
+      if (isolateForms) {
+        const sourceForm = await getFormById(fId);
+        // If it's a template or general form, generate an isolated copy for this company
+        if (sourceForm && (sourceForm.isTemplate !== false || !sourceForm.company || sourceForm.company.toUpperCase() !== cleanCompany.toUpperCase())) {
+          const cloned = await cloneFormForCampaign(fId, {
+            code: cleanCode,
+            title: cleanTitle,
+            company: cleanCompany,
+          });
+          campaignFormIds.push(cloned.id);
+        } else {
+          campaignFormIds.push(fId);
+        }
+      } else {
+        campaignFormIds.push(fId);
+      }
+    }
+
     const newCampaign: EvaluationCampaign = {
       id: `camp-${Date.now()}`,
-      code: code.trim().toUpperCase(),
-      title: title.trim(),
-      company: company.trim(),
-      formId: resolvedFormIds[0],
-      formIds: resolvedFormIds,
+      code: cleanCode,
+      title: cleanTitle,
+      company: cleanCompany,
+      formId: campaignFormIds[0],
+      formIds: campaignFormIds,
       expectedParticipants: Number(expectedParticipants) || 100,
       status: 'active',
       groupId: groupId || undefined,

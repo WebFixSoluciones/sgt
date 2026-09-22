@@ -261,6 +261,82 @@ export async function saveForm(form: FormSchema): Promise<FormSchema> {
   return form;
 }
 
+export async function deleteForm(id: string): Promise<boolean> {
+  const db = await getDatabase();
+  const initialCount = db.forms.length;
+  db.forms = db.forms.filter((f) => f.id !== id && f.code !== id);
+  const deleted = db.forms.length < initialCount;
+  if (deleted) {
+    await writeToDiskOrBlob(db);
+  }
+  return deleted;
+}
+
+export async function cloneFormForCampaign(
+  sourceFormId: string,
+  campaign: { code: string; title: string; company: string }
+): Promise<FormSchema> {
+  const db = await getDatabase();
+  const source = db.forms.find((f) => f.id === sourceFormId || f.code === sourceFormId) || db.forms[0];
+  if (!source) {
+    throw new Error(`Formulario origen no encontrado para clonar: ${sourceFormId}`);
+  }
+
+  const cleanCode = campaign.code.trim().toUpperCase();
+  const cleanComp = campaign.company.trim();
+  const slug = cleanCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const nowEc = getEcuadorISOString();
+
+  const newFormId = `form-${slug}-${Date.now()}`;
+  const cloned: FormSchema = {
+    id: newFormId,
+    title: `${source.title} (${cleanComp})`,
+    code: `${cleanCode}-${source.code || 'FORM'}`,
+    company: cleanComp,
+    description: `Formulario exclusivo adaptado para la evaluación ${cleanCode} de ${cleanComp}. Basado en la plantilla maestra "${source.title}".`,
+    isTemplate: false,
+    category: source.category,
+    fields: JSON.parse(JSON.stringify(source.fields)),
+    createdAt: nowEc,
+    updatedAt: nowEc,
+  };
+
+  db.forms.unshift(cloned);
+  await writeToDiskOrBlob(db);
+  return cloned;
+}
+
+export async function duplicateForm(
+  sourceFormId: string,
+  newTitle?: string,
+  asTemplate: boolean = false,
+  company?: string
+): Promise<FormSchema> {
+  const db = await getDatabase();
+  const source = db.forms.find((f) => f.id === sourceFormId || f.code === sourceFormId);
+  if (!source) {
+    throw new Error('Formulario origen no encontrado para duplicar');
+  }
+
+  const nowEc = getEcuadorISOString();
+  const duplicated: FormSchema = {
+    id: `form-${Date.now()}`,
+    title: newTitle ? newTitle.trim() : `Copia de ${source.title}`,
+    code: `copy-${source.code || 'form'}-${Date.now()}`,
+    company: company || (asTemplate ? '' : source.company || ''),
+    description: source.description || '',
+    isTemplate: asTemplate,
+    category: source.category,
+    fields: JSON.parse(JSON.stringify(source.fields)),
+    createdAt: nowEc,
+    updatedAt: nowEc,
+  };
+
+  db.forms.unshift(duplicated);
+  await writeToDiskOrBlob(db);
+  return duplicated;
+}
+
 // Submission / Save & Resume Operations
 export async function getSubmissions(evaluationCode?: string): Promise<WorkerSubmission[]> {
   const db = await getDatabase();

@@ -41,3 +41,28 @@ export async function PUT(
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const existing = await getFormById(params.id);
+    if (!existing) {
+      return NextResponse.json({ success: false, error: 'Formulario no encontrado' }, { status: 404 });
+    }
+
+    if (existing.isTemplate) {
+      return NextResponse.json(
+        { success: false, error: 'No se pueden eliminar las plantillas maestras del sistema.' },
+        { status: 400 }
+      );
+    }
+
+    const { deleteForm } = await import('@/lib/storage');
+    const deleted = await deleteForm(params.id);
+    return NextResponse.json({ success: deleted, message: 'Formulario eliminado correctamente' });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

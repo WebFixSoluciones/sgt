@@ -432,6 +432,19 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
               />
             </div>
 
+            {/* Tipo: Plantilla Maestra o Formulario Empresa */}
+            <label className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={Boolean(form.isTemplate)}
+                onChange={(e) => updateFormMeta({ isTemplate: e.target.checked })}
+                className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 w-3.5 h-3.5"
+              />
+              <span className={`text-[11px] font-bold ${form.isTemplate ? 'text-purple-700' : 'text-blue-700'}`}>
+                {form.isTemplate ? 'Plantilla Maestra' : 'Formulario Empresa'}
+              </span>
+            </label>
+
             {/* Categoría */}
             <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-xs">
               <span className="font-semibold text-slate-500 text-[11px]">Cat:</span>

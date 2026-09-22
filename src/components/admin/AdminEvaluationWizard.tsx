@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   AlertCircle,
   PlusCircle,
+  Edit,
 } from 'lucide-react';
 import type { EvaluationCampaign, FormSchema } from '@/lib/types';
 
@@ -374,6 +375,17 @@ export default function AdminEvaluationWizard({
                     <PlusCircle className="w-3.5 h-3.5 text-blue-600" />
                     <span>Crear Formulario Nuevo</span>
                   </Link>
+                </div>
+              </div>
+
+              {/* Automatic Isolation Reassurance Banner */}
+              <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl flex items-start gap-3">
+                <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <div className="text-xs text-blue-900 leading-relaxed">
+                  <span className="font-bold">Aislamiento automático e independencia por empresa:</span>
+                  <p className="text-[11px] text-blue-700 mt-0.5">
+                    Al crear la evaluación, el sistema genera automáticamente una copia exclusiva e independiente de este formulario para esta empresa. Podrás personalizar los puestos de trabajo (ej. 10 o 26 grupos), editar preguntas o agregar nuevas sin alterar la plantilla maestra ni otras empresas.
+                  </p>
                 </div>
               </div>
 
@@ -865,6 +877,18 @@ export default function AdminEvaluationWizard({
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
+                {createdCampaign.formId && (
+                  <Link
+                    href={`/admin/formularios/${createdCampaign.formId}`}
+                    onClick={() => onClose()}
+                    className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-xs"
+                    title="Editar puestos de trabajo o preguntas específicas de esta empresa"
+                  >
+                    <Edit className="w-4 h-4" />
+                    <span>Personalizar Puestos y Preguntas</span>
+                  </Link>
+                )}
+
                 <a
                   href={`/evaluar/${createdCampaign.code}`}
                   target="_blank"
