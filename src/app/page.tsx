@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowRight, Lock } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
@@ -38,13 +37,10 @@ export default function HomePage() {
 
         {/* Clean Form */}
         <div className="w-full space-y-4 text-left">
-          <div className="text-center space-y-1">
+          <div className="text-center">
             <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
               Ingrese su código de evaluación
             </h1>
-            <p className="text-xs text-slate-500">
-              Cuestionario de prevención de riesgos laborales
-            </p>
           </div>
 
           <form onSubmit={handleAccess} className="space-y-3 pt-2">
@@ -75,17 +71,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Discreet Admin Lock Link at Bottom */}
-      <footer className="w-full max-w-sm flex items-center justify-between text-xs text-slate-400 pt-8">
+      {/* Footer */}
+      <footer className="w-full max-w-sm flex items-center justify-center text-xs text-slate-400 pt-8">
         <span>SGT Prevención © 2026</span>
-        <Link
-          href="/admin/login"
-          title="Acceso Administrador"
-          className="p-1.5 hover:text-slate-700 rounded-md transition-colors flex items-center gap-1"
-        >
-          <Lock className="w-3.5 h-3.5" />
-          <span className="text-[11px]">Administrador</span>
-        </Link>
       </footer>
     </div>
   );
