@@ -305,13 +305,26 @@ export async function POST(req: NextRequest) {
 
       // Check chained evaluation in group
       const nextEvaluationCode = campaign.nextEvaluationCode;
+      let nextEvaluationTitle: string | null = null;
+      if (nextEvaluationCode) {
+        try {
+          const nextCamp = await getCampaignByCode(nextEvaluationCode);
+          if (nextCamp) {
+            nextEvaluationTitle = nextCamp.title;
+          }
+        } catch (e) {
+          console.warn('[SESIONES] Error getting next evaluation title:', e);
+        }
+      }
 
       return NextResponse.json({
         success: true,
         status: 'completed',
+        currentEvaluationTitle: campaign.title,
         nextEvaluationCode: nextEvaluationCode || null,
+        nextEvaluationTitle: nextEvaluationTitle || null,
         message: nextEvaluationCode
-          ? 'Evaluación completada. Pasando a la siguiente evaluación...'
+          ? `Evaluación completada. Pasando a la siguiente evaluación: ${nextEvaluationTitle || nextEvaluationCode}...`
           : 'USTED HA COMPLETADO SATISFACTORIAMENTE SU EVALUACIÓN.',
       });
     }

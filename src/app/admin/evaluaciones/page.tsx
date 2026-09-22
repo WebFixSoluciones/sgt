@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   ShieldAlert,
   Upload,
+  GitMerge,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema } from '@/lib/types';
 import { formatEcuadorDateTime } from '@/lib/date-utils';
@@ -477,6 +478,14 @@ export default function AdminEvaluacionesPage() {
                               </button>
                             )}
                           </div>
+                          {!isTrashItem && camp.nextEvaluationCode && (
+                            <div className="flex items-center gap-1.5 text-[11px] text-purple-700 font-semibold mt-1">
+                              <GitMerge className="w-3 h-3 text-purple-600 shrink-0" />
+                              <span>
+                                Encadenada a: <strong className="font-bold">{campaigns.find((c) => c.code === camp.nextEvaluationCode)?.title || camp.nextEvaluationCode}</strong> ({camp.nextEvaluationCode})
+                              </span>
+                            </div>
+                          )}
                           {isTrashItem && camp.trashedAt && (
                             <div className="text-[10px] text-rose-600 font-medium mt-1">
                               En papelera desde: {formatEcuadorDateTime(camp.trashedAt)}

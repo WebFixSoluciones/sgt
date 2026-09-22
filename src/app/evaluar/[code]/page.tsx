@@ -14,6 +14,7 @@ import {
   Loader2,
   HelpCircle,
   Sparkles,
+  GitMerge,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema, FormField } from '@/lib/types';
 import ResumePromptModal from '@/components/worker/ResumePromptModal';
@@ -35,8 +36,13 @@ export default function WorkerEvaluationPage() {
   const [form, setForm] = useState<FormSchema | null>(null);
   const [formsList, setFormsList] = useState<FormSchema[]>([]);
   const [activeFormIndex, setActiveFormIndex] = useState(0);
+  const [nextCampaignTitle, setNextCampaignTitle] = useState<string | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Chained URL tracking
+  const fromChain = searchParams.get('from_chain') === '1';
+  const prevTitle = searchParams.get('prev_title') || '';
 
   // Worker Session State
   const [workerCode, setWorkerCode] = useState(searchParams.get('worker') || '');
@@ -65,10 +71,75 @@ export default function WorkerEvaluationPage() {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isFinalSubmitting, setIsFinalSubmitting] = useState(false);
-  const [transitionMsg, setTransitionMsg] = useState<string | null>(null);
   const [surveyCompletedSuccess, setSurveyCompletedSuccess] = useState(false);
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
   const [validationNotice, setValidationNotice] = useState<string | null>(null);
+
+  // Clear, High-Clarity Transition Modals (Single source of truth for step changes)
+  const [chainTransition, setChainTransition] = useState<{
+    completedTitle: string;
+    nextCode: string;
+    nextTitle: string;
+    workerCode: string;
+    puestoLabel: string;
+    redirectUrl: string;
+    countdown: number;
+  } | null>(null);
+
+  const [formTransition, setFormTransition] = useState<{
+    completedTitle: string;
+    nextTitle: string;
+    nextIndex: number;
+    totalForms: number;
+    countdown: number;
+  } | null>(null);
+
+  // Countdown timer for chained evaluation transition
+  useEffect(() => {
+    if (!chainTransition) return;
+    if (chainTransition.countdown <= 0) {
+      router.push(chainTransition.redirectUrl);
+      return;
+    }
+    const timer = setInterval(() => {
+      setChainTransition((prev) => {
+        if (!prev) return null;
+        if (prev.countdown <= 1) {
+          router.push(prev.redirectUrl);
+          return null;
+        }
+        return { ...prev, countdown: prev.countdown - 1 };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [chainTransition, router]);
+
+  // Countdown timer for multi-form transition
+  useEffect(() => {
+    if (!formTransition) return;
+    if (formTransition.countdown <= 0) {
+      setActiveFormIndex(formTransition.nextIndex);
+      setCurrentSectionIndex(0);
+      setActiveFieldId(null);
+      setFormTransition(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const timer = setInterval(() => {
+      setFormTransition((prev) => {
+        if (!prev) return null;
+        if (prev.countdown <= 1) {
+          setActiveFormIndex(prev.nextIndex);
+          setCurrentSectionIndex(0);
+          setActiveFieldId(null);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return null;
+        }
+        return { ...prev, countdown: prev.countdown - 1 };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [formTransition]);
 
   // 1. Fetch Campaign & Form Schema
   useEffect(() => {
@@ -83,6 +154,9 @@ export default function WorkerEvaluationPage() {
           const loadedForms = data.data.forms || (data.data.form ? [data.data.form] : []);
           setFormsList(loadedForms);
           setForm(loadedForms[0] || data.data.form);
+          if (data.data.nextCampaignTitle) {
+            setNextCampaignTitle(data.data.nextCampaignTitle);
+          }
         } else {
           setErrorMsg(data.error || 'No se pudo cargar la evaluación.');
         }
@@ -497,15 +571,16 @@ export default function WorkerEvaluationPage() {
           }),
         });
 
-        const nextFormTitle = formsList[activeFormIndex + 1]?.title || 'Siguiente Formulario';
-        setTransitionMsg(`¡Cuestionario completado! Avanzando al siguiente formulario: ${nextFormTitle}...`);
-        setTimeout(() => {
-          setActiveFormIndex((prev) => prev + 1);
-          setCurrentSectionIndex(0);
-          setActiveFieldId(null);
-          setTransitionMsg(null);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }, 1500);
+        const completedFormTitle = activeForm?.title || `Cuestionario ${activeFormIndex + 1}`;
+        const nextFormTitle = formsList[activeFormIndex + 1]?.title || `Cuestionario ${activeFormIndex + 2}`;
+
+        setFormTransition({
+          completedTitle: completedFormTitle,
+          nextTitle: nextFormTitle,
+          nextIndex: activeFormIndex + 1,
+          totalForms: formsList.length,
+          countdown: 4,
+        });
       } catch (err) {
         console.error(err);
       } finally {
@@ -546,17 +621,22 @@ export default function WorkerEvaluationPage() {
 
       // Check Chained Evaluation in Group!
       if (data.nextEvaluationCode) {
-        setTransitionMsg(
-          `¡Evaluación completada! Continuando automáticamente con la siguiente evaluación de su grupo...`
-        );
         const pVal = encodeURIComponent(String(answers['puesto'] || answers['agrupacion_puestos'] || ''));
         const hVal = encodeURIComponent(String(answers['horario'] || answers['horarios'] || ''));
         const aVal = encodeURIComponent(String(answers['antiguedad'] || ''));
-        setTimeout(() => {
-          router.push(
-            `/evaluar/${data.nextEvaluationCode}?worker=${encodeURIComponent(workerCode)}&puesto=${pVal}&horario=${hVal}&antiguedad=${aVal}`
-          );
-        }, 2000);
+        const nextTitle = data.nextEvaluationTitle || nextCampaignTitle || data.nextEvaluationCode;
+        const currentCampTitle = campaign?.title || 'Evaluación Actual';
+        const redirectUrl = `/evaluar/${data.nextEvaluationCode}?worker=${encodeURIComponent(workerCode)}&puesto=${pVal}&horario=${hVal}&antiguedad=${aVal}&from_chain=1&prev_title=${encodeURIComponent(currentCampTitle)}`;
+
+        setChainTransition({
+          completedTitle: currentCampTitle,
+          nextCode: data.nextEvaluationCode,
+          nextTitle,
+          workerCode,
+          puestoLabel: selectedPuestoLabel || 'Asignado',
+          redirectUrl,
+          countdown: 5,
+        });
       } else {
         setSurveyCompletedSuccess(true);
       }
@@ -621,50 +701,176 @@ export default function WorkerEvaluationPage() {
     );
   }
 
-  // State: Final Success Confirmation
-  if (surveyCompletedSuccess) {
+  // State: Chain Transition (Between different linked campaigns)
+  if (chainTransition) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white border border-emerald-200 rounded-xl p-8 text-center space-y-5 shadow-sm">
-          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-200">
-            <CheckCircle2 className="w-10 h-10" />
+      <div className="min-h-[85vh] flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-200 max-w-lg w-full p-6 sm:p-8 space-y-6 text-center animate-in fade-in zoom-in-95 duration-200">
+          {/* Progress Indicator */}
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-11 h-11 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-base shadow-xs">
+              <Check className="w-6 h-6 stroke-[3]" />
+            </div>
+            <div className="w-16 h-1 bg-emerald-200 rounded-full" />
+            <div className="w-11 h-11 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-xs animate-pulse">
+              2
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+
+          <div className="space-y-2">
+            <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold uppercase tracking-wider">
               ¡Evaluación Completada con Éxito!
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
+              Has finalizado:
             </h2>
-            <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Muchas gracias por su valiosa colaboración. Sus respuestas han sido registradas de forma
-              segura para el programa de prevención laboral de{' '}
-              <strong className="text-slate-800">{campaign.company}</strong>.
-            </p>
+            <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-900 font-bold text-sm sm:text-base">
+              "{chainTransition.completedTitle}"
+            </div>
           </div>
-          <div className="pt-2">
+
+          {/* Siguiente Evaluación en Cadena */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50/70 border-2 border-blue-200 rounded-2xl p-5 text-left space-y-2.5 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-wider">
+              <Sparkles className="w-4 h-4 text-blue-600" />
+              <span>Siguiente Evaluación del Circuito:</span>
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug">
+              {chainTransition.nextTitle}
+            </h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Tus datos ya fueron asignados automáticamente para esta nueva evaluación:
+            </p>
+            <div className="flex items-center gap-2 flex-wrap pt-1 text-xs">
+              <span className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg font-mono font-bold text-slate-800 shadow-2xs">
+                COD: {chainTransition.workerCode}
+              </span>
+              {chainTransition.puestoLabel && (
+                <span className="px-2.5 py-1 bg-emerald-100 border border-emerald-300 rounded-lg font-bold text-emerald-900 shadow-2xs">
+                  {chainTransition.puestoLabel}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-1">
             <button
-              onClick={() => router.push('/')}
-              className="px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-medium rounded transition-colors"
+              type="button"
+              onClick={() => router.push(chainTransition.redirectUrl)}
+              className="w-full py-3.5 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 group"
             >
-              Finalizar y salir
+              <span>Comenzar Ahora: {chainTransition.nextTitle}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
+            <p className="text-xs text-slate-400">
+              Avanzando automáticamente en <span className="font-bold text-slate-700">{chainTransition.countdown}</span> segundos...
+            </p>
           </div>
         </div>
       </div>
     );
   }
 
-  // State: Transitioning to Next Chained Evaluation
-  if (transitionMsg) {
+  // State: Form Transition (Between forms within the same evaluation)
+  if (formTransition) {
+    return (
+      <div className="min-h-[85vh] flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-200 max-w-lg w-full p-6 sm:p-8 space-y-6 text-center animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto border border-blue-200 shadow-xs">
+            <CheckCircle2 className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold uppercase tracking-wider">
+              ¡Cuestionario Completado!
+            </span>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+              Has finalizado:
+            </h2>
+            <div className="p-3 bg-slate-100 rounded-2xl text-slate-800 font-semibold text-sm">
+              "{formTransition.completedTitle}"
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200 rounded-2xl p-5 text-left space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 uppercase tracking-wider">
+              <ArrowRight className="w-4 h-4 text-indigo-600" />
+              <span>A continuación ({formTransition.nextIndex + 1} de {formTransition.totalForms}):</span>
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-slate-900">
+              {formTransition.nextTitle}
+            </h3>
+            <p className="text-xs text-slate-600">
+              Evaluación en curso: <strong>{campaign.title}</strong>
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveFormIndex(formTransition.nextIndex);
+                setCurrentSectionIndex(0);
+                setActiveFieldId(null);
+                setFormTransition(null);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="w-full py-3.5 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              <span>Comenzar: {formTransition.nextTitle}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <p className="text-xs text-slate-400">
+              Continuando automáticamente en <span className="font-bold text-slate-700">{formTransition.countdown}</span> segundos...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // State: Final Success Confirmation
+  if (surveyCompletedSuccess) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white border border-purple-200 rounded-xl p-8 text-center space-y-4 shadow-sm animate-pulse">
-          <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mx-auto">
-            <Sparkles className="w-8 h-8" />
+        <div className="max-w-md w-full bg-white border border-emerald-200 rounded-2xl p-8 text-center space-y-5 shadow-sm">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-200">
+            <CheckCircle2 className="w-10 h-10" />
           </div>
-          <h2 className="text-lg font-bold text-slate-900">Encuesta Guardada</h2>
-          <p className="text-xs text-slate-600 leading-relaxed">{transitionMsg}</p>
-          <div className="flex items-center justify-center gap-2 text-xs text-purple-700 font-semibold pt-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Cargando siguiente sección...</span>
+          <div className="space-y-2">
+            <span className="inline-block px-3 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-bold uppercase tracking-wider">
+              Evaluación Finalizada
+            </span>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              ¡Evaluación Completada con Éxito!
+            </h2>
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-left space-y-1.5 text-xs">
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Evaluación:</span>
+                <span className="font-bold text-slate-900 text-sm">{campaign?.title || 'Evaluación'}</span>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200">
+                <span className="text-slate-600 font-medium">Empresa: {campaign?.company || ''}</span>
+                <span className="font-mono font-bold text-slate-800">COD: {workerCode}</span>
+              </div>
+              {selectedPuestoLabel && (
+                <div className="pt-1 border-t border-slate-200 text-emerald-800 font-semibold">
+                  Puesto: {selectedPuestoLabel}
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed pt-1">
+              Muchas gracias por su valiosa colaboración. Sus respuestas han sido registradas de forma
+              segura para el programa de prevención laboral.
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              onClick={() => router.push('/')}
+              className="px-5 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-semibold rounded-xl transition-colors shadow-xs"
+            >
+              Finalizar y salir
+            </button>
           </div>
         </div>
       </div>
@@ -807,31 +1013,60 @@ export default function WorkerEvaluationPage() {
         />
       )}
 
-      {/* Top Clean Sticky Progress Header: Solo título de sección y porcentaje % */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-8 py-3.5">
+      {/* Top Clean Sticky Progress Header con Título de Evaluación destacado */}
+      <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-8 py-3">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
               <img
                 src="/logo-sgt.jpg"
                 alt="SGT"
-                className="h-7 w-auto object-contain hidden sm:block"
+                className="h-8 w-auto object-contain hidden sm:block shrink-0"
               />
               <div className="flex flex-col min-w-0">
-                {formsList.length > 1 && (
-                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider truncate">
-                    Formulario {activeFormIndex + 1} de {formsList.length}: {activeForm?.title}
+                {/* Badges superiores: Empresa + Tipo / Cadena */}
+                <div className="flex items-center gap-2 flex-wrap text-[10px] font-bold uppercase tracking-wider">
+                  <span className="text-blue-700 flex items-center gap-1">
+                    <Building2 className="w-3 h-3 shrink-0" />
+                    <span className="truncate max-w-[180px]">{campaign.company}</span>
                   </span>
-                )}
-                <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate">
-                  {currentSection?.title || 'Evaluación'}
+                  {campaign.nextEvaluationCode && (
+                    <span className="text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 flex items-center gap-1 shrink-0">
+                      <GitMerge className="w-2.5 h-2.5" />
+                      <span>Circuito en Cadena</span>
+                    </span>
+                  )}
+                  {formsList.length > 1 && (
+                    <span className="text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 shrink-0">
+                      Cuestionario {activeFormIndex + 1} de {formsList.length}
+                    </span>
+                  )}
+                </div>
+
+                {/* TÍTULO PRINCIPAL DE LA EVALUACIÓN */}
+                <h1 className="text-sm sm:text-base font-extrabold text-slate-900 truncate leading-tight mt-0.5" title={campaign.title}>
+                  {campaign.title}
                 </h1>
-                {selectedPuestoLabel && (
-                  <span className="text-[11px] text-emerald-700 font-semibold truncate flex items-center gap-1 mt-0.5">
-                    <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                    <span>Puesto asignado: <strong className="font-bold">{selectedPuestoLabel}</strong></span>
+
+                {/* Sub-línea: Cuestionario actual, Sección y Puesto Asignado */}
+                <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-500 mt-0.5">
+                  <span className="font-semibold text-slate-700 truncate max-w-[200px]" title={activeForm?.title}>
+                    {activeForm?.title || 'Cuestionario'}
                   </span>
-                )}
+                  <span className="text-slate-300">•</span>
+                  <span className="text-slate-600 truncate max-w-[180px]">
+                    {currentSection?.title || 'Preguntas'}
+                  </span>
+                  {selectedPuestoLabel && (
+                    <>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-emerald-700 font-semibold truncate flex items-center gap-1">
+                        <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                        <span className="truncate max-w-[180px]">Puesto: {selectedPuestoLabel}</span>
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -841,24 +1076,98 @@ export default function WorkerEvaluationPage() {
                   <Loader2 className="w-3 h-3 animate-spin text-blue-600" /> Guardando...
                 </span>
               )}
-              <span className="text-xs sm:text-sm font-bold text-blue-600 font-mono">
-                {progressPercent}%
-              </span>
+              <div className="text-right">
+                <span className="text-xs sm:text-sm font-black text-blue-600 font-mono">
+                  {progressPercent}%
+                </span>
+                <span className="block text-[9px] text-slate-400 uppercase font-medium">Completado</span>
+              </div>
             </div>
           </div>
 
           {/* Slim clean progress line */}
-          <div className="w-full bg-slate-100 rounded-full h-1 mt-2.5 overflow-hidden">
+          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
             <div
-              className="bg-blue-600 h-1 rounded-full transition-all duration-300"
+              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
       </header>
 
-      {/* Main Wide Evaluation Body: Clean question flow without heavy cards */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-8 py-8 animate-fade-in-slide">
+      {/* Main Wide Evaluation Body: Clean question flow with clear Evaluation Identification */}
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8 animate-fade-in-slide">
+        {/* Banner si viene de una evaluación previa en cadena */}
+        {fromChain && (
+          <div className="mb-5 p-3.5 bg-purple-50/80 border border-purple-200 rounded-2xl flex items-center justify-between gap-3 text-xs text-purple-900 animate-in fade-in slide-in-from-top-2 shadow-2xs">
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
+              <div>
+                <span className="font-bold">Continuando circuito de evaluación en cadena:</span>
+                {prevTitle ? (
+                  <span className="ml-1 text-purple-800">
+                    Has completado con éxito <strong>"{prevTitle}"</strong>. Ahora te encuentras en <strong>"{campaign.title}"</strong>.
+                  </span>
+                ) : (
+                  <span className="ml-1 text-purple-800">
+                    Tus respuestas anteriores se guardaron correctamente.
+                  </span>
+                )}
+              </div>
+            </div>
+            <span className="px-2.5 py-0.5 bg-purple-200/60 text-purple-900 rounded-full text-[10px] font-bold uppercase shrink-0">
+              Paso Siguiente
+            </span>
+          </div>
+        )}
+
+        {/* Banner Hero de Identificación Clara de Evaluación Actual */}
+        <div className="mb-6 p-4 sm:p-5 bg-gradient-to-r from-blue-50/80 via-slate-50 to-white border border-blue-200/70 rounded-2xl shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider">
+                  Evaluación en curso
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider">
+                  {campaign.company}
+                </span>
+                {formsList.length > 1 && (
+                  <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] font-bold uppercase tracking-wider">
+                    Cuestionario {activeFormIndex + 1} de {formsList.length}
+                  </span>
+                )}
+                {campaign.nextEvaluationCode && (
+                  <span className="px-2 py-0.5 rounded-md bg-purple-50 border border-purple-200 text-purple-700 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                    <GitMerge className="w-3 h-3 text-purple-600" />
+                    Circuito en Cadena
+                  </span>
+                )}
+              </div>
+              <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight">
+                {campaign.title}
+              </h2>
+              <p className="text-xs text-slate-600">
+                {activeForm?.description || `Instrumento activo: ${activeForm?.title || 'Cuestionario de Evaluación'}. Complete todas las preguntas requeridas.`}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl shadow-2xs">
+                <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-wider">Trabajador</span>
+                <span className="font-mono font-bold text-slate-900 text-xs">{workerCode}</span>
+              </div>
+              {selectedPuestoLabel && (
+                <div className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl shadow-2xs">
+                  <span className="block text-[9px] text-emerald-700 font-bold uppercase tracking-wider">Puesto Asignado</span>
+                  <span className="font-bold text-emerald-900 text-xs truncate max-w-[150px] block" title={selectedPuestoLabel}>
+                    {selectedPuestoLabel}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
         <div className="divide-y divide-slate-100">
           {currentSection?.fields.map((field) => {
             const currentValue = answers[field.id];
@@ -1019,7 +1328,9 @@ export default function WorkerEvaluationPage() {
                 </>
               ) : (
                 <>
-                  <span>Siguiente Formulario: {formsList[activeFormIndex + 1]?.title}</span>
+                  <span>
+                    Siguiente Cuestionario ({activeFormIndex + 2} de {formsList.length}): {formsList[activeFormIndex + 1]?.title}
+                  </span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -1035,6 +1346,13 @@ export default function WorkerEvaluationPage() {
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Enviando...</span>
+                </>
+              ) : campaign?.nextEvaluationCode ? (
+                <>
+                  <span>
+                    Finalizar y Continuar Circuito ({nextCampaignTitle || 'Siguiente Evaluación'})
+                  </span>
+                  <ArrowRight className="w-4 h-4" />
                 </>
               ) : (
                 <>

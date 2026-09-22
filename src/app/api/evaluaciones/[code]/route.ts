@@ -42,6 +42,18 @@ export async function GET(
     const form = forms[0] || (campaign.formId ? await getFormById(campaign.formId) : null);
     const submissions = await getSubmissions(code);
 
+    let nextCampaignTitle: string | null = null;
+    if (campaign.nextEvaluationCode) {
+      try {
+        const nextCamp = await getCampaignByCode(campaign.nextEvaluationCode);
+        if (nextCamp) {
+          nextCampaignTitle = nextCamp.title;
+        }
+      } catch (e) {
+        console.warn('[EVALUACIONES] Error fetching next campaign title:', e);
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -49,6 +61,7 @@ export async function GET(
           campaign,
           form,
           forms,
+          nextCampaignTitle,
           submissionsCount: submissions.filter((s) => s.status === 'completed').length,
           totalEntries: submissions.length,
         },
