@@ -929,6 +929,13 @@ export default function AdminEvaluationWizard({
                       </div>
                     ))}
                   </div>
+
+                  <div className="mt-2.5 p-2.5 bg-blue-50/60 border border-blue-100 rounded-lg text-[11px] text-blue-700 flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 shrink-0 text-blue-600" />
+                    <span>
+                      Se duplicarán automáticamente <strong>{selectedForms.length} formulario(s) nuevos para {company || 'esta empresa'}</strong>, listos para personalizar sin alterar las plantillas maestras.
+                    </span>
+                  </div>
                 </div>
 
                 {/* Empresa & Título */}

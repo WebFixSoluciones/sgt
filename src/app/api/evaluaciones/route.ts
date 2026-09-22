@@ -10,6 +10,7 @@ import {
   emptyTrashCampaigns,
   getFormById,
   cloneFormForCampaign,
+  cloneFormsForCampaignBatch,
 } from '@/lib/storage';
 import { EvaluationCampaign } from '@/lib/types';
 import { getEcuadorISOString } from '@/lib/date-utils';
@@ -62,47 +63,51 @@ export async function POST(req: NextRequest) {
       ? puestos.map((p: any) => String(p).trim()).filter(Boolean)
       : [];
 
-    // Auto-clone forms so each company evaluation has its own isolated form instance
-    const campaignFormIds: string[] = [];
-    for (const fId of resolvedFormIds) {
-      if (isolateForms) {
+    // Auto-clone all forms in a single batch so each company evaluation has its own isolated form instances
+    let campaignFormIds: string[] = [];
+    if (isolateForms) {
+      const formsToClone: string[] = [];
+      const formKeepIds: { [fId: string]: boolean } = {};
+
+      for (const fId of resolvedFormIds) {
         const sourceForm = await getFormById(fId);
-        // If it's a template or general form, generate an isolated copy for this company
-        if (sourceForm && (sourceForm.isTemplate !== false || !sourceForm.company || sourceForm.company.toUpperCase() !== cleanCompany.toUpperCase())) {
-          const cloned = await cloneFormForCampaign(fId, {
-            code: cleanCode,
-            title: cleanTitle,
-            company: cleanCompany,
-          });
-
-          // If custom puestos were provided, update the cloned form's puesto options
-          if (cleanPuestos.length > 0) {
-            const puestoField = cloned.fields.find(
-              (f) => f.id === 'puesto' || f.id === 'agrupacion_puestos'
-            );
-            if (puestoField) {
-              puestoField.options = cleanPuestos.map((pName, pIdx) => {
-                const matchNum = pName.match(/^(\d+)\.\s*(.+)$/);
-                const val = matchNum ? matchNum[1] : String(pIdx + 1);
-                const lbl = matchNum ? pName : `${pIdx + 1}. ${pName}`;
-                return {
-                  id: `p_${val}`,
-                  value: val,
-                  label: lbl,
-                };
-              });
-              const { saveForm } = await import('@/lib/storage');
-              await saveForm(cloned);
-            }
-          }
-
-          campaignFormIds.push(cloned.id);
+        // If it's a template or a form from another company, generate an isolated copy for this company
+        if (
+          sourceForm &&
+          (sourceForm.isTemplate !== false ||
+            !sourceForm.company ||
+            sourceForm.company.trim().toUpperCase() !== cleanCompany.toUpperCase())
+        ) {
+          formsToClone.push(fId);
         } else {
-          campaignFormIds.push(fId);
+          formKeepIds[fId] = true;
+        }
+      }
+
+      if (formsToClone.length > 0) {
+        const clonedForms = await cloneFormsForCampaignBatch(formsToClone, {
+          code: cleanCode,
+          title: cleanTitle,
+          company: cleanCompany,
+          puestos: cleanPuestos,
+        });
+
+        let cloneIdx = 0;
+        for (const fId of resolvedFormIds) {
+          if (formKeepIds[fId]) {
+            campaignFormIds.push(fId);
+          } else if (clonedForms[cloneIdx]) {
+            campaignFormIds.push(clonedForms[cloneIdx].id);
+            cloneIdx++;
+          } else {
+            campaignFormIds.push(fId);
+          }
         }
       } else {
-        campaignFormIds.push(fId);
+        campaignFormIds = [...resolvedFormIds];
       }
+    } else {
+      campaignFormIds = [...resolvedFormIds];
     }
 
     const newCampaign: EvaluationCampaign = {

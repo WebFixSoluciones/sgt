@@ -519,38 +519,107 @@ export async function deleteForm(id: string): Promise<boolean> {
   return deleted;
 }
 
-export async function cloneFormForCampaign(
-  sourceFormId: string,
-  campaign: { code: string; title: string; company: string }
-): Promise<FormSchema> {
+export async function cloneFormsForCampaignBatch(
+  sourceFormIds: string[],
+  campaign: { code: string; title: string; company: string; puestos?: string[] }
+): Promise<FormSchema[]> {
   const db = await getDatabase();
-  const source = db.forms.find((f) => f.id === sourceFormId || f.code === sourceFormId) || db.forms[0];
-  if (!source) {
-    throw new Error(`Formulario origen no encontrado para clonar: ${sourceFormId}`);
-  }
-
   const cleanCode = campaign.code.trim().toUpperCase();
   const cleanComp = campaign.company.trim();
-  const slug = cleanCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const baseSlug = cleanCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
   const nowEc = getEcuadorISOString();
+  const cleanPuestos = Array.isArray(campaign.puestos)
+    ? campaign.puestos.map((p) => String(p).trim()).filter(Boolean)
+    : [];
 
-  const newFormId = `form-${slug}-${Date.now()}`;
-  const cloned: FormSchema = {
-    id: newFormId,
-    title: `${source.title} (${cleanComp})`,
-    code: `${cleanCode}-${source.code || 'FORM'}`,
-    company: cleanComp,
-    description: `Formulario exclusivo adaptado para la evaluación ${cleanCode} de ${cleanComp}. Basado en la plantilla maestra "${source.title}".`,
-    isTemplate: false,
-    category: source.category,
-    fields: JSON.parse(JSON.stringify(source.fields)),
-    createdAt: nowEc,
-    updatedAt: nowEc,
-  };
+  const clonedList: FormSchema[] = [];
 
-  db.forms.unshift(cloned);
-  await writeToDiskOrBlob(db);
-  return cloned;
+  for (let idx = 0; idx < sourceFormIds.length; idx++) {
+    const sId = sourceFormIds[idx];
+    // Find the exact source form by id or code
+    let source = db.forms.find((f) => f.id === sId || f.code === sId);
+
+    // If not found directly, check case-insensitively
+    if (!source) {
+      source = db.forms.find(
+        (f) =>
+          f.id.toLowerCase() === sId.toLowerCase() ||
+          (f.code && f.code.toLowerCase() === sId.toLowerCase())
+      );
+    }
+
+    if (!source) {
+      console.warn(`[STORAGE] Formulario origen no encontrado: ${sId}.`);
+      continue;
+    }
+
+    // Identify slug based on source code or id
+    const rawSourceSlug = (source.code || source.id)
+      .toLowerCase()
+      .replace(/^form-/, '')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-');
+
+    // Create unique ID and Code guaranteed distinct across forms and timestamps
+    const uniqueId = `form-${baseSlug}-${rawSourceSlug}-${Date.now()}-${idx + 1}-${Math.random().toString(36).substring(2, 6)}`;
+    const uniqueCode = `${cleanCode}-${(source.code || rawSourceSlug).toUpperCase()}`;
+
+    // Deep copy fields
+    const clonedFields = JSON.parse(JSON.stringify(source.fields));
+
+    // Update custom puestos if configured and form has a puesto field
+    if (cleanPuestos.length > 0) {
+      const puestoField = clonedFields.find(
+        (f: any) => f.id === 'puesto' || f.id === 'agrupacion_puestos'
+      );
+      if (puestoField) {
+        puestoField.options = cleanPuestos.map((pName, pIdx) => {
+          const matchNum = pName.match(/^(\d+)\.\s*(.+)$/);
+          const val = matchNum ? matchNum[1] : String(pIdx + 1);
+          const lbl = matchNum ? pName : `${pIdx + 1}. ${pName}`;
+          return {
+            id: `p_${val}`,
+            value: val,
+            label: lbl,
+          };
+        });
+      }
+    }
+
+    const cloned: FormSchema = {
+      id: uniqueId,
+      title: `${source.title} (${cleanComp})`,
+      code: uniqueCode,
+      company: cleanComp,
+      description: `Formulario exclusivo adaptado para la evaluación ${cleanCode} de ${cleanComp}. Basado en la plantilla maestra "${source.title}".`,
+      isTemplate: false,
+      category: source.category,
+      fields: clonedFields,
+      createdAt: nowEc,
+      updatedAt: nowEc,
+    };
+
+    // Add to in-memory db forms
+    db.forms.unshift(cloned);
+    clonedList.push(cloned);
+  }
+
+  if (clonedList.length > 0) {
+    await writeToDiskOrBlob(db);
+  }
+
+  return clonedList;
+}
+
+export async function cloneFormForCampaign(
+  sourceFormId: string,
+  campaign: { code: string; title: string; company: string; puestos?: string[] }
+): Promise<FormSchema> {
+  const clonedForms = await cloneFormsForCampaignBatch([sourceFormId], campaign);
+  if (!clonedForms || clonedForms.length === 0) {
+    throw new Error(`Formulario origen no encontrado para clonar: ${sourceFormId}`);
+  }
+  return clonedForms[0];
 }
 
 export async function duplicateForm(
