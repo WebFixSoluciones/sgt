@@ -376,6 +376,42 @@ export async function getFormsForCampaign(campaign: EvaluationCampaign): Promise
     .filter((f): f is FormSchema => Boolean(f));
 }
 
+export async function updateCampaign(
+  code: string,
+  updates: {
+    title?: string;
+    company?: string;
+    expectedParticipants?: number;
+    nextEvaluationCode?: string;
+    status?: 'active' | 'inactive';
+  }
+): Promise<EvaluationCampaign | null> {
+  const db = await getDatabase();
+  const index = db.campaigns.findIndex((c) => c.code.toUpperCase() === code.trim().toUpperCase());
+  if (index < 0) return null;
+
+  const current = db.campaigns[index];
+  const updated: EvaluationCampaign = {
+    ...current,
+    title: updates.title !== undefined ? updates.title.trim() : current.title,
+    company: updates.company !== undefined ? updates.company.trim() : current.company,
+    expectedParticipants:
+      updates.expectedParticipants !== undefined
+        ? Number(updates.expectedParticipants)
+        : current.expectedParticipants,
+    nextEvaluationCode:
+      updates.nextEvaluationCode !== undefined
+        ? updates.nextEvaluationCode.trim().toUpperCase()
+        : current.nextEvaluationCode,
+    status: updates.status !== undefined ? updates.status : current.status,
+    updatedAt: getEcuadorISOString(),
+  };
+
+  db.campaigns[index] = updated;
+  await writeToDiskOrBlob(db);
+  return updated;
+}
+
 export async function toggleCampaignStatus(code: string): Promise<EvaluationCampaign | null> {
   const db = await getDatabase();
   const campaign = db.campaigns.find((c) => c.code.toUpperCase() === code.trim().toUpperCase());

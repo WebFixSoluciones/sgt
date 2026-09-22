@@ -25,6 +25,7 @@ import { EvaluationCampaign, FormSchema } from '@/lib/types';
 import { formatEcuadorDateTime } from '@/lib/date-utils';
 import AdminEvaluationWizard from '@/components/admin/AdminEvaluationWizard';
 import EvaluationBackupModal from '@/components/admin/EvaluationBackupModal';
+import EditEvaluationModal from '@/components/admin/EditEvaluationModal';
 
 export default function AdminEvaluacionesPage() {
   const searchParams = useSearchParams();
@@ -36,6 +37,13 @@ export default function AdminEvaluacionesPage() {
   const [filterTab, setFilterTab] = useState<'all' | 'active' | 'inactive' | 'trash'>(initialTab);
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Edit Evaluation Modal state
+  const [editingCampaign, setEditingCampaign] = useState<EvaluationCampaign | null>(null);
+
+  const handleEditSuccess = (updated: EvaluationCampaign) => {
+    setCampaigns((prev) => prev.map((c) => (c.code === updated.code ? updated : c)));
+  };
 
   // Wizard state
   const [wizardOpen, setWizardOpen] = useState(searchParams.get('crear') === '1');
@@ -446,18 +454,29 @@ export default function AdminEvaluacionesPage() {
                       {/* Título & Empresa */}
                       <td className="py-4 px-5">
                         <div>
-                          {isTrashItem ? (
-                            <span className="font-bold text-slate-700 text-xs sm:text-sm">
-                              {camp.title}
-                            </span>
-                          ) : (
-                            <Link
-                              href={`/admin/resultados?code=${camp.code}`}
-                              className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors text-xs sm:text-sm hover:underline"
-                            >
-                              {camp.title}
-                            </Link>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {isTrashItem ? (
+                              <span className="font-bold text-slate-700 text-xs sm:text-sm">
+                                {camp.title}
+                              </span>
+                            ) : (
+                              <Link
+                                href={`/admin/resultados?code=${camp.code}`}
+                                className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors text-xs sm:text-sm hover:underline"
+                              >
+                                {camp.title}
+                              </Link>
+                            )}
+                            {!isTrashItem && (
+                              <button
+                                onClick={() => setEditingCampaign(camp)}
+                                title="Editar nombre o datos de la evaluación"
+                                className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all shrink-0"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-0.5">
                             <Building2 className="w-3.5 h-3.5 text-slate-400" />
                             <span>{camp.company}</span>
@@ -596,6 +615,14 @@ export default function AdminEvaluacionesPage() {
                             </Link>
 
                             <button
+                              onClick={() => setEditingCampaign(camp)}
+                              title="Editar nombre y datos de la evaluación"
+                              className="p-1.5 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors border border-transparent hover:border-blue-200"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+
+                            <button
                               onClick={() => handleOpenBackupModal(camp, camp.submissionsCount > 0 ? 'limpiar' : 'restaurar')}
                               title="Limpiar entradas (con seguro) o Restaurar Respaldo"
                               className="p-1.5 hover:bg-amber-50 text-slate-400 hover:text-amber-700 rounded-lg transition-colors border border-transparent hover:border-amber-200"
@@ -651,6 +678,15 @@ export default function AdminEvaluacionesPage() {
         campaign={backupModalCampaign}
         initialTab={backupModalTab}
         onSuccess={handleBackupSuccess}
+      />
+
+      {/* Edit Evaluation Modal */}
+      <EditEvaluationModal
+        isOpen={Boolean(editingCampaign)}
+        onClose={() => setEditingCampaign(null)}
+        campaign={editingCampaign}
+        existingCampaigns={campaigns}
+        onSuccess={handleEditSuccess}
       />
     </div>
   );

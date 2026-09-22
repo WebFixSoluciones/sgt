@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getCampaigns,
   saveCampaign,
+  updateCampaign,
   toggleCampaignStatus,
   trashCampaign,
   restoreCampaign,
@@ -126,6 +127,27 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Código de evaluación requerido' },
         { status: 400, headers: NO_CACHE_HEADERS }
+      );
+    }
+
+    if (action === 'update' || (!action && (body.title || body.company))) {
+      const { title, company, expectedParticipants, nextEvaluationCode, status } = body;
+      const updated = await updateCampaign(code, {
+        title,
+        company,
+        expectedParticipants,
+        nextEvaluationCode,
+        status,
+      });
+      if (!updated) {
+        return NextResponse.json(
+          { success: false, error: 'Evaluación no encontrada' },
+          { status: 404, headers: NO_CACHE_HEADERS }
+        );
+      }
+      return NextResponse.json(
+        { success: true, data: updated },
+        { headers: NO_CACHE_HEADERS }
       );
     }
 
