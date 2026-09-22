@@ -13,7 +13,6 @@ import {
   Users,
   ChevronDown,
   Search,
-  ArrowRight,
   ClipboardList,
   Check,
 } from 'lucide-react';
@@ -431,30 +430,6 @@ export default function AdminResultadosPage() {
           </div>
         )}
 
-        {/* CURRENT FORM TITLE BANNER (COMPACT) */}
-        <div className="p-3 px-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-4">
-          <div>
-            <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
-              Cuestionario Analizado
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 mt-0.5">
-              {currentForm?.title || 'Formulario'}
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {currentForm?.description || 'Escala de baremos y niveles de riesgo calculados para esta evaluación.'}
-            </p>
-          </div>
-
-          <div className="print:hidden shrink-0">
-            <Link
-              href={`/admin/formularios/${currentForm?.id}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold shadow-2xs transition-colors"
-            >
-              <span>Editar Formulario</span>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-            </Link>
-          </div>
-        </div>
 
         {/* ========================================================================= */}
         {/* 3. VISUAL RISK LEVEL: FILAS CONTINUAS SIN CARDS (MISMA LÍNEA) */}
