@@ -618,6 +618,31 @@ export async function resetSubmission(evaluationCode: string, workerCode: string
   return null;
 }
 
+export async function deleteSubmission(evaluationCode: string, workerCode: string): Promise<boolean> {
+  const db = await getDatabase();
+  const normEval = evaluationCode.trim().toUpperCase();
+  const normWorker = workerCode.trim().toUpperCase();
+
+  const initialCount = db.submissions.length;
+  db.submissions = db.submissions.filter(
+    (s) => !(s.evaluationCode.toUpperCase() === normEval && s.workerCode.toUpperCase() === normWorker)
+  );
+
+  const deleted = db.submissions.length < initialCount;
+  if (deleted) {
+    const campaign = db.campaigns.find((c) => c.code.toUpperCase() === normEval);
+    if (campaign) {
+      const completedCount = db.submissions.filter(
+        (s) => s.evaluationCode.toUpperCase() === normEval && s.status === 'completed'
+      ).length;
+      campaign.submissionsCount = completedCount;
+      campaign.updatedAt = getEcuadorISOString();
+    }
+    await writeToDiskOrBlob(db);
+  }
+  return deleted;
+}
+
 export async function clearCampaignSubmissions(
   code: string
 ): Promise<{ deletedCount: number; campaign: EvaluationCampaign | null }> {

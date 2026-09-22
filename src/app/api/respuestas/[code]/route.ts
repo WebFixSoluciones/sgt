@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCampaignByCode, getFormById, getSubmissions, getFormsForCampaign } from '@/lib/storage';
+import {
+  getCampaignByCode,
+  getFormById,
+  getSubmissions,
+  getFormsForCampaign,
+  deleteSubmission,
+} from '@/lib/storage';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -38,6 +44,40 @@ export async function GET(
           forms,
           submissions,
         },
+      },
+      { headers: NO_CACHE_HEADERS }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500, headers: NO_CACHE_HEADERS }
+    );
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { code: string } }
+) {
+  try {
+    const code = params.code;
+    const body = await req.json().catch(() => ({}));
+    const workerCode = body.workerCode || req.nextUrl.searchParams.get('workerCode');
+
+    if (!workerCode) {
+      return NextResponse.json(
+        { success: false, error: 'Código de trabajador requerido para eliminar' },
+        { status: 400, headers: NO_CACHE_HEADERS }
+      );
+    }
+
+    const deleted = await deleteSubmission(code, workerCode);
+    return NextResponse.json(
+      {
+        success: deleted,
+        message: deleted
+          ? `La entrada del trabajador ${workerCode} fue eliminada correctamente.`
+          : 'Entrada no encontrada.',
       },
       { headers: NO_CACHE_HEADERS }
     );
