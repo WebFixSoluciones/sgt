@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema, WorkerSubmission } from '@/lib/types';
 import { formatEcuadorDateTime } from '@/lib/date-utils';
+import { resolvePuestoLabel } from '@/lib/export-excel';
 import EvaluationBackupModal from '@/components/admin/EvaluationBackupModal';
 import Portal from '@/components/common/Portal';
 
@@ -87,18 +88,11 @@ export default function RespuestasPage() {
 
   // Helper to lookup position/puesto human-readable label
   const getPuestoLabel = (val: string | number | undefined) => {
-    if (!val || val === '-') return 'No especificado';
-    const strVal = String(val).trim();
-    const puestoField = form?.fields?.find(
-      (f) => f.id === 'puesto' || f.id === 'agrupacion_puestos'
+    return resolvePuestoLabel(
+      { answers: { puesto: val } } as any,
+      form ? [form] : [],
+      campaign?.puestos
     );
-    if (puestoField && puestoField.options) {
-      const opt = puestoField.options.find(
-        (o) => String(o.value).trim() === strVal || o.label.toLowerCase() === strVal.toLowerCase()
-      );
-      if (opt) return opt.label;
-    }
-    return `Código ${strVal}`;
   };
 
   // Total question fields (excluding page breaks)

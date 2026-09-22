@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, title, company, formId, formIds, expectedParticipants, groupId, nextEvaluationCode, isolateForms = true } = body;
+    const { code, title, company, formId, formIds, expectedParticipants, groupId, nextEvaluationCode, isolateForms = true, puestos } = body;
 
     const resolvedFormIds: string[] = Array.isArray(formIds) && formIds.length > 0
       ? formIds
@@ -58,6 +58,9 @@ export async function POST(req: NextRequest) {
     const cleanTitle = title.trim();
     const cleanCompany = company.trim();
     const nowEc = getEcuadorISOString();
+    const cleanPuestos: string[] = Array.isArray(puestos)
+      ? puestos.map((p: any) => String(p).trim()).filter(Boolean)
+      : [];
 
     // Auto-clone forms so each company evaluation has its own isolated form instance
     const campaignFormIds: string[] = [];
@@ -71,6 +74,28 @@ export async function POST(req: NextRequest) {
             title: cleanTitle,
             company: cleanCompany,
           });
+
+          // If custom puestos were provided, update the cloned form's puesto options
+          if (cleanPuestos.length > 0) {
+            const puestoField = cloned.fields.find(
+              (f) => f.id === 'puesto' || f.id === 'agrupacion_puestos'
+            );
+            if (puestoField) {
+              puestoField.options = cleanPuestos.map((pName, pIdx) => {
+                const matchNum = pName.match(/^(\d+)\.\s*(.+)$/);
+                const val = matchNum ? matchNum[1] : String(pIdx + 1);
+                const lbl = matchNum ? pName : `${pIdx + 1}. ${pName}`;
+                return {
+                  id: `p_${val}`,
+                  value: val,
+                  label: lbl,
+                };
+              });
+              const { saveForm } = await import('@/lib/storage');
+              await saveForm(cloned);
+            }
+          }
+
           campaignFormIds.push(cloned.id);
         } else {
           campaignFormIds.push(fId);
@@ -91,6 +116,7 @@ export async function POST(req: NextRequest) {
       status: 'active',
       groupId: groupId || undefined,
       nextEvaluationCode: nextEvaluationCode || undefined,
+      puestos: cleanPuestos.length > 0 ? cleanPuestos : undefined,
       visits: 0,
       submissionsCount: 0,
       createdAt: nowEc,
@@ -131,13 +157,14 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (action === 'update' || (!action && (body.title || body.company))) {
-      const { title, company, expectedParticipants, nextEvaluationCode, status } = body;
+      const { title, company, expectedParticipants, nextEvaluationCode, status, puestos } = body;
       const updated = await updateCampaign(code, {
         title,
         company,
         expectedParticipants,
         nextEvaluationCode,
         status,
+        puestos: Array.isArray(puestos) ? puestos.map((p: any) => String(p).trim()).filter(Boolean) : undefined,
       });
       if (!updated) {
         return NextResponse.json(

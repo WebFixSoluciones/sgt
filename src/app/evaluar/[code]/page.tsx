@@ -106,7 +106,30 @@ export default function WorkerEvaluationPage() {
       fields: [],
     };
 
-    for (const field of activeForm.fields) {
+    // If campaign has configured puestos, inject into puesto / agrupacion_puestos field options
+    const effectiveFields = activeForm.fields.map((f) => {
+      if ((f.id === 'puesto' || f.id === 'agrupacion_puestos') && campaign?.puestos && campaign.puestos.length > 0) {
+        return {
+          ...f,
+          options: campaign.puestos.map((pName, pIdx) => {
+            const matchNum = pName.match(/^(\d+)\.\s*(.+)$/);
+            const val = matchNum ? matchNum[1] : String(pIdx + 1);
+            const lbl = matchNum ? pName : `${pIdx + 1}. ${pName}`;
+            return {
+              id: `p_${val}`,
+              value: val,
+              label: lbl,
+            };
+          }),
+        };
+      }
+      return f;
+    });
+
+    const isDemographicField = (id: string) =>
+      ['puesto', 'agrupacion_puestos', 'horario', 'horarios', 'antiguedad'].includes(id.toLowerCase());
+
+    for (const field of effectiveFields) {
       if (field.type === 'page_break') {
         if (currentSec.fields.length > 0) {
           secList.push(currentSec);
@@ -116,6 +139,16 @@ export default function WorkerEvaluationPage() {
           fields: [],
         };
       } else {
+        // If we are on form 2, 3... AND this demographic field was already answered, don't ask again!
+        const alreadyAnswered =
+          answers[field.id] !== undefined &&
+          answers[field.id] !== null &&
+          String(answers[field.id]).trim() !== '';
+
+        if (activeFormIndex > 0 && isDemographicField(field.id) && alreadyAnswered) {
+          continue; // Automatically carried over from Form 1
+        }
+
         currentSec.fields.push(field);
       }
     }
@@ -125,7 +158,37 @@ export default function WorkerEvaluationPage() {
     }
 
     return secList;
-  }, [activeForm]);
+  }, [activeForm, campaign, activeFormIndex, answers]);
+
+  // Lookup readable label for the selected puesto
+  const selectedPuestoLabel = useMemo(() => {
+    const raw = answers['puesto'] || answers['agrupacion_puestos'];
+    if (raw === undefined || raw === null || raw === '' || raw === '-') return null;
+    const strVal = String(raw).trim();
+
+    if (campaign?.puestos && campaign.puestos.length > 0) {
+      const num = parseInt(strVal, 10);
+      if (!isNaN(num) && campaign.puestos[num - 1]) {
+        return campaign.puestos[num - 1];
+      }
+      const found = campaign.puestos.find(
+        (p, idx) => p === strVal || String(idx + 1) === strVal || p.toLowerCase().includes(strVal.toLowerCase())
+      );
+      if (found) return found;
+    }
+
+    for (const f of formsList) {
+      const pField = f.fields?.find((field) => field.id === 'puesto' || field.id === 'agrupacion_puestos');
+      if (pField && pField.options) {
+        const opt = pField.options.find(
+          (o) => String(o.value).trim() === strVal || o.label.toLowerCase() === strVal.toLowerCase()
+        );
+        if (opt) return opt.label;
+      }
+    }
+
+    return `Puesto ${strVal}`;
+  }, [answers, campaign, formsList]);
 
   // 3. Worker Check / Login
   const handleWorkerCheck = async (targetCode?: string) => {
@@ -136,6 +199,11 @@ export default function WorkerEvaluationPage() {
     }
     setCheckError(null);
 
+    // Read URL query params for carried-over demographics from chained evaluation
+    const urlPuesto = searchParams.get('puesto');
+    const urlHorario = searchParams.get('horario');
+    const urlAntiguedad = searchParams.get('antiguedad');
+
     try {
       setIsSubmittingCheck(true);
       const res = await fetch('/api/sesiones', {
@@ -145,6 +213,9 @@ export default function WorkerEvaluationPage() {
           action: 'check',
           evaluationCode: code,
           workerCode: codeToTest,
+          puesto: urlPuesto || undefined,
+          horario: urlHorario || undefined,
+          antiguedad: urlAntiguedad || undefined,
         }),
       });
 
@@ -162,9 +233,16 @@ export default function WorkerEvaluationPage() {
         return;
       }
 
+      const mergedAnswers = {
+        ...(urlPuesto ? { puesto: urlPuesto } : {}),
+        ...(urlHorario ? { horario: urlHorario } : {}),
+        ...(urlAntiguedad ? { antiguedad: urlAntiguedad } : {}),
+        ...(data.answers || {}),
+      };
+
       // If worker in progress with answers -> Prompt with exact question number
       if (data.canResume) {
-        setAnswers(data.answers || {});
+        setAnswers(mergedAnswers);
         setResumeData({
           questionNumber: data.questionNumber || 1,
           answeredCount: data.answeredCount || 0,
@@ -176,7 +254,7 @@ export default function WorkerEvaluationPage() {
         });
         setShowResumeModal(true);
       } else {
-        setAnswers(data.answers || {});
+        setAnswers(mergedAnswers);
         setCurrentSectionIndex(0);
         setIsLoggedIn(true);
       }
@@ -471,8 +549,13 @@ export default function WorkerEvaluationPage() {
         setTransitionMsg(
           `¡Evaluación completada! Continuando automáticamente con la siguiente evaluación de su grupo...`
         );
+        const pVal = encodeURIComponent(String(answers['puesto'] || answers['agrupacion_puestos'] || ''));
+        const hVal = encodeURIComponent(String(answers['horario'] || answers['horarios'] || ''));
+        const aVal = encodeURIComponent(String(answers['antiguedad'] || ''));
         setTimeout(() => {
-          router.push(`/evaluar/${data.nextEvaluationCode}?worker=${encodeURIComponent(workerCode)}`);
+          router.push(
+            `/evaluar/${data.nextEvaluationCode}?worker=${encodeURIComponent(workerCode)}&puesto=${pVal}&horario=${hVal}&antiguedad=${aVal}`
+          );
         }, 2000);
       } else {
         setSurveyCompletedSuccess(true);
@@ -743,6 +826,12 @@ export default function WorkerEvaluationPage() {
                 <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate">
                   {currentSection?.title || 'Evaluación'}
                 </h1>
+                {selectedPuestoLabel && (
+                  <span className="text-[11px] text-emerald-700 font-semibold truncate flex items-center gap-1 mt-0.5">
+                    <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                    <span>Puesto asignado: <strong className="font-bold">{selectedPuestoLabel}</strong></span>
+                  </span>
+                )}
               </div>
             </div>
 

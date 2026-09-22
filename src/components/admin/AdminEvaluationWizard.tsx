@@ -23,6 +23,7 @@ import {
   Edit,
   ChevronDown,
   RotateCcw,
+  Briefcase,
 } from 'lucide-react';
 import type { EvaluationCampaign, FormSchema } from '@/lib/types';
 
@@ -34,6 +35,17 @@ interface AdminEvaluationWizardProps {
   forms: FormSchema[];
   initialData?: Partial<EvaluationCampaign> | null;
 }
+
+const DEFAULT_PUESTOS = [
+  '1. DIRECCIÓN / GERENCIA',
+  '2. ADMINISTRACIÓN / FINANZAS',
+  '3. COMERCIAL / VENTAS',
+  '4. COORDINADORES / SUPERVISORES',
+  '5. OPERACIONES / PLANTA',
+  '6. LOGÍSTICA / BODEGA',
+  '7. SERVICIO TÉCNICO / MANTENIMIENTO',
+  '28. PRODUCCIÓN LÍNEA CONTINUA',
+];
 
 export default function AdminEvaluationWizard({
   isOpen,
@@ -53,6 +65,8 @@ export default function AdminEvaluationWizard({
   const [title, setTitle] = useState('');
   const [code, setCode] = useState('');
   const [expectedParticipants, setExpectedParticipants] = useState('100');
+  const [puestosText, setPuestosText] = useState(DEFAULT_PUESTOS.join('\n'));
+  const [showPuestosCustomizer, setShowPuestosCustomizer] = useState(false);
   
   // Chaining configuration
   const [isChained, setIsChained] = useState(false);
@@ -122,6 +136,11 @@ export default function AdminEvaluationWizard({
         setTitle(initialData.title || '');
         setCode(initialData.code || '');
         setExpectedParticipants(String(initialData.expectedParticipants || 100));
+        if (initialData.puestos && initialData.puestos.length > 0) {
+          setPuestosText(initialData.puestos.join('\n'));
+        } else {
+          setPuestosText(DEFAULT_PUESTOS.join('\n'));
+        }
         if (initialData.nextEvaluationCode) {
           setIsChained(true);
           setNextEvaluationCode(initialData.nextEvaluationCode);
@@ -137,6 +156,8 @@ export default function AdminEvaluationWizard({
         setTitle('');
         setCode('');
         setExpectedParticipants('100');
+        setPuestosText(DEFAULT_PUESTOS.join('\n'));
+        setShowPuestosCustomizer(false);
         setIsChained(false);
         setNextEvaluationCode('');
       }
@@ -239,6 +260,11 @@ export default function AdminEvaluationWizard({
     setIsSubmitting(true);
 
     try {
+      const cleanPuestos = puestosText
+        .split('\n')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
       const payload = {
         title: title.trim(),
         code: code.trim().toUpperCase(),
@@ -247,6 +273,7 @@ export default function AdminEvaluationWizard({
         company: company.trim(),
         expectedParticipants: parseInt(expectedParticipants) || 100,
         nextEvaluationCode: isChained ? nextEvaluationCode.trim().toUpperCase() : '',
+        puestos: cleanPuestos.length > 0 ? cleanPuestos : undefined,
         status: 'active',
       };
 
@@ -657,6 +684,55 @@ export default function AdminEvaluationWizard({
                     />
                   </div>
                 </div>
+
+                {/* Puestos de Trabajo de la Empresa */}
+                <div className="pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Briefcase className="w-3.5 h-3.5 text-blue-600" />
+                      Puestos de Trabajo de la Empresa
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowPuestosCustomizer(!showPuestosCustomizer)}
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+                    >
+                      {showPuestosCustomizer ? 'Reducir vista' : 'Personalizar puestos'}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed mb-2.5">
+                    El trabajador seleccionará su puesto una sola vez y se asignará automáticamente a todos los formularios conectados y evaluaciones en cadena.
+                  </p>
+
+                  <div className="space-y-2">
+                    <textarea
+                      rows={showPuestosCustomizer ? 7 : 3}
+                      value={puestosText}
+                      onChange={(e) => setPuestosText(e.target.value)}
+                      placeholder="Ingrese un puesto por línea..."
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors font-mono leading-relaxed resize-y bg-slate-50/50"
+                    />
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span>
+                        {
+                          puestosText
+                            .split('\n')
+                            .map((p) => p.trim())
+                            .filter(Boolean).length
+                        }{' '}
+                        puestos configurados (un puesto por línea)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPuestosText(DEFAULT_PUESTOS.join('\n'))}
+                        className="text-blue-600 hover:underline transition-colors font-medium"
+                      >
+                        Restablecer estándar
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -909,6 +985,24 @@ export default function AdminEvaluationWizard({
                           Siguiente COD: {selectedNextCampaign.code}
                         </div>
                       )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Puestos de Trabajo */}
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                      <Briefcase className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-400 font-semibold uppercase">Puestos de Trabajo</div>
+                      <div className="text-xs sm:text-sm font-bold text-slate-900">
+                        {puestosText.split('\n').map((p) => p.trim()).filter(Boolean).length} puestos configurados
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        Asignación única automática para todos los formularios
+                      </div>
                     </div>
                   </div>
                 </div>

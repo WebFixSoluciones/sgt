@@ -135,18 +135,49 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // New worker session
+      // New worker session: Check if worker already has demographic answers (puesto, horario, antiguedad)
+      // from URL params, body, or from a prior evaluation in the same company/group
+      const inheritedAnswers: Record<string, string | number> = {};
+
+      if (body.puesto) inheritedAnswers.puesto = String(body.puesto);
+      if (body.horario) inheritedAnswers.horario = String(body.horario);
+      if (body.antiguedad) inheritedAnswers.antiguedad = String(body.antiguedad);
+
+      if (!inheritedAnswers.puesto) {
+        try {
+          const { getDatabase } = await import('@/lib/storage');
+          const db = await getDatabase();
+          const cleanWCode = workerCode.trim().toUpperCase();
+          const priorSub = db.submissions.find(
+            (s) =>
+              s.workerCode.trim().toUpperCase() === cleanWCode &&
+              (s.answers?.['puesto'] || s.answers?.['agrupacion_puestos'])
+          );
+          if (priorSub && priorSub.answers) {
+            if (priorSub.answers['puesto'] || priorSub.answers['agrupacion_puestos']) {
+              inheritedAnswers.puesto = priorSub.answers['puesto'] || priorSub.answers['agrupacion_puestos'];
+            }
+            if (priorSub.answers['horario'] || priorSub.answers['horarios']) {
+              inheritedAnswers.horario = priorSub.answers['horario'] || priorSub.answers['horarios'];
+            }
+            if (priorSub.answers['antiguedad']) {
+              inheritedAnswers.antiguedad = priorSub.answers['antiguedad'];
+            }
+          }
+        } catch (e) {}
+      }
+
       const allQuestions = form.fields.filter((f) => f.type !== 'page_break');
       return NextResponse.json({
         success: true,
         status: 'new',
         canResume: false,
-        answeredCount: 0,
+        answeredCount: Object.keys(inheritedAnswers).length,
         totalQuestions: allQuestions.length,
         questionNumber: 1,
         currentFieldIndex: 0,
         currentSectionTitle: '',
-        answers: {},
+        answers: inheritedAnswers,
         form,
         forms,
         campaign,

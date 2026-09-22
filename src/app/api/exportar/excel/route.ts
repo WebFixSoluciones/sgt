@@ -25,18 +25,18 @@ export async function GET(req: NextRequest) {
       if (!form) {
         return NextResponse.json({ success: false, error: 'Formulario no encontrado' }, { status: 404 });
       }
-      excelBuffer = generateEvaluationExcel(form, submissions);
+      excelBuffer = generateEvaluationExcel(form, submissions, campaign);
     } else {
       const forms = await getFormsForCampaign(campaign);
       if (forms.length > 0) {
-        excelBuffer = generateMultiFormEvaluationExcel(forms, submissions, campaign.title);
+        excelBuffer = generateMultiFormEvaluationExcel(forms, submissions, campaign);
       } else {
         const targetFormId = campaign.formId || (campaign.formIds && campaign.formIds[0]) || '';
         const form = targetFormId ? await getFormById(targetFormId) : null;
         if (!form) {
           return NextResponse.json({ success: false, error: 'Formulario vinculado no encontrado' }, { status: 404 });
         }
-        excelBuffer = generateEvaluationExcel(form, submissions);
+        excelBuffer = generateEvaluationExcel(form, submissions, campaign);
       }
     }
 

@@ -59,6 +59,7 @@ export interface EvaluationCampaign {
   nextEvaluationCode?: string; // Auto-transition to next survey
   visits: number;
   submissionsCount: number;
+  puestos?: string[]; // Job positions configured for this evaluation/company
   createdAt: string;
   updatedAt: string;
 }

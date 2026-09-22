@@ -354,6 +354,7 @@ export async function saveCampaign(campaign: EvaluationCampaign): Promise<Evalua
     ...campaign,
     formIds,
     formId: formIds[0] || campaign.formId || '',
+    puestos: Array.isArray(campaign.puestos) ? campaign.puestos : (campaign.puestos || []),
   };
   const index = db.campaigns.findIndex((c) => c.id === normalizedCampaign.id || c.code === normalizedCampaign.code);
   if (index >= 0) {
@@ -384,6 +385,7 @@ export async function updateCampaign(
     expectedParticipants?: number;
     nextEvaluationCode?: string;
     status?: 'active' | 'inactive';
+    puestos?: string[];
   }
 ): Promise<EvaluationCampaign | null> {
   const db = await getDatabase();
@@ -404,6 +406,7 @@ export async function updateCampaign(
         ? updates.nextEvaluationCode.trim().toUpperCase()
         : current.nextEvaluationCode,
     status: updates.status !== undefined ? updates.status : current.status,
+    puestos: updates.puestos !== undefined ? updates.puestos : current.puestos,
     updatedAt: getEcuadorISOString(),
   };
 
