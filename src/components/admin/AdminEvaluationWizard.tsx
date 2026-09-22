@@ -116,6 +116,17 @@ export default function AdminEvaluationWizard({
     return selectedForms.reduce((acc, f) => acc + (f.fields?.filter((field) => field.type !== 'page_break').length || 0), 0);
   }, [selectedForms]);
 
+  // Sorted forms: Master templates first, then custom forms
+  const sortedForms = useMemo(() => {
+    return [...forms].sort((a, b) => {
+      const aIsMaster = a.isTemplate !== false && (!a.company || a.company.trim() === '');
+      const bIsMaster = b.isTemplate !== false && (!b.company || b.company.trim() === '');
+      if (aIsMaster && !bIsMaster) return -1;
+      if (!aIsMaster && bIsMaster) return 1;
+      return 0;
+    });
+  }, [forms]);
+
   // Primary selected form
   const selectedForm = selectedForms[0] || forms[0];
 
@@ -207,17 +218,17 @@ export default function AdminEvaluationWizard({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fade-in-slide">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-4xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6 animate-fade-in-slide">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-4xl overflow-hidden flex flex-col max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2.5rem)] my-auto">
         
         {/* TOP HEADER: Clean Stepper & Progress */}
-        <div className="px-6 py-4 border-b border-slate-100 bg-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-              <Sparkles className="w-5 h-5" />
+        <div className="px-5 sm:px-6 py-3 sm:py-3.5 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-sm sm:text-base font-bold text-slate-900">
                 Asistente de Creación de Evaluación
               </h2>
             </div>
@@ -225,7 +236,7 @@ export default function AdminEvaluationWizard({
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+            className="p-1.5 sm:p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
             title="Cerrar asistente"
           >
             <X className="w-5 h-5" />
@@ -234,7 +245,7 @@ export default function AdminEvaluationWizard({
 
         {/* STEP PROGRESS BAR */}
         {!createdCampaign && (
-          <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-3">
+          <div className="bg-slate-50/80 border-b border-slate-100 px-4 sm:px-6 py-2 sm:py-2.5 shrink-0">
             <div className="flex items-center justify-between max-w-2xl mx-auto">
               {/* Step 1 */}
               <div
@@ -343,9 +354,9 @@ export default function AdminEvaluationWizard({
         )}
 
         {/* STEP CONTENT BODY (SCROLLABLE) */}
-        <div className="p-6 overflow-y-auto flex-1 bg-[#fcfdfe]">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 bg-[#fcfdfe]">
           {errorMsg && (
-            <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center gap-2.5">
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center gap-2.5">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -355,21 +366,24 @@ export default function AdminEvaluationWizard({
           {/* STEP 1: SELECCIÓN DE PLANTILLAS O FORMULARIOS QUE COMPONEN LA EVALUACIÓN */}
           {/* ========================================================================= */}
           {currentStep === 1 && !createdCampaign && (
-            <div className="space-y-4 animate-fade-in-slide">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-slate-100">
+            <div className="space-y-3.5 animate-fade-in-slide">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
                     Seleccione una plantilla o formulario
                   </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Elige el cuestionario base para esta evaluación.
+                  </p>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg">
-                    {selectedFormIds.length} seleccionado(s) • {totalQuestions} preguntas
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg shrink-0">
+                    {selectedFormIds.length} selecc. • {totalQuestions} preg.
                   </span>
                   <Link
                     href="/admin/formularios/nuevo"
                     onClick={() => onClose()}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-50 text-blue-600 hover:text-blue-700 border border-slate-300 hover:border-blue-400 rounded-lg text-xs font-bold transition-all shadow-xs"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-50 text-blue-600 hover:text-blue-700 border border-slate-300 hover:border-blue-400 rounded-lg text-xs font-bold transition-all shadow-xs shrink-0"
                     title="Crear una nueva plantilla personalizada en el constructor"
                   >
                     <PlusCircle className="w-3.5 h-3.5 text-blue-600" />
@@ -379,18 +393,18 @@ export default function AdminEvaluationWizard({
               </div>
 
               {/* Automatic Isolation Reassurance Banner */}
-              <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl flex items-start gap-3">
-                <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <div className="text-xs text-blue-900 leading-relaxed">
-                  <span className="font-bold">Aislamiento automático e independencia por empresa:</span>
-                  <p className="text-[11px] text-blue-700 mt-0.5">
-                    Al crear la evaluación, el sistema genera automáticamente una copia exclusiva e independiente de este formulario para esta empresa. Podrás personalizar los puestos de trabajo (ej. 10 o 26 grupos), editar preguntas o agregar nuevas sin alterar la plantilla maestra ni otras empresas.
-                  </p>
+              <div className="p-2.5 sm:p-3 bg-blue-50/70 border border-blue-200 rounded-xl flex items-center gap-2.5">
+                <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
+                <div className="text-xs text-blue-900 leading-snug">
+                  <span className="font-bold">Aislamiento automático por empresa: </span>
+                  <span className="text-blue-700 text-[11px]">
+                    El sistema generará una copia exclusiva e independiente para esta evaluación. Podrás personalizar sus puestos (ej. 10 o 26 grupos) y preguntas sin alterar las plantillas maestras ni otras empresas.
+                  </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                {forms.map((form) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
+                {sortedForms.map((form) => {
                   const isSelected = selectedFormIds.includes(form.id);
                   const selectedOrder = selectedFormIds.indexOf(form.id) + 1;
                   const isFPSICO = form.title.toLowerCase().includes('fpsico');
@@ -398,21 +412,22 @@ export default function AdminEvaluationWizard({
                   const isEstres = form.title.toLowerCase().includes('estrés') || form.title.toLowerCase().includes('estres');
                   const isNocturno = form.title.toLowerCase().includes('nocturno');
                   const qCount = form.fields?.filter((f) => f.type !== 'page_break').length || 0;
+                  const isMaster = form.isTemplate !== false && (!form.company || form.company.trim() === '');
 
                   return (
                     <div
                       key={form.id}
                       onClick={() => toggleFormSelection(form.id)}
-                      className={`p-3.5 sm:p-4 rounded-xl border text-left cursor-pointer transition-all relative ${
+                      className={`p-3 rounded-xl border text-left cursor-pointer transition-all relative ${
                         isSelected
                           ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20 shadow-xs'
                           : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <div
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${
                               isFPSICO
                                 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                                 : isLIPS
@@ -424,28 +439,36 @@ export default function AdminEvaluationWizard({
                                 : 'bg-slate-100 text-slate-700 border border-slate-200'
                             }`}
                           >
-                            <FileText className="w-5 h-5" />
+                            <FileText className="w-4 h-4" />
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5">
                               <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
                                 {form.title}
                               </h4>
                               {isSelected && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-600 text-white rounded-md shrink-0">
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 bg-blue-600 text-white rounded-md shrink-0">
                                   #{selectedOrder}
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
                               <span className="font-semibold text-slate-700">
                                 {qCount} preguntas
                               </span>
                               <span>•</span>
                               <span className="flex items-center gap-1 text-slate-600 font-medium">
-                                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                <Clock className="w-3 h-3 text-slate-400" />
                                 {Math.max(5, Math.round(qCount * 0.25))} min
                               </span>
+                              {!isMaster && form.company && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-blue-600 font-semibold truncate max-w-[90px]">
+                                    {form.company}
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -461,28 +484,6 @@ export default function AdminEvaluationWizard({
                     </div>
                   );
                 })}
-
-                {/* Opción de Crear Formulario Nuevo directamente en el constructor */}
-                <Link
-                  href="/admin/formularios/nuevo"
-                  onClick={() => onClose()}
-                  className="p-3.5 sm:p-4 rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50/50 hover:bg-blue-50/30 text-left transition-all flex items-center justify-between gap-3 group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 group-hover:border-blue-300 flex items-center justify-center text-slate-500 group-hover:text-blue-600 shrink-0 transition-colors">
-                      <PlusCircle className="w-5 h-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-blue-700 transition-colors">
-                        Crear Formulario Nuevo
-                      </h4>
-                      <div className="text-xs text-slate-400 group-hover:text-blue-600 transition-colors mt-0.5">
-                        Ir al constructor de preguntas ➔
-                      </div>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all shrink-0" />
-                </Link>
               </div>
             </div>
           )}
@@ -491,14 +492,14 @@ export default function AdminEvaluationWizard({
           {/* STEP 2: DATOS DE LA CAMPAÑA & EMPRESA */}
           {/* ========================================================================= */}
           {currentStep === 2 && !createdCampaign && (
-            <div className="space-y-5 max-w-2xl mx-auto animate-fade-in-slide">
+            <div className="space-y-4 max-w-2xl mx-auto animate-fade-in-slide">
               <div>
                 <h3 className="text-sm font-bold text-slate-900">
                   Paso 2: Información de la Empresa y la Campaña
                 </h3>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4 shadow-xs">
+              <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3.5 shadow-xs">
                 {/* Empresa Destino */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
@@ -575,7 +576,7 @@ export default function AdminEvaluationWizard({
           {/* STEP 3: ORDENAMIENTO & ENCADENAMIENTO DE CIRCUITO */}
           {/* ========================================================================= */}
           {currentStep === 3 && !createdCampaign && (
-            <div className="space-y-5 max-w-2xl mx-auto animate-fade-in-slide">
+            <div className="space-y-4 max-w-2xl mx-auto animate-fade-in-slide">
               <div>
                 <h3 className="text-sm font-bold text-slate-900">
                   Paso 3: Secuencia y Circuito de Encuestas
@@ -583,7 +584,7 @@ export default function AdminEvaluationWizard({
               </div>
 
               {/* Selector de Modo de Circuito */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div
                   onClick={() => {
                     setIsChained(false);
@@ -725,7 +726,7 @@ export default function AdminEvaluationWizard({
           {/* STEP 4: RESUMEN Y CONFIRMACIÓN */}
           {/* ========================================================================= */}
           {currentStep === 4 && !createdCampaign && (
-            <div className="space-y-5 max-w-2xl mx-auto animate-fade-in-slide">
+            <div className="space-y-4 max-w-2xl mx-auto animate-fade-in-slide">
               <div>
                 <h3 className="text-sm font-bold text-slate-900">
                   Paso 4: Resumen y Confirmación de la Evaluación
@@ -911,7 +912,7 @@ export default function AdminEvaluationWizard({
 
         {/* BOTTOM NAVIGATION FOOTER */}
         {!createdCampaign && (
-          <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-between">
+          <div className="px-5 sm:px-6 py-3 sm:py-3.5 border-t border-slate-100 bg-white flex items-center justify-between shrink-0">
             <div>
               {currentStep > 1 && (
                 <button
