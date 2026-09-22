@@ -113,6 +113,26 @@ async function writeToDiskOrBlob(db: DatabaseSchema): Promise<void> {
 export async function getDatabase(): Promise<DatabaseSchema> {
   if (!memDb) {
     memDb = await readFromDiskOrBlob();
+    // Guarantee canonical master templates have isTemplate: true and empty company
+    const MASTER_TEMPLATE_IDS = [
+      'form-fpsico-40',
+      'form-lips-60',
+      'form-estres-laboral',
+      'form-trabajo-nocturno',
+    ];
+    let modified = false;
+    for (const f of memDb.forms) {
+      if (MASTER_TEMPLATE_IDS.includes(f.id)) {
+        if (f.company || f.isTemplate !== true) {
+          f.company = '';
+          f.isTemplate = true;
+          modified = true;
+        }
+      }
+    }
+    if (modified) {
+      await writeToDiskOrBlob(memDb);
+    }
   }
   return memDb;
 }

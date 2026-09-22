@@ -52,18 +52,22 @@ export default function AdminFormulariosPage() {
     fetchForms();
   }, []);
 
+  const isMasterForm = (f: FormSchema) => {
+    return Boolean(f.isTemplate) && (!f.company || f.company.trim() === '');
+  };
+
   const masterTemplatesCount = useMemo(() => {
-    return forms.filter((f) => f.isTemplate !== false && (!f.company || f.company === '')).length;
+    return forms.filter(isMasterForm).length;
   }, [forms]);
 
   const companyFormsCount = useMemo(() => {
-    return forms.filter((f) => f.isTemplate === false || (f.company && f.company !== '')).length;
+    return forms.filter((f) => !isMasterForm(f)).length;
   }, [forms]);
 
   const filteredForms = useMemo(() => {
     return forms.filter((f) => {
       // Tab filter
-      const isMaster = f.isTemplate !== false && (!f.company || f.company === '');
+      const isMaster = isMasterForm(f);
       if (activeTab === 'templates' && !isMaster) return false;
       if (activeTab === 'companies' && isMaster) return false;
 
@@ -81,7 +85,7 @@ export default function AdminFormulariosPage() {
   const handleOpenDuplicateModal = (form: FormSchema) => {
     setDuplicatingForm(form);
     setDuplicateTitle(`Copia de ${form.title}`);
-    setDuplicateAsTemplate(form.isTemplate !== false && !form.company);
+    setDuplicateAsTemplate(isMasterForm(form));
     setDuplicateCompany(form.company || '');
     setDuplicateModalOpen(true);
   };
@@ -127,7 +131,7 @@ export default function AdminFormulariosPage() {
 
   // Delete Custom Form
   const handleDeleteCustomForm = async (form: FormSchema) => {
-    if (form.isTemplate) {
+    if (isMasterForm(form)) {
       alert('Las plantillas maestras del sistema no pueden eliminarse.');
       return;
     }
@@ -252,7 +256,7 @@ export default function AdminFormulariosPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredForms.map((form) => {
             const questionCount = form.fields.filter((f) => f.type !== 'page_break').length;
-            const isMaster = form.isTemplate !== false && (!form.company || form.company === '');
+            const isMaster = isMasterForm(form);
 
             return (
               <div
