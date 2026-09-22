@@ -398,7 +398,7 @@ export default function AdminEvaluacionesPage() {
               <thead className="bg-[#f8fafc] text-slate-500 font-semibold uppercase text-[11px] tracking-wider">
                 <tr>
                   <th className="py-3.5 px-5">Estado</th>
-                  <th className="py-3.5 px-5">Evaluación / Empresa</th>
+                  <th className="py-3.5 px-5">Evaluación</th>
                   <th className="py-3.5 px-5">Código de Acceso</th>
                   <th className="py-3.5 px-5">Formularios Asignados & Edición</th>
                   <th className="py-3.5 px-5 text-center">Respuestas</th>
@@ -477,10 +477,6 @@ export default function AdminEvaluacionesPage() {
                               </button>
                             )}
                           </div>
-                          <div className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-0.5">
-                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                            <span>{camp.company}</span>
-                          </div>
                           {isTrashItem && camp.trashedAt && (
                             <div className="text-[10px] text-rose-600 font-medium mt-1">
                               En papelera desde: {formatEcuadorDateTime(camp.trashedAt)}
@@ -543,34 +539,10 @@ export default function AdminEvaluacionesPage() {
                       </td>
 
                       {/* Respuestas */}
-                      <td className="py-4 px-5 text-center">
-                        <div className="font-bold text-slate-900 text-sm">
-                          {camp.submissionsCount || 0}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          de {camp.expectedParticipants || 100} esperados
-                        </div>
-                        {!isTrashItem && (
-                          <div className="mt-1 flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleOpenBackupModal(camp, camp.submissionsCount > 0 ? 'limpiar' : 'restaurar')}
-                              title={camp.submissionsCount > 0 ? "Limpiar a 0 (con respaldo obligatorio)" : "Cargar respaldo (.json)"}
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded transition-colors"
-                            >
-                              {camp.submissionsCount > 0 ? (
-                                <>
-                                  <RotateCcw className="w-2.5 h-2.5 text-amber-600" />
-                                  <span>Limpiar a 0</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Upload className="w-2.5 h-2.5 text-blue-600" />
-                                  <span>Restaurar</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        )}
+                      <td className="py-4 px-5 text-center whitespace-nowrap">
+                        <span className="font-semibold text-slate-800 text-xs sm:text-sm">
+                          {camp.submissionsCount || 0} de {camp.expectedParticipants || 100}
+                        </span>
                       </td>
 
                       {/* Acciones */}
@@ -624,10 +596,10 @@ export default function AdminEvaluacionesPage() {
 
                             <button
                               onClick={() => handleOpenBackupModal(camp, camp.submissionsCount > 0 ? 'limpiar' : 'restaurar')}
-                              title="Limpiar entradas (con seguro) o Restaurar Respaldo"
+                              title={camp.submissionsCount > 0 ? "Limpiar o Restaurar Respaldo" : "Restaurar Respuestas desde Respaldo"}
                               className="p-1.5 hover:bg-amber-50 text-slate-400 hover:text-amber-700 rounded-lg transition-colors border border-transparent hover:border-amber-200"
                             >
-                              <ShieldAlert className="w-4 h-4" />
+                              <RotateCcw className="w-4 h-4" />
                             </button>
 
                             <a
