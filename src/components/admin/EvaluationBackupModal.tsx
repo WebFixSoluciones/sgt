@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ShieldAlert,
   Download,
@@ -85,7 +86,23 @@ export default function EvaluationBackupModal({
     }
   }, [isOpen, initialTab, campaign?.code]);
 
-  if (!isOpen || !campaign) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && campaign) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, campaign]);
+
+  if (!isOpen || !campaign || !mounted) return null;
 
   // Handler: Download Backup (.json)
   const handleDownloadBackup = async () => {
@@ -244,9 +261,9 @@ export default function EvaluationBackupModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in duration-200">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-3">
@@ -623,6 +640,7 @@ export default function EvaluationBackupModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { History, RotateCcw, ArrowRight, HelpCircle } from 'lucide-react';
 
 interface ResumePromptModalProps {
@@ -22,10 +23,20 @@ export default function ResumePromptModal({
   onContinue,
   onReset,
 }: ResumePromptModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const displayQNum = questionNumber || (answeredCount ? answeredCount + 1 : 1);
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+  if (!mounted || typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-2xl text-center space-y-5 animate-in fade-in zoom-in-95 duration-150">
         <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto border border-blue-100 shadow-xs">
           <History className="w-7 h-7" />
@@ -85,6 +96,7 @@ export default function ResumePromptModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

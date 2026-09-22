@@ -30,6 +30,7 @@ import {
 import { EvaluationCampaign, FormSchema, WorkerSubmission } from '@/lib/types';
 import { formatEcuadorDateTime } from '@/lib/date-utils';
 import EvaluationBackupModal from '@/components/admin/EvaluationBackupModal';
+import Portal from '@/components/common/Portal';
 
 export default function RespuestasPage() {
   const params = useParams();
@@ -564,8 +565,9 @@ export default function RespuestasPage() {
 
       {/* 4. MODAL: DETALLE COMPLETO DEL CUESTIONARIO INDIVIDUAL */}
       {selectedSubmission && form && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        <Portal>
+          <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in duration-200">
             {/* Modal Header */}
             <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -699,6 +701,7 @@ export default function RespuestasPage() {
             </div>
           </div>
         </div>
+        </Portal>
       )}
 
       {/* 5. BACKUP, CLEAR & RESTORE MODAL */}

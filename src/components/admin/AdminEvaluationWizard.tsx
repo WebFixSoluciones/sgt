@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
   X,
@@ -59,6 +60,22 @@ export default function AdminEvaluationWizard({
   const [createdCampaign, setCreatedCampaign] = useState<EvaluationCampaign | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   // Prepopulate or initialize
   useEffect(() => {
@@ -155,7 +172,7 @@ export default function AdminEvaluationWizard({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   // Step 1 Validation
   const canProceedStep1 = selectedFormIds.length > 0;
@@ -216,9 +233,9 @@ export default function AdminEvaluationWizard({
     setTimeout(() => setCopiedLink(false), 3000);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6 animate-fade-in-slide">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-4xl overflow-hidden flex flex-col max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2.5rem)] my-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-4xl overflow-hidden flex flex-col max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2.5rem)] my-auto animate-fade-in-slide">
         
         {/* TOP HEADER: Clean Stepper & Progress */}
         <div className="px-5 sm:px-6 py-3 sm:py-3.5 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
@@ -916,6 +933,7 @@ export default function AdminEvaluationWizard({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
