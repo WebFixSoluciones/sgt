@@ -56,7 +56,7 @@ export default function AdminResultadosPage() {
     const fetchCampaigns = async () => {
       try {
         setLoadingCampaigns(true);
-        const res = await fetch('/api/evaluaciones');
+        const res = await fetch(`/api/evaluaciones?t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
         if (data.success && data.data.length > 0) {
           const nonTrash = data.data.filter((c: EvaluationCampaign) => c.status !== 'trash' && !c.isTrash);
@@ -80,7 +80,7 @@ export default function AdminResultadosPage() {
     const fetchEvaluationDetails = async () => {
       try {
         setLoadingData(true);
-        const res = await fetch(`/api/respuestas/${selectedCode}`);
+        const res = await fetch(`/api/respuestas/${selectedCode}?t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
         if (data.success) {
           setCampaign(data.data.campaign);

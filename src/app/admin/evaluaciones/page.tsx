@@ -59,16 +59,18 @@ export default function AdminEvaluacionesPage() {
   const fetchCampaignsData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/evaluaciones');
-      const data = await res.json();
-      if (data.success) {
-        setCampaigns(data.data);
-      }
+      const [resCamps, resForms] = await Promise.all([
+        fetch(`/api/evaluaciones?t=${Date.now()}`, { cache: 'no-store' }),
+        fetch(`/api/formularios?t=${Date.now()}`, { cache: 'no-store' }),
+      ]);
+      const dataCamps = await resCamps.json();
+      const formsData = await resForms.json();
 
-      const formsRes = await fetch('/api/formularios');
-      const formsData = await formsRes.json();
+      if (dataCamps.success) {
+        setCampaigns(dataCamps.data || []);
+      }
       if (formsData.success) {
-        setForms(formsData.data);
+        setForms(formsData.data || []);
       }
     } catch (e) {
       console.error(e);
@@ -123,6 +125,7 @@ export default function AdminEvaluacionesPage() {
               : c
           )
         );
+        fetchCampaignsData();
       } else {
         alert(data.error || 'Error al enviar a papelera');
       }
@@ -153,6 +156,7 @@ export default function AdminEvaluacionesPage() {
               : c
           )
         );
+        fetchCampaignsData();
       } else {
         alert(data.error || 'Error al restaurar evaluación');
       }
@@ -177,6 +181,7 @@ export default function AdminEvaluacionesPage() {
       const data = await res.json();
       if (data.success) {
         setCampaigns((prev) => prev.filter((c) => c.code !== code));
+        fetchCampaignsData();
       } else {
         alert(data.error || 'Error al eliminar definitivamente');
       }
@@ -201,6 +206,7 @@ export default function AdminEvaluacionesPage() {
       const data = await res.json();
       if (data.success) {
         setCampaigns((prev) => prev.filter((c) => c.status !== 'trash' && !c.isTrash));
+        fetchCampaignsData();
       } else {
         alert(data.error || 'Error al vaciar papelera');
       }

@@ -36,7 +36,7 @@ export default function AdminFormulariosPage() {
   const fetchForms = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/formularios');
+      const res = await fetch(`/api/formularios?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success) {
         setForms(data.data);

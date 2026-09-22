@@ -24,13 +24,13 @@ export default function AdminDashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/evaluaciones');
+      const res = await fetch(`/api/evaluaciones?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success) {
         setCampaigns(data.data);
       }
 
-      const formsRes = await fetch('/api/formularios');
+      const formsRes = await fetch(`/api/formularios?t=${Date.now()}`, { cache: 'no-store' });
       const formsData = await formsRes.json();
       if (formsData.success) {
         setForms(formsData.data);

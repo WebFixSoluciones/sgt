@@ -57,7 +57,7 @@ export default function RespuestasPage() {
     if (!code) return;
     try {
       setLoading(true);
-      const res = await fetch(`/api/respuestas/${code}`);
+      const res = await fetch(`/api/respuestas/${code}?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success) {
         setCampaign(data.data.campaign);

@@ -26,8 +26,10 @@ const SERVERLESS_DB_FILE = path.join(SERVERLESS_DATA_DIR, 'db.json');
 const DATA_DIR = IS_SERVERLESS ? SERVERLESS_DATA_DIR : LOCAL_DATA_DIR;
 const DB_FILE = IS_SERVERLESS ? SERVERLESS_DB_FILE : LOCAL_DB_FILE;
 
-// In-memory cache for speed
+// In-memory cache for speed with TTL invalidation
 let memDb: DatabaseSchema | null = null;
+let lastDbReadTime = 0;
+const CACHE_TTL_MS = 1500; // 1.5s cache for serverless concurrency
 
 function getInitialDb(): DatabaseSchema {
   return {
@@ -39,24 +41,33 @@ function getInitialDb(): DatabaseSchema {
 }
 
 async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
-  // Check if Vercel Blob is configured
+  // 1. Check if Vercel Blob is configured (Cloud Database)
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
       const { list } = await import('@vercel/blob');
-      const blobs = await list({ prefix: 'db.json' });
-      if (blobs.blobs.length > 0) {
-        const response = await fetch(blobs.blobs[0].url, { cache: 'no-store' });
+      const blobs = await list();
+      const dbBlobs = blobs.blobs.filter(
+        (b) => b.pathname.startsWith('db') && b.pathname.endsWith('.json')
+      );
+      if (dbBlobs.length > 0) {
+        // Sort descending: newest uploaded snapshot first
+        dbBlobs.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+        const newestBlob = dbBlobs[0];
+        const cacheBustUrl = `${newestBlob.downloadUrl || newestBlob.url}?t=${Date.now()}`;
+        const response = await fetch(cacheBustUrl, { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
-          return data;
+          if (data && Array.isArray(data.campaigns) && Array.isArray(data.forms)) {
+            return data;
+          }
         }
       }
     } catch (e) {
-      console.warn('Vercel Blob read error, falling back to local/tmp:', e);
+      console.warn('[STORAGE] Vercel Blob read error, falling back to disk:', e);
     }
   }
 
-  // Filesystem fallback (uses /tmp on Vercel/serverless)
+  // 2. Filesystem fallback (uses /tmp on Vercel/serverless or data/ on local)
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -78,41 +89,72 @@ async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
       return initial;
     }
   } catch (err) {
-    console.error('Error reading DB:', err);
+    console.error('[STORAGE] Error reading local/tmp DB:', err);
     return getInitialDb();
   }
 }
 
 async function writeToDiskOrBlob(db: DatabaseSchema): Promise<void> {
   memDb = db;
+  lastDbReadTime = Date.now();
 
-  // Local write
+  // 1. Local / Tmp filesystem write
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
     fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
   } catch (e) {
-    console.warn('Could not write to local file (read-only environment):', e);
+    console.warn('[STORAGE] Could not write to DB_FILE:', e);
   }
 
-  // Vercel Blob write if token exists
+  // Also sync to local data/db.json if running in dev mode
+  if (!IS_SERVERLESS && DB_FILE !== LOCAL_DB_FILE) {
+    try {
+      if (!fs.existsSync(LOCAL_DATA_DIR)) {
+        fs.mkdirSync(LOCAL_DATA_DIR, { recursive: true });
+      }
+      fs.writeFileSync(LOCAL_DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+    } catch (e) {}
+  }
+
+  // 2. Vercel Blob write if token exists (Cloud Database)
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
-      const { put } = await import('@vercel/blob');
-      await put('db.json', JSON.stringify(db, null, 2), {
+      const { put, list, del } = await import('@vercel/blob');
+      const newSnapshotName = `db-${Date.now()}.json`;
+      
+      await put(newSnapshotName, JSON.stringify(db, null, 2), {
         access: 'public',
         addRandomSuffix: false,
+        cacheControlMaxAge: 0, // Disable CDN caching for database snapshots
       });
+
+      // Cleanup older snapshots keeping the 2 most recent
+      try {
+        const allBlobs = await list();
+        const olderDbBlobs = allBlobs.blobs
+          .filter((b) => b.pathname.startsWith('db') && b.pathname.endsWith('.json') && b.pathname !== newSnapshotName)
+          .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+          .slice(2); // Keep 2 newest historical snapshots for safety
+        if (olderDbBlobs.length > 0) {
+          await del(olderDbBlobs.map((b) => b.url));
+        }
+      } catch (cleanupErr) {
+        console.warn('[STORAGE] Blob history cleanup note:', cleanupErr);
+      }
     } catch (e) {
-      console.error('Error writing to Vercel Blob:', e);
+      console.error('[STORAGE] Error writing to Vercel Blob:', e);
     }
   }
 }
 
 export async function getDatabase(): Promise<DatabaseSchema> {
-  if (!memDb) {
+  const isExpired = Date.now() - lastDbReadTime > CACHE_TTL_MS;
+  if (!memDb || isExpired) {
     memDb = await readFromDiskOrBlob();
+    lastDbReadTime = Date.now();
+
     // Guarantee canonical master templates have isTemplate: true and empty company
     const MASTER_TEMPLATE_IDS = [
       'form-fpsico-40',
@@ -135,6 +177,54 @@ export async function getDatabase(): Promise<DatabaseSchema> {
     }
   }
   return memDb;
+}
+
+export async function getDatabaseStatus() {
+  const isServerless = IS_SERVERLESS;
+  const blobTokenConfigured = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  let blobBlobsCount = 0;
+  let blobLatestUrl: string | null = null;
+
+  if (blobTokenConfigured) {
+    try {
+      const { list } = await import('@vercel/blob');
+      const res = await list();
+      const dbBlobs = res.blobs.filter((b) => b.pathname.startsWith('db') && b.pathname.endsWith('.json'));
+      blobBlobsCount = dbBlobs.length;
+      if (dbBlobs.length > 0) {
+        dbBlobs.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+        blobLatestUrl = dbBlobs[0].url;
+      }
+    } catch (e: any) {
+      blobLatestUrl = `Error al consultar Blob: ${e.message}`;
+    }
+  }
+
+  const db = await getDatabase();
+  return {
+    status: 'online',
+    isServerless,
+    blobTokenConfigured,
+    storageDriver: blobTokenConfigured ? 'vercel-blob (Persistente en Nube)' : (isServerless ? 'serverless-tmp (Efímero Lambda)' : 'local-disk (data/db.json)'),
+    blobBlobsCount,
+    blobLatestUrl,
+    counts: {
+      campaigns: db.campaigns.length,
+      activeCampaigns: db.campaigns.filter((c) => c.status === 'active' && !c.isTrash).length,
+      inactiveCampaigns: db.campaigns.filter((c) => c.status === 'inactive' && !c.isTrash).length,
+      trashCampaigns: db.campaigns.filter((c) => c.status === 'trash' || c.isTrash).length,
+      forms: db.forms.length,
+      submissions: db.submissions.length,
+    },
+    campaigns: db.campaigns.map((c) => ({
+      code: c.code,
+      title: c.title,
+      company: c.company,
+      status: c.status,
+      isTrash: Boolean(c.isTrash),
+    })),
+    lastReadTime: new Date(lastDbReadTime).toISOString(),
+  };
 }
 
 // Campaign Operations

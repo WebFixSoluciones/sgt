@@ -13,12 +13,27 @@ import {
 import { EvaluationCampaign } from '@/lib/types';
 import { getEcuadorISOString } from '@/lib/date-utils';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+};
+
 export async function GET(req: NextRequest) {
   try {
     const campaigns = await getCampaigns();
-    return NextResponse.json({ success: true, data: campaigns });
+    return NextResponse.json(
+      { success: true, data: campaigns },
+      { headers: NO_CACHE_HEADERS }
+    );
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500, headers: NO_CACHE_HEADERS }
+    );
   }
 }
 
@@ -34,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (!code || !title || !company || resolvedFormIds.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Faltan campos obligatorios (código, título, empresa y al menos un formulario seleccionado)' },
-        { status: 400 }
+        { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
 
@@ -82,9 +97,15 @@ export async function POST(req: NextRequest) {
     };
 
     await saveCampaign(newCampaign);
-    return NextResponse.json({ success: true, data: newCampaign }, { status: 201 });
+    return NextResponse.json(
+      { success: true, data: newCampaign },
+      { status: 201, headers: NO_CACHE_HEADERS }
+    );
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500, headers: NO_CACHE_HEADERS }
+    );
   }
 }
 
@@ -95,40 +116,70 @@ export async function PATCH(req: NextRequest) {
 
     if (action === 'empty_trash') {
       const count = await emptyTrashCampaigns();
-      return NextResponse.json({ success: true, count });
+      return NextResponse.json(
+        { success: true, count },
+        { headers: NO_CACHE_HEADERS }
+      );
     }
 
     if (!code) {
-      return NextResponse.json({ success: false, error: 'Código de evaluación requerido' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Código de evaluación requerido' },
+        { status: 400, headers: NO_CACHE_HEADERS }
+      );
     }
 
     if (action === 'toggle_status') {
       const updated = await toggleCampaignStatus(code);
       if (!updated) {
-        return NextResponse.json({ success: false, error: 'Evaluación no encontrada' }, { status: 404 });
+        return NextResponse.json(
+          { success: false, error: 'Evaluación no encontrada' },
+          { status: 404, headers: NO_CACHE_HEADERS }
+        );
       }
-      return NextResponse.json({ success: true, data: updated });
+      return NextResponse.json(
+        { success: true, data: updated },
+        { headers: NO_CACHE_HEADERS }
+      );
     }
 
     if (action === 'trash') {
       const updated = await trashCampaign(code);
       if (!updated) {
-        return NextResponse.json({ success: false, error: 'Evaluación no encontrada' }, { status: 404 });
+        return NextResponse.json(
+          { success: false, error: 'Evaluación no encontrada' },
+          { status: 404, headers: NO_CACHE_HEADERS }
+        );
       }
-      return NextResponse.json({ success: true, data: updated });
+      return NextResponse.json(
+        { success: true, data: updated },
+        { headers: NO_CACHE_HEADERS }
+      );
     }
 
     if (action === 'restore') {
       const updated = await restoreCampaign(code);
       if (!updated) {
-        return NextResponse.json({ success: false, error: 'Evaluación no encontrada' }, { status: 404 });
+        return NextResponse.json(
+          { success: false, error: 'Evaluación no encontrada' },
+          { status: 404, headers: NO_CACHE_HEADERS }
+        );
       }
-      return NextResponse.json({ success: true, data: updated });
+      return NextResponse.json(
+        { success: true, data: updated },
+        { headers: NO_CACHE_HEADERS }
+      );
     }
 
-    return NextResponse.json({ success: false, error: 'Acción no soportada' }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: 'Acción no soportada' },
+      { status: 400, headers: NO_CACHE_HEADERS }
+    );
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500, headers: NO_CACHE_HEADERS }
+    );
   }
 }
 
@@ -150,20 +201,35 @@ export async function DELETE(req: NextRequest) {
 
     if (action === 'empty_trash') {
       const count = await emptyTrashCampaigns();
-      return NextResponse.json({ success: true, count });
+      return NextResponse.json(
+        { success: true, count },
+        { headers: NO_CACHE_HEADERS }
+      );
     }
 
     if (!code) {
-      return NextResponse.json({ success: false, error: 'Código de evaluación requerido' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Código de evaluación requerido' },
+        { status: 400, headers: NO_CACHE_HEADERS }
+      );
     }
 
     const deleted = await deleteCampaignPermanently(code);
     if (!deleted) {
-      return NextResponse.json({ success: false, error: 'Evaluación no encontrada para eliminar' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Evaluación no encontrada para eliminar' },
+        { status: 404, headers: NO_CACHE_HEADERS }
+      );
     }
 
-    return NextResponse.json({ success: true, message: 'Evaluación eliminada definitivamente' });
+    return NextResponse.json(
+      { success: true, message: 'Evaluación eliminada definitivamente' },
+      { headers: NO_CACHE_HEADERS }
+    );
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500, headers: NO_CACHE_HEADERS }
+    );
   }
 }
