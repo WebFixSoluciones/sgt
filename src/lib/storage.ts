@@ -40,12 +40,75 @@ function getInitialDb(): DatabaseSchema {
   };
 }
 
-async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
-  // 1. Check if Vercel Blob is configured (Cloud Database)
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
+// Helper to detect BLOB read-write token from any standard Vercel environment variable
+export function getBlobToken(): string | undefined {
+  if (process.env.BLOB_READ_WRITE_TOKEN) return process.env.BLOB_READ_WRITE_TOKEN;
+  const envKey = Object.keys(process.env).find((key) => key.endsWith('_READ_WRITE_TOKEN'));
+  if (envKey && process.env[envKey]) {
+    return process.env[envKey];
+  }
+  return undefined;
+}
+
+export async function writeToBlobOnly(db: DatabaseSchema): Promise<{ success: boolean; url?: string; error?: string }> {
+  const token = getBlobToken();
+  if (!token) {
+    return { success: false, error: 'No BLOB token found in environment variables' };
+  }
+
+  try {
+    const { put, list, del } = await import('@vercel/blob');
+    const newSnapshotName = `db-${Date.now()}.json`;
+
+    let blobResult: any = null;
+    // 1. Try private access first (sgt-blob is configured as Private in Vercel)
     try {
-      const { list } = await import('@vercel/blob');
-      const blobs = await list();
+      blobResult = await put(newSnapshotName, JSON.stringify(db, null, 2), {
+        access: 'private',
+        addRandomSuffix: false,
+        cacheControlMaxAge: 0,
+        token,
+      });
+    } catch (privErr) {
+      console.warn('[STORAGE] Blob private put failed, falling back to public:', privErr);
+      // 2. Fallback to public access if the store allows public
+      blobResult = await put(newSnapshotName, JSON.stringify(db, null, 2), {
+        access: 'public',
+        addRandomSuffix: false,
+        cacheControlMaxAge: 0,
+        token,
+      });
+    }
+
+    // Cleanup older snapshots keeping the 2 most recent for safety
+    try {
+      const allBlobs = await list({ token });
+      const olderDbBlobs = allBlobs.blobs
+        .filter((b) => b.pathname.startsWith('db') && b.pathname.endsWith('.json') && b.pathname !== newSnapshotName)
+        .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+        .slice(2);
+      if (olderDbBlobs.length > 0) {
+        await del(olderDbBlobs.map((b) => b.url), { token });
+      }
+    } catch (cleanupErr) {
+      console.warn('[STORAGE] Blob history cleanup note:', cleanupErr);
+    }
+
+    return { success: true, url: blobResult?.url || blobResult?.downloadUrl };
+  } catch (e: any) {
+    console.error('[STORAGE] Error writing to Vercel Blob:', e);
+    return { success: false, error: e?.message || String(e) };
+  }
+}
+
+async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
+  const token = getBlobToken();
+
+  // 1. Check if Vercel Blob is configured (Cloud Database)
+  if (token) {
+    try {
+      const { list, get } = await import('@vercel/blob');
+      const blobs = await list({ token });
       const dbBlobs = blobs.blobs.filter(
         (b) => b.pathname.startsWith('db') && b.pathname.endsWith('.json')
       );
@@ -53,13 +116,39 @@ async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
         // Sort descending: newest uploaded snapshot first
         dbBlobs.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
         const newestBlob = dbBlobs[0];
-        const cacheBustUrl = `${newestBlob.downloadUrl || newestBlob.url}?t=${Date.now()}`;
-        const response = await fetch(cacheBustUrl, { cache: 'no-store' });
-        if (response.ok) {
-          const data = await response.json();
-          if (data && Array.isArray(data.campaigns) && Array.isArray(data.forms)) {
-            return data;
+
+        let data: DatabaseSchema | null = null;
+
+        // A. Try get() with private access first
+        try {
+          const res = await get(newestBlob.url, { access: 'private', useCache: false, token });
+          if (res && res.statusCode === 200 && res.stream) {
+            const text = await new Response(res.stream).text();
+            data = JSON.parse(text);
           }
+        } catch (privErr) {
+          // B. Try get() with public access
+          try {
+            const resPub = await get(newestBlob.url, { access: 'public', useCache: false, token });
+            if (resPub && resPub.statusCode === 200 && resPub.stream) {
+              const text = await new Response(resPub.stream).text();
+              data = JSON.parse(text);
+            }
+          } catch (pubErr) {
+            // C. Direct fetch fallback with Authorization header
+            const targetUrl = newestBlob.downloadUrl || newestBlob.url;
+            const resFetch = await fetch(`${targetUrl}?t=${Date.now()}`, {
+              headers: { Authorization: `Bearer ${token}` },
+              cache: 'no-store',
+            });
+            if (resFetch.ok) {
+              data = await resFetch.json();
+            }
+          }
+        }
+
+        if (data && Array.isArray(data.campaigns) && Array.isArray(data.forms)) {
+          return data;
         }
       }
     } catch (e) {
@@ -74,7 +163,12 @@ async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
     }
     if (fs.existsSync(DB_FILE)) {
       const content = fs.readFileSync(DB_FILE, 'utf-8');
-      return JSON.parse(content);
+      const parsed = JSON.parse(content);
+      // If token exists and Blob had 0 snapshots, seed Blob snapshot immediately
+      if (token && parsed && Array.isArray(parsed.campaigns)) {
+        writeToBlobOnly(parsed).catch((err) => console.warn('[STORAGE] Auto-seed to Blob error:', err));
+      }
+      return parsed;
     } else {
       let initial = getInitialDb();
       if (fs.existsSync(LOCAL_DB_FILE)) {
@@ -86,6 +180,10 @@ async function readFromDiskOrBlob(): Promise<DatabaseSchema> {
       try {
         fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
       } catch (e) {}
+      // Sync initial DB to empty Blob store
+      if (token && initial && Array.isArray(initial.campaigns)) {
+        writeToBlobOnly(initial).catch((err) => console.warn('[STORAGE] Auto-seed initial to Blob error:', err));
+      }
       return initial;
     }
   } catch (err) {
@@ -119,34 +217,7 @@ async function writeToDiskOrBlob(db: DatabaseSchema): Promise<void> {
   }
 
   // 2. Vercel Blob write if token exists (Cloud Database)
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    try {
-      const { put, list, del } = await import('@vercel/blob');
-      const newSnapshotName = `db-${Date.now()}.json`;
-      
-      await put(newSnapshotName, JSON.stringify(db, null, 2), {
-        access: 'public',
-        addRandomSuffix: false,
-        cacheControlMaxAge: 0, // Disable CDN caching for database snapshots
-      });
-
-      // Cleanup older snapshots keeping the 2 most recent
-      try {
-        const allBlobs = await list();
-        const olderDbBlobs = allBlobs.blobs
-          .filter((b) => b.pathname.startsWith('db') && b.pathname.endsWith('.json') && b.pathname !== newSnapshotName)
-          .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
-          .slice(2); // Keep 2 newest historical snapshots for safety
-        if (olderDbBlobs.length > 0) {
-          await del(olderDbBlobs.map((b) => b.url));
-        }
-      } catch (cleanupErr) {
-        console.warn('[STORAGE] Blob history cleanup note:', cleanupErr);
-      }
-    } catch (e) {
-      console.error('[STORAGE] Error writing to Vercel Blob:', e);
-    }
-  }
+  await writeToBlobOnly(db);
 }
 
 export async function getDatabase(): Promise<DatabaseSchema> {
@@ -181,14 +252,16 @@ export async function getDatabase(): Promise<DatabaseSchema> {
 
 export async function getDatabaseStatus() {
   const isServerless = IS_SERVERLESS;
-  const blobTokenConfigured = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  const token = getBlobToken();
+  const blobTokenConfigured = Boolean(token);
   let blobBlobsCount = 0;
   let blobLatestUrl: string | null = null;
+  let blobError: string | null = null;
 
-  if (blobTokenConfigured) {
+  if (token) {
     try {
       const { list } = await import('@vercel/blob');
-      const res = await list();
+      const res = await list({ token });
       const dbBlobs = res.blobs.filter((b) => b.pathname.startsWith('db') && b.pathname.endsWith('.json'));
       blobBlobsCount = dbBlobs.length;
       if (dbBlobs.length > 0) {
@@ -196,6 +269,7 @@ export async function getDatabaseStatus() {
         blobLatestUrl = dbBlobs[0].url;
       }
     } catch (e: any) {
+      blobError = e.message;
       blobLatestUrl = `Error al consultar Blob: ${e.message}`;
     }
   }
@@ -205,9 +279,11 @@ export async function getDatabaseStatus() {
     status: 'online',
     isServerless,
     blobTokenConfigured,
+    tokenDetected: blobTokenConfigured ? 'Configurado' : 'No encontrado en env',
     storageDriver: blobTokenConfigured ? 'vercel-blob (Persistente en Nube)' : (isServerless ? 'serverless-tmp (Efímero Lambda)' : 'local-disk (data/db.json)'),
     blobBlobsCount,
     blobLatestUrl,
+    blobError,
     counts: {
       campaigns: db.campaigns.length,
       activeCampaigns: db.campaigns.filter((c) => c.status === 'active' && !c.isTrash).length,
