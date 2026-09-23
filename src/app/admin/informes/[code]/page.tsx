@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -15,6 +15,8 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema, WorkerSubmission } from '@/lib/types';
+import { hasFpsicoForm, isFpsicoForm } from '@/lib/export-fpsico';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 
 export default function InformesPage() {
   const params = useParams();
@@ -22,8 +24,10 @@ export default function InformesPage() {
 
   const [campaign, setCampaign] = useState<EvaluationCampaign | null>(null);
   const [form, setForm] = useState<FormSchema | null>(null);
+  const [formsList, setFormsList] = useState<FormSchema[]>([]);
   const [submissions, setSubmissions] = useState<WorkerSubmission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showFpsicoNoticeModal, setShowFpsicoNoticeModal] = useState(false);
 
   useEffect(() => {
     if (!code) return;
@@ -35,6 +39,7 @@ export default function InformesPage() {
         if (data.success) {
           setCampaign(data.data.campaign);
           setForm(data.data.form);
+          setFormsList(data.data.forms || (data.data.form ? [data.data.form] : []));
           setSubmissions(data.data.submissions);
         }
       } catch (err) {
@@ -91,7 +96,20 @@ export default function InformesPage() {
     '3': 'Más de 5 años',
   };
 
-  const isFpsico = campaign?.formId === 'form-fpsico-40' || campaign?.code.includes('PSI');
+  const hasFpsico = useMemo(() => {
+    if (formsList.length > 0) {
+      return hasFpsicoForm(formsList);
+    }
+    return isFpsicoForm(form);
+  }, [formsList, form]);
+
+  const handleDownloadFpsicoTxt = () => {
+    if (!hasFpsico) {
+      setShowFpsicoNoticeModal(true);
+      return;
+    }
+    window.open(`/api/exportar/fpsico?code=${code}`, '_blank');
+  };
 
   return (
     <div className="w-full px-6 sm:px-8 py-6 space-y-6 animate-fade-in-slide">
@@ -129,15 +147,28 @@ export default function InformesPage() {
             <span>Descargar Excel</span>
           </a>
 
-          <a
-            href={`/api/exportar/fpsico?code=${code}`}
-            download
-            className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm font-medium rounded transition-colors inline-flex items-center gap-1.5 shadow-xs"
-            title="Descargar archivo plano .TXT compatible con el software oficial INSST FPSICO 4.0"
+          <button
+            type="button"
+            onClick={handleDownloadFpsicoTxt}
+            className={`px-3.5 py-2 text-white text-xs sm:text-sm font-medium rounded transition-colors inline-flex items-center gap-1.5 shadow-xs ${
+              hasFpsico
+                ? 'bg-purple-600 hover:bg-purple-700'
+                : 'bg-slate-700 hover:bg-slate-800'
+            }`}
+            title={
+              hasFpsico
+                ? 'Descargar archivo plano .TXT compatible con el software oficial INSST FPSICO 4.0'
+                : 'Esta evaluación no contiene el cuestionario de Factores Psicosociales (FPSICO 4.0)'
+            }
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-4 h-4 text-white" />
             <span>FPSICO TXT</span>
-          </a>
+            {!hasFpsico && (
+              <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-amber-950 rounded font-black ml-0.5">
+                No aplica
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -324,6 +355,18 @@ export default function InformesPage() {
               })}
           </div>
         </div>
+      )}
+
+      {showFpsicoNoticeModal && (
+        <ConfirmDialog
+          isOpen={showFpsicoNoticeModal}
+          type="warning"
+          title="Descarga exclusiva para Evaluación Psicosocial"
+          message={`La exportación en formato plano .TXT para el software oficial INSST FPSICO 4.0 está disponible única y exclusivamente para evaluaciones que contengan un cuestionario de Factores Psicosociales.\n\nEsta evaluación ("${campaign?.title || code}") no incluye dicho instrumento.\n\nCuestionarios asignados a esta evaluación:\n${formsList.map((f) => `• ${f.title}`).join('\n') || (form ? `• ${form.title}` : '• Ninguno')}`}
+          confirmText="Entendido"
+          cancelText={null}
+          onConfirm={() => setShowFpsicoNoticeModal(false)}
+        />
       )}
     </div>
   );

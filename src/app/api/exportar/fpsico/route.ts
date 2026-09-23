@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCampaignByCode, getFormById, getSubmissions, getFormsForCampaign } from '@/lib/storage';
-import { generateFpsicoTxt } from '@/lib/export-fpsico';
+import { getCampaignByCode, getSubmissions, getFormsForCampaign } from '@/lib/storage';
+import { generateFpsicoTxt, isFpsicoForm } from '@/lib/export-fpsico';
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,29 +17,34 @@ export async function GET(req: NextRequest) {
     }
 
     const forms = await getFormsForCampaign(campaign);
-    const form = forms.find(
-      (f) =>
-        f.id === 'form-fpsico-40' ||
-        f.title.toLowerCase().includes('fpsico') ||
-        f.title.toLowerCase().includes('psico')
-    ) || (campaign.formId ? await getFormById(campaign.formId) : forms[0]);
+    // Find specifically the Psychosocial / FPSICO 4.0 form within this campaign
+    const fpsicoForm = forms.find(isFpsicoForm);
 
-    if (!form) {
-      return NextResponse.json({ success: false, error: 'Formulario no encontrado en esta evaluación' }, { status: 404 });
+    // EXCLUSIVE: FPSICO TXT is strictly allowed if and only if the evaluation contains a psychosocial evaluation form!
+    if (!fpsicoForm) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Esta evaluación no contiene un cuestionario de Evaluación Psicosocial (FPSICO 4.0). La exportación en formato TXT del INSST es exclusiva para evaluaciones psicosociales.',
+        },
+        { status: 400 }
+      );
     }
 
     const submissions = await getSubmissions(code);
 
     // Filter question fields (non-pagebreaks, non-demographic, non-observaciones)
-    let fpsicoFieldIds = form.fields
-      .filter((f) => f.type !== 'page_break' && f.id.startsWith('q'))
+    let fpsicoFieldIds = fpsicoForm.fields
+      .filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.id.startsWith('q'))
       .map((f) => f.id);
 
     if (fpsicoFieldIds.length === 0) {
-      fpsicoFieldIds = form.fields
+      fpsicoFieldIds = fpsicoForm.fields
         .filter(
           (f) =>
             f.type !== 'page_break' &&
+            f.type !== 'html' &&
             !['puesto', 'agrupacion_puestos', 'horario', 'horarios', 'antiguedad', 'observaciones'].includes(
               f.id.toLowerCase()
             )

@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema, WorkerSubmission } from '@/lib/types';
 import { formatEcuadorLongDate } from '@/lib/date-utils';
+import { hasFpsicoForm } from '@/lib/export-fpsico';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 
 interface DimensionScore {
   name: string;
@@ -46,6 +48,7 @@ export default function AdminResultadosPage() {
   const [activeFormIndex, setActiveFormIndex] = useState(0);
   const [submissions, setSubmissions] = useState<WorkerSubmission[]>([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [showFpsicoNoticeModal, setShowFpsicoNoticeModal] = useState(false);
 
   // Search filter for selector
   const [selectorSearch, setSelectorSearch] = useState('');
@@ -106,11 +109,9 @@ export default function AdminResultadosPage() {
     return submissions.filter((s) => s.status === 'completed');
   }, [submissions]);
 
-  // Check if evaluation contains FPSICO
+  // Check if evaluation contains Psychosocial / FPSICO 4.0
   const hasFpsico = useMemo(() => {
-    return forms.some(
-      (f) => f.id === 'form-fpsico-40' || f.title.toLowerCase().includes('fpsico')
-    );
+    return hasFpsicoForm(forms);
   }, [forms]);
 
   // Calculate psychometric dimensions based on answers
@@ -188,6 +189,10 @@ export default function AdminResultadosPage() {
   // Handler for FPSICO TXT download
   const handleDownloadTxt = () => {
     if (!campaign) return;
+    if (!hasFpsico) {
+      setShowFpsicoNoticeModal(true);
+      return;
+    }
     window.open(`/api/exportar/fpsico?code=${campaign.code}`, '_blank');
   };
 
@@ -331,17 +336,26 @@ export default function AdminResultadosPage() {
             <span>DESCARGAR EXCEL</span>
           </button>
 
-          {/* 4. DESCARGAR FPSICO (TXT) */}
-          {hasFpsico && (
-            <button
-              onClick={handleDownloadTxt}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md"
-              title="Descargar archivo .txt compatible con el software oficial FPSICO 4.0 del INSST"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>DESCARGAR FPSICO (TXT)</span>
-            </button>
-          )}
+          {/* 4. DESCARGAR FPSICO (TXT) - Siempre visible; descarga solo si tiene FPSICO */}
+          <button
+            onClick={handleDownloadTxt}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md ${
+              hasFpsico ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-600 hover:bg-slate-700'
+            }`}
+            title={
+              hasFpsico
+                ? 'Descargar archivo .txt compatible con el software oficial FPSICO 4.0 del INSST'
+                : 'Esta evaluación no contiene el cuestionario de Factores Psicosociales (FPSICO 4.0)'
+            }
+          >
+            <FileText className="w-3.5 h-3.5 text-white" />
+            <span>DESCARGAR FPSICO (TXT)</span>
+            {!hasFpsico && (
+              <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-amber-950 rounded font-black ml-0.5">
+                No aplica
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -533,6 +547,18 @@ export default function AdminResultadosPage() {
           <p>Informe generado automáticamente con baremos estandarizados del INSST y normativa laboral vigente.</p>
         </div>
       </div>
+
+      {showFpsicoNoticeModal && (
+        <ConfirmDialog
+          isOpen={showFpsicoNoticeModal}
+          type="warning"
+          title="Descarga exclusiva para Evaluación Psicosocial"
+          message={`La exportación en formato plano .TXT para el software oficial INSST FPSICO 4.0 está disponible única y exclusivamente para evaluaciones que contengan un cuestionario de Factores Psicosociales.\n\nEsta evaluación ("${campaign?.title || 'Seleccionada'}") no incluye dicho instrumento.\n\nCuestionarios asignados a esta evaluación:\n${forms.map((f) => `• ${f.title}`).join('\n') || '• Ninguno'}`}
+          confirmText="Entendido"
+          cancelText={null}
+          onConfirm={() => setShowFpsicoNoticeModal(false)}
+        />
+      )}
     </div>
   );
 }

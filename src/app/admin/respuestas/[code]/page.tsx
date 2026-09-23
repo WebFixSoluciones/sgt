@@ -30,7 +30,9 @@ import {
 import { EvaluationCampaign, FormSchema, WorkerSubmission } from '@/lib/types';
 import { formatEcuadorDateTime } from '@/lib/date-utils';
 import { resolvePuestoLabel } from '@/lib/export-excel';
+import { hasFpsicoForm, isFpsicoForm } from '@/lib/export-fpsico';
 import EvaluationBackupModal from '@/components/admin/EvaluationBackupModal';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import Portal from '@/components/common/Portal';
 
 export default function RespuestasPage() {
@@ -40,8 +42,10 @@ export default function RespuestasPage() {
 
   const [campaign, setCampaign] = useState<EvaluationCampaign | null>(null);
   const [form, setForm] = useState<FormSchema | null>(null);
+  const [formsList, setFormsList] = useState<FormSchema[]>([]);
   const [submissions, setSubmissions] = useState<WorkerSubmission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showFpsicoNoticeModal, setShowFpsicoNoticeModal] = useState(false);
   
   // Filtering & Search
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,6 +68,7 @@ export default function RespuestasPage() {
       if (data.success) {
         setCampaign(data.data.campaign);
         setForm(data.data.form);
+        setFormsList(data.data.forms || (data.data.form ? [data.data.form] : []));
         setSubmissions(data.data.submissions);
       }
     } catch (err) {
@@ -90,7 +95,7 @@ export default function RespuestasPage() {
   const getPuestoLabel = (val: string | number | undefined) => {
     return resolvePuestoLabel(
       { answers: { puesto: val } } as any,
-      form ? [form] : [],
+      formsList.length > 0 ? formsList : (form ? [form] : []),
       campaign?.puestos
     );
   };
@@ -121,14 +126,29 @@ export default function RespuestasPage() {
         puestoLabel.includes(term)
       );
     });
-  }, [submissions, searchTerm, statusFilter, form]);
+  }, [submissions, searchTerm, statusFilter, form, formsList]);
 
   const completedCount = submissions.filter((s) => s.status === 'completed').length;
   const inProgressCount = submissions.filter((s) => s.status === 'in_progress').length;
   const expectedCount = campaign?.expectedParticipants || 100;
   const coveragePct = Math.min(100, Math.round((completedCount / (expectedCount || 1)) * 100));
   const completionRate = submissions.length > 0 ? Math.round((completedCount / submissions.length) * 100) : 0;
-  const isFpsico = campaign?.formId === 'form-fpsico-40' || campaign?.code.includes('PSI');
+  
+  // Check if evaluation contains Psychosocial / FPSICO 4.0
+  const hasFpsico = useMemo(() => {
+    if (formsList.length > 0) {
+      return hasFpsicoForm(formsList);
+    }
+    return isFpsicoForm(form);
+  }, [formsList, form]);
+
+  const handleDownloadFpsicoTxt = () => {
+    if (!hasFpsico) {
+      setShowFpsicoNoticeModal(true);
+      return;
+    }
+    window.open(`/api/exportar/fpsico?code=${code}`, '_blank');
+  };
 
   // Filtered fields inside answer modal
   const modalFilteredFields = useMemo(() => {
@@ -206,15 +226,28 @@ export default function RespuestasPage() {
               <span>Descargar Excel</span>
             </a>
 
-            <a
-              href={`/api/exportar/fpsico?code=${code}`}
-              download
-              className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs"
-              title="Descargar archivo plano .TXT compatible con el software oficial INSST FPSICO 4.0"
+            <button
+              type="button"
+              onClick={handleDownloadFpsicoTxt}
+              className={`px-3.5 py-2 text-white text-xs font-semibold rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs ${
+                hasFpsico
+                  ? 'bg-purple-600 hover:bg-purple-700'
+                  : 'bg-slate-700 hover:bg-slate-800'
+              }`}
+              title={
+                hasFpsico
+                  ? 'Descargar archivo plano .TXT compatible con el software oficial INSST FPSICO 4.0'
+                  : 'Esta evaluación no contiene el cuestionario de Factores Psicosociales (FPSICO 4.0)'
+              }
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="w-4 h-4 text-white" />
               <span>FPSICO TXT</span>
-            </a>
+              {!hasFpsico && (
+                <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-amber-950 rounded font-black ml-0.5">
+                  No aplica
+                </span>
+              )}
+            </button>
 
             {/* Limpiar a 0 con Seguro */}
             <button
@@ -711,6 +744,18 @@ export default function RespuestasPage() {
           }}
           initialTab={backupModalTab}
           onSuccess={handleBackupSuccess}
+        />
+      )}
+
+      {showFpsicoNoticeModal && (
+        <ConfirmDialog
+          isOpen={showFpsicoNoticeModal}
+          type="warning"
+          title="Descarga exclusiva para Evaluación Psicosocial"
+          message={`La exportación en formato plano .TXT para el software oficial INSST FPSICO 4.0 está disponible única y exclusivamente para evaluaciones que contengan un cuestionario de Factores Psicosociales.\n\nEsta evaluación ("${campaign?.title || code}") no incluye dicho instrumento.\n\nCuestionarios asignados a esta evaluación:\n${formsList.map((f) => `• ${f.title}`).join('\n') || (form ? `• ${form.title}` : '• Ninguno')}`}
+          confirmText="Entendido"
+          cancelText={null}
+          onConfirm={() => setShowFpsicoNoticeModal(false)}
         />
       )}
     </div>

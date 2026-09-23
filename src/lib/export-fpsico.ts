@@ -1,5 +1,36 @@
-import { WorkerSubmission } from './types';
+import { WorkerSubmission, FormSchema } from './types';
 import { formatEcuadorFpsicoDate } from './date-utils';
+
+/**
+ * Checks if a specific form schema is an official Psychosocial Evaluation (FPSICO 4.0 / INSST).
+ */
+export function isFpsicoForm(form?: FormSchema | null): boolean {
+  if (!form) return false;
+  const id = (form.id || '').toLowerCase();
+  const code = (form.code || '').toLowerCase();
+  const title = (form.title || '').toLowerCase();
+  const category = (form.category || '').toLowerCase();
+
+  return (
+    id === 'form-fpsico-40' ||
+    id.startsWith('form-fpsico') ||
+    code === 'fpsico-40' ||
+    code.startsWith('fpsico') ||
+    code.includes('fpsico') ||
+    category === 'psicosocial' ||
+    title.includes('fpsico') ||
+    title.includes('psicosocial') ||
+    title.includes('factores psicosociales')
+  );
+}
+
+/**
+ * Checks if an array of forms contains at least one Psychosocial / FPSICO form.
+ */
+export function hasFpsicoForm(forms?: FormSchema[] | null): boolean {
+  if (!forms || forms.length === 0) return false;
+  return forms.some(isFpsicoForm);
+}
 
 /**
  * Generates an official INSST FPSICO 4.0 compliant TXT file content.
