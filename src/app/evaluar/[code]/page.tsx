@@ -16,6 +16,7 @@ import {
   Sparkles,
   GitMerge,
   LogOut,
+  X,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema, FormField } from '@/lib/types';
 import ResumePromptModal from '@/components/worker/ResumePromptModal';
@@ -982,7 +983,7 @@ export default function WorkerEvaluationPage() {
   // State: Step 1 - Worker Login
   if (!isLoggedIn) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center p-4">
+      <div className="min-h-[80vh] flex items-center justify-center p-3 sm:p-4">
         {showResumeModal && resumeData && (
           <ResumePromptModal
             questionNumber={resumeData.questionNumber}
@@ -995,15 +996,15 @@ export default function WorkerEvaluationPage() {
           />
         )}
 
-        <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl p-5 sm:p-8 shadow-sm space-y-5 sm:space-y-6">
           {/* Header with SGT Logo */}
           <div className="border-b border-slate-100 pb-4 text-center">
             <div className="flex justify-center mb-3">
-              <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+              <div className="bg-white p-2 sm:p-2.5 rounded-xl border border-slate-200 shadow-xs">
                 <img
                   src="/logo-sgt.jpg"
                   alt="SGT Corp. Prevención S.A."
-                  className="h-12 w-auto object-contain"
+                  className="h-10 sm:h-12 w-auto object-contain"
                 />
               </div>
             </div>
@@ -1011,7 +1012,7 @@ export default function WorkerEvaluationPage() {
               <Building2 className="w-3.5 h-3.5" />
               <span>{campaign.company}</span>
             </div>
-            <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight leading-snug">
+            <h1 className="text-base sm:text-xl font-bold text-slate-900 tracking-tight leading-snug">
               {campaign.title}
             </h1>
             <p className="mt-1 text-xs text-slate-500">
@@ -1052,9 +1053,9 @@ export default function WorkerEvaluationPage() {
                     setCheckError(null);
                   }}
                   placeholder="Ej. 5555 o 999999"
-                  className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 font-mono tracking-wider uppercase focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  className="w-full pl-9 pr-3 py-3 sm:py-2.5 border border-slate-300 rounded-xl text-base sm:text-sm text-slate-900 font-mono tracking-wider uppercase focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 touch-manipulation"
                 />
-                <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 sm:top-3" />
               </div>
               <p className="mt-1 text-[11px] text-slate-400">
                 Ingrese su número o código provisto por la empresa para identificarse.
@@ -1064,7 +1065,7 @@ export default function WorkerEvaluationPage() {
             <button
               type="submit"
               disabled={isSubmittingCheck}
-              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition-colors flex items-center justify-center gap-2 shadow-xs disabled:opacity-50"
+              className="w-full py-3 sm:py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 touch-manipulation active:scale-[0.99] min-h-[46px]"
             >
               {isSubmittingCheck ? (
                 <>
@@ -1129,10 +1130,10 @@ export default function WorkerEvaluationPage() {
       )}
 
       {/* Top Clean Sticky Progress Header con Título de Evaluación destacado */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-8 py-3">
+      <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-30 px-3 sm:px-8 py-2 sm:py-3">
         <div className="max-w-6xl xl:max-w-7xl w-full mx-auto">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <img
                 src="/logo-sgt.jpg"
                 alt="SGT"
@@ -1140,10 +1141,10 @@ export default function WorkerEvaluationPage() {
               />
               <div className="flex flex-col min-w-0">
                 {/* Badges superiores: Empresa + Trabajador + Cuestionario */}
-                <div className="flex items-center gap-2 flex-wrap text-[10px] font-bold uppercase tracking-wider">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-[10px] font-bold uppercase tracking-wider">
                   <span className="text-blue-700 flex items-center gap-1">
                     <Building2 className="w-3 h-3 shrink-0" />
-                    <span className="truncate max-w-[200px]">{campaign.company}</span>
+                    <span className="truncate max-w-[120px] sm:max-w-[200px]">{campaign.company}</span>
                   </span>
                   {workerCode && (
                     <span className="text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 shrink-0">
@@ -1152,19 +1153,21 @@ export default function WorkerEvaluationPage() {
                   )}
                   {formsList.length > 1 && (
                     <span className="text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 shrink-0">
-                      Cuestionario {activeFormIndex + 1} de {formsList.length}
+                      <span className="hidden sm:inline">Cuestionario </span>
+                      <span className="sm:hidden">Cuest. </span>
+                      {activeFormIndex + 1} de {formsList.length}
                     </span>
                   )}
                 </div>
 
                 {/* TÍTULO DEL CUESTIONARIO EN EJECUCIÓN (MÁS GRANDE) */}
-                <h1 className="text-base sm:text-lg font-black text-slate-900 truncate leading-snug mt-0.5 tracking-tight uppercase" title={displayFormTitle}>
+                <h1 className="text-sm sm:text-lg font-black text-slate-900 truncate leading-snug mt-0.5 tracking-tight uppercase" title={displayFormTitle}>
                   {displayFormTitle}
                 </h1>
 
                 {/* Sub-línea: Nombre de la Campaña y Puesto Asignado */}
-                <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-500 mt-0.5">
-                  <span className="font-semibold text-slate-600 truncate max-w-[340px]" title={campaign.title}>
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-[10px] sm:text-[11px] text-slate-500 mt-0.5">
+                  <span className="font-semibold text-slate-600 truncate max-w-[150px] sm:max-w-[340px]" title={campaign.title}>
                     {campaign.title}
                   </span>
                   {selectedPuestoLabel && (
@@ -1172,7 +1175,7 @@ export default function WorkerEvaluationPage() {
                       <span className="text-slate-300">•</span>
                       <span className="text-emerald-700 font-semibold truncate flex items-center gap-1">
                         <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                        <span className="truncate max-w-[220px]">Puesto: {selectedPuestoLabel}</span>
+                        <span className="truncate max-w-[130px] sm:max-w-[220px]">Puesto: {selectedPuestoLabel}</span>
                       </span>
                     </>
                   )}
@@ -1180,37 +1183,38 @@ export default function WorkerEvaluationPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               {isSavingDraft && (
-                <span className="text-[11px] text-slate-400 hidden sm:inline-flex items-center gap-1">
-                  <Loader2 className="w-3 h-3 animate-spin text-blue-600" /> Guardando...
+                <span className="text-[11px] text-slate-400 inline-flex items-center gap-1" title="Guardando progreso automáticamente">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600 shrink-0" />
+                  <span className="hidden sm:inline">Guardando...</span>
                 </span>
               )}
               <div className="text-right">
                 <span className="text-xs sm:text-sm font-black text-blue-600 font-mono">
                   {progressPercent}%
                 </span>
-                <span className="block text-[9px] text-slate-400 uppercase font-medium">Completado</span>
+                <span className="block text-[8px] sm:text-[9px] text-slate-400 uppercase font-medium">Completado</span>
               </div>
 
               {/* Botón Salir de la Evaluación */}
-              <div className="h-6 w-px bg-slate-200" />
+              <div className="h-5 sm:h-6 w-px bg-slate-200" />
               <button
                 type="button"
                 onClick={() => setShowExitConfirm(true)}
-                className="px-2.5 sm:px-3 py-1.5 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 shadow-2xs group"
+                className="p-1.5 sm:px-3 sm:py-1.5 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 shadow-2xs group touch-manipulation"
                 title="Guardar respuestas y salir de la evaluación"
               >
-                <LogOut className="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-600 transition-colors" />
-                <span>Salir</span>
+                <LogOut className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-slate-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                <span className="hidden sm:inline">Salir</span>
               </button>
             </div>
           </div>
 
           {/* Slim clean progress line */}
-          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
+          <div className="w-full bg-slate-100 rounded-full h-1 sm:h-1.5 mt-2 overflow-hidden">
             <div
-              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+              className="bg-blue-600 h-1 sm:h-1.5 rounded-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -1218,10 +1222,10 @@ export default function WorkerEvaluationPage() {
       </header>
 
       {/* Main Wide Evaluation Body: Clean question flow */}
-      <main className="flex-1 max-w-6xl xl:max-w-7xl w-full mx-auto px-4 sm:px-8 md:px-12 py-6 sm:py-8 animate-fade-in-slide">
+      <main className="flex-1 max-w-6xl xl:max-w-7xl w-full mx-auto px-3 sm:px-8 md:px-12 py-4 sm:py-8 animate-fade-in-slide">
         {/* Banner si viene de una evaluación previa en cadena */}
         {fromChain && (
-          <div className="mb-5 p-3.5 bg-purple-50/80 border border-purple-200 rounded-2xl flex items-center justify-between gap-3 text-xs text-purple-900 animate-in fade-in slide-in-from-top-2 shadow-2xs">
+          <div className="mb-4 sm:mb-5 p-3 sm:p-3.5 bg-purple-50/80 border border-purple-200 rounded-2xl flex items-center justify-between gap-3 text-xs text-purple-900 animate-in fade-in slide-in-from-top-2 shadow-2xs">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
               <div>
@@ -1245,8 +1249,8 @@ export default function WorkerEvaluationPage() {
 
         {/* TÍTULO DE LA SECCIÓN (BAJADO AL CUERPO PRINCIPAL SOBRE LAS PREGUNTAS) */}
         {currentSection?.title && (
-          <div className="mb-6 pb-3.5 border-b border-slate-200">
-            <div className="flex items-center gap-2 text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-1">
+          <div className="mb-4 sm:mb-6 pb-2.5 sm:pb-3.5 border-b border-slate-200">
+            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-1">
               <span className="px-2 py-0.5 bg-blue-50 border border-blue-200 rounded-md">
                 Sección {currentSectionIndex + 1} de {sections.length}
               </span>
@@ -1256,7 +1260,7 @@ export default function WorkerEvaluationPage() {
                 </span>
               )}
             </div>
-            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight leading-snug">
               {currentSection.title}
             </h2>
           </div>
@@ -1270,7 +1274,7 @@ export default function WorkerEvaluationPage() {
                 <div
                   key={field.id}
                   id={`field-${field.id}`}
-                  className="py-5 first:pt-2 last:pb-6"
+                  className="py-4 sm:py-5 first:pt-1 last:pb-6"
                 >
                   {field.label && field.label.trim() !== '' && field.label !== 'Bloque HTML' && field.label !== 'Instrucciones / Contenido Informativo' && (
                     <h2 className="text-sm sm:text-base font-bold text-slate-800 mb-2 leading-snug">
@@ -1295,16 +1299,16 @@ export default function WorkerEvaluationPage() {
               <div
                 key={field.id}
                 id={`field-${field.id}`}
-                className={`py-6 first:pt-2 last:pb-8 transition-all rounded-xl px-2 sm:px-3 ${
+                className={`py-4 sm:py-6 first:pt-1 last:pb-6 transition-all rounded-xl px-2.5 sm:px-3 ${
                   activeFieldId === field.id
                     ? 'ring-2 ring-blue-500/40 bg-blue-50/20'
                     : ''
                 }`}
               >
                 {/* Question Label */}
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <h2 className="text-sm sm:text-base font-semibold text-slate-900 leading-snug">
-                    {field.label} {field.required && <span className="text-rose-500">*</span>}
+                <div className="flex items-start justify-between gap-3 mb-2.5 sm:mb-3">
+                  <h2 className="text-sm sm:text-base font-bold sm:font-semibold text-slate-900 leading-snug">
+                    {field.label} {field.required && <span className="text-rose-500 font-bold ml-0.5">*</span>}
                   </h2>
 
                   {isAnswered && (
@@ -1320,7 +1324,7 @@ export default function WorkerEvaluationPage() {
 
                 {/* Radio Options Grid */}
                 {field.type === 'radio' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 mt-2.5">
                     {field.options?.map((opt) => {
                       const isSelected = String(currentValue) === String(opt.value);
                       return (
@@ -1328,21 +1332,21 @@ export default function WorkerEvaluationPage() {
                           type="button"
                           key={opt.id}
                           onClick={() => handleSelectAnswer(field.id, opt.value)}
-                          className={`p-3 rounded-lg border text-left text-xs sm:text-sm font-medium transition-all duration-150 flex items-center justify-between ${
+                          className={`p-3 sm:p-3.5 min-h-[48px] rounded-xl border text-left text-xs sm:text-sm font-medium transition-all duration-150 flex items-center justify-between touch-manipulation active:scale-[0.99] select-none ${
                             isSelected
-                              ? 'bg-blue-50/90 border-blue-600 text-blue-950 font-semibold ring-1 ring-blue-600 shadow-xs'
-                              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                              ? 'bg-blue-50/95 border-blue-600 text-blue-950 font-semibold ring-1 ring-blue-600 shadow-xs'
+                              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 active:bg-slate-100'
                           }`}
                         >
-                          <span className="leading-snug pointer-events-none">{opt.label}</span>
+                          <span className="leading-snug pointer-events-none pr-2">{opt.label}</span>
                           <span
-                            className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ml-2.5 pointer-events-none ${
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 pointer-events-none transition-colors ${
                               isSelected
                                 ? 'border-blue-600 bg-blue-600 text-white'
                                 : 'border-slate-300 bg-white'
                             }`}
                           >
-                            {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white pointer-events-none" />}
+                            {isSelected && <span className="w-2 h-2 rounded-full bg-white pointer-events-none" />}
                           </span>
                         </button>
                       );
@@ -1356,7 +1360,7 @@ export default function WorkerEvaluationPage() {
                     <select
                       value={currentValue !== undefined ? String(currentValue) : ''}
                       onChange={(e) => handleSelectAnswer(field.id, e.target.value)}
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                      className="w-full px-3.5 py-3 sm:py-2.5 border border-slate-300 rounded-xl text-base sm:text-sm text-slate-900 bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 touch-manipulation"
                     >
                       <option value="">-- Seleccione una opción --</option>
                       {field.options?.map((opt) => (
@@ -1376,7 +1380,7 @@ export default function WorkerEvaluationPage() {
                       value={currentValue !== undefined ? String(currentValue) : ''}
                       onChange={(e) => handleSelectAnswer(field.id, e.target.value)}
                       placeholder="Escriba aquí sus observaciones o consideraciones..."
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                      className="w-full px-3.5 py-3 sm:py-2.5 border border-slate-300 rounded-xl text-base sm:text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 touch-manipulation"
                     />
                   </div>
                 )}
@@ -1389,7 +1393,7 @@ export default function WorkerEvaluationPage() {
                       value={currentValue !== undefined ? String(currentValue) : ''}
                       onChange={(e) => handleSelectAnswer(field.id, e.target.value)}
                       placeholder="Ingrese texto..."
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                      className="w-full px-3.5 py-3 sm:py-2.5 border border-slate-300 rounded-xl text-base sm:text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 touch-manipulation"
                     />
                   </div>
                 )}
@@ -1400,98 +1404,125 @@ export default function WorkerEvaluationPage() {
       </main>
 
       {/* Guided Sticky Bottom Control Bar */}
-      <footer className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-sm border-t border-slate-200 py-3.5 px-4 sm:px-8">
-        <div className="max-w-6xl xl:max-w-7xl w-full mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+      <footer className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2.5 sm:py-3.5 px-3 sm:px-8 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+        {/* Banner de validación animado visible si hay una pregunta pendiente */}
+        {validationNotice && (
+          <div className="max-w-6xl xl:max-w-7xl w-full mx-auto mb-2 p-2 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in slide-in-from-bottom-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+              <span className="truncate">{validationNotice}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setValidationNotice(null)}
+              className="p-1 text-rose-400 hover:text-rose-600 shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        <div className="max-w-6xl xl:max-w-7xl w-full mx-auto flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={handlePrevSection}
               disabled={currentSectionIndex === 0}
-              className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs sm:text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-1.5 disabled:opacity-30 disabled:pointer-events-none"
+              className="px-2.5 sm:px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs sm:text-sm font-semibold rounded-xl transition-all inline-flex items-center gap-1 active:scale-95 disabled:opacity-30 disabled:pointer-events-none min-h-[40px] sm:min-h-[44px] touch-manipulation shadow-2xs"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Anterior</span>
+              <ArrowLeft className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Anterior</span>
+              <span className="sm:hidden text-xs">Ant.</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowExitConfirm(true)}
-              className="px-3 py-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 text-xs font-semibold rounded-lg transition-colors inline-flex items-center gap-1.5 border border-slate-200"
+              className="p-2 sm:px-3 sm:py-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 text-xs font-semibold rounded-xl transition-all inline-flex items-center gap-1 border border-slate-200 min-h-[40px] sm:min-h-[44px] touch-manipulation active:scale-95"
               title="Guardar respuestas y salir"
             >
-              <LogOut className="w-3.5 h-3.5 text-slate-400 hover:text-rose-600" />
+              <LogOut className="w-3.5 h-3.5 text-slate-400 hover:text-rose-600 shrink-0" />
               <span className="hidden sm:inline">Salir</span>
             </button>
           </div>
 
-          {/* Dynamic Status / Validation Notice */}
-          <div className="text-center text-xs text-slate-500 font-medium">
-            {validationNotice ? (
-              <span className="text-rose-600 font-semibold">{validationNotice}</span>
-            ) : (
-              <span>
-                Respondidas: <strong className="text-slate-800">{currentSectionAnswered}</strong> de {currentSectionTotal}
-              </span>
-            )}
+          {/* Dynamic Status / Progress Count */}
+          <div className="text-center text-[11px] sm:text-xs text-slate-500 font-medium px-1 truncate">
+            <span className="whitespace-nowrap">
+              <span className="hidden sm:inline">Respondidas: </span>
+              <strong className="text-slate-800 font-bold">{currentSectionAnswered}</strong>
+              <span className="text-slate-400 mx-0.5">/</span>
+              <span className="text-slate-600">{currentSectionTotal}</span>
+            </span>
           </div>
 
-          {currentSectionIndex < sections.length - 1 ? (
-            <button
-              type="button"
-              onClick={handleNextSection}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors inline-flex items-center gap-2 shadow-xs"
-            >
-              <span>Siguiente Sección</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          ) : activeFormIndex < formsList.length - 1 ? (
-            <button
-              type="button"
-              onClick={handleFinalSubmit}
-              disabled={isSavingDraft}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors inline-flex items-center gap-2 shadow-xs disabled:opacity-50"
-            >
-              {isSavingDraft ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Cargando...</span>
-                </>
-              ) : (
-                <>
-                  <span>
-                    Siguiente Cuestionario ({activeFormIndex + 2} de {formsList.length}): {formsList[activeFormIndex + 1]?.title}
-                  </span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleFinalSubmit}
-              disabled={isFinalSubmitting}
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors inline-flex items-center gap-2 shadow-xs disabled:opacity-50"
-            >
-              {isFinalSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Enviando...</span>
-                </>
-              ) : campaign?.nextEvaluationCode ? (
-                <>
-                  <span>
-                    Finalizar y Continuar Circuito ({nextCampaignTitle || 'Siguiente Evaluación'})
-                  </span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              ) : (
-                <>
-                  <span>Finalizar Evaluación</span>
-                  <CheckCircle2 className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          )}
+          <div className="shrink-0 flex items-center justify-end">
+            {currentSectionIndex < sections.length - 1 ? (
+              <button
+                type="button"
+                onClick={handleNextSection}
+                className="px-3.5 sm:px-5 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs sm:text-sm font-bold rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs active:scale-95 min-h-[40px] sm:min-h-[44px] touch-manipulation"
+              >
+                <span className="hidden sm:inline">Siguiente Sección</span>
+                <span className="sm:hidden">Siguiente</span>
+                <ArrowRight className="w-4 h-4 shrink-0" />
+              </button>
+            ) : activeFormIndex < formsList.length - 1 ? (
+              <button
+                type="button"
+                onClick={handleFinalSubmit}
+                disabled={isSavingDraft}
+                className="px-3.5 sm:px-6 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs sm:text-sm font-bold rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50 active:scale-95 min-h-[40px] sm:min-h-[44px] touch-manipulation"
+              >
+                {isSavingDraft ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    <span>Cargando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">
+                      Siguiente Cuestionario ({activeFormIndex + 2} de {formsList.length}): {formsList[activeFormIndex + 1]?.title}
+                    </span>
+                    <span className="sm:hidden">
+                      Sig. Cuestionario ({activeFormIndex + 2}/{formsList.length})
+                    </span>
+                    <ArrowRight className="w-4 h-4 shrink-0" />
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleFinalSubmit}
+                disabled={isFinalSubmitting}
+                className="px-4 sm:px-6 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs sm:text-sm font-bold rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50 active:scale-95 min-h-[40px] sm:min-h-[44px] touch-manipulation"
+              >
+                {isFinalSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    <span>Enviando...</span>
+                  </>
+                ) : campaign?.nextEvaluationCode ? (
+                  <>
+                    <span className="hidden sm:inline">
+                      Finalizar y Continuar Circuito ({nextCampaignTitle || 'Siguiente Evaluación'})
+                    </span>
+                    <span className="sm:hidden">
+                      Finalizar y Continuar
+                    </span>
+                    <ArrowRight className="w-4 h-4 shrink-0" />
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Finalizar Evaluación</span>
+                    <span className="sm:hidden">Finalizar</span>
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </footer>
 
