@@ -1157,19 +1157,15 @@ export default function WorkerEvaluationPage() {
                   )}
                 </div>
 
-                {/* TÍTULO PRINCIPAL DE LA EVALUACIÓN */}
-                <h1 className="text-sm sm:text-base font-extrabold text-slate-900 truncate leading-tight mt-0.5" title={campaign.title}>
-                  {campaign.title}
+                {/* TÍTULO DEL CUESTIONARIO EN EJECUCIÓN (MÁS GRANDE) */}
+                <h1 className="text-base sm:text-lg font-black text-slate-900 truncate leading-snug mt-0.5 tracking-tight uppercase" title={displayFormTitle}>
+                  {displayFormTitle}
                 </h1>
 
-                {/* Sub-línea: Cuestionario actual, Sección y Puesto Asignado */}
+                {/* Sub-línea: Nombre de la Campaña y Puesto Asignado */}
                 <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-500 mt-0.5">
-                  <span className="font-semibold text-slate-700 truncate max-w-[320px]" title={displayFormTitle}>
-                    {displayFormTitle}
-                  </span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-slate-600 truncate max-w-[240px]">
-                    {currentSection?.title || 'Preguntas'}
+                  <span className="font-semibold text-slate-600 truncate max-w-[340px]" title={campaign.title}>
+                    {campaign.title}
                   </span>
                   {selectedPuestoLabel && (
                     <>
@@ -1244,6 +1240,25 @@ export default function WorkerEvaluationPage() {
             <span className="px-2.5 py-0.5 bg-purple-200/60 text-purple-900 rounded-full text-[10px] font-bold uppercase shrink-0">
               Paso Siguiente
             </span>
+          </div>
+        )}
+
+        {/* TÍTULO DE LA SECCIÓN (BAJADO AL CUERPO PRINCIPAL SOBRE LAS PREGUNTAS) */}
+        {currentSection?.title && (
+          <div className="mb-6 pb-3.5 border-b border-slate-200">
+            <div className="flex items-center gap-2 text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-1">
+              <span className="px-2 py-0.5 bg-blue-50 border border-blue-200 rounded-md">
+                Sección {currentSectionIndex + 1} de {sections.length}
+              </span>
+              {sections.length > 1 && (
+                <span className="text-slate-400 font-medium">
+                  • Pantalla {currentSectionIndex + 1}
+                </span>
+              )}
+            </div>
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+              {currentSection.title}
+            </h2>
           </div>
         )}
 
