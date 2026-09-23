@@ -588,7 +588,7 @@ export async function cloneFormsForCampaignBatch(
 
     const cloned: FormSchema = {
       id: uniqueId,
-      title: `${source.title} (${cleanComp})`,
+      title: source.title,
       code: uniqueCode,
       company: cleanComp,
       description: `Formulario exclusivo adaptado para la evaluación ${cleanCode} de ${cleanComp}. Basado en la plantilla maestra "${source.title}".`,

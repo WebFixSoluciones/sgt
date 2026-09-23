@@ -196,6 +196,21 @@ export default function WorkerEvaluationPage() {
 
   const activeForm = formsList[activeFormIndex] || form;
 
+  // Clean form title for worker view (stripping redundant company name in parentheses)
+  const displayFormTitle = useMemo(() => {
+    if (!activeForm?.title) return 'Cuestionario';
+    let clean = activeForm.title;
+    if (campaign?.company) {
+      const escaped = campaign.company.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      clean = clean.replace(new RegExp(`\\s*\\(${escaped}\\)\\s*$`, 'i'), '');
+    }
+    clean = clean.replace(/\s*\([^)]*\)\s*$/, (m) => {
+      if (/oficial|insst/i.test(m)) return m;
+      return '';
+    });
+    return clean.trim() || activeForm.title;
+  }, [activeForm?.title, campaign?.company]);
+
   // 2. Build Sections based on 'page_break' fields
   const sections: Section[] = useMemo(() => {
     if (!activeForm || !activeForm.fields) return [];
@@ -1064,7 +1079,7 @@ export default function WorkerEvaluationPage() {
 
       {/* Top Clean Sticky Progress Header con Título de Evaluación destacado */}
       <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-8 py-3">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl xl:max-w-7xl w-full mx-auto">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
               <img
@@ -1073,16 +1088,15 @@ export default function WorkerEvaluationPage() {
                 className="h-8 w-auto object-contain hidden sm:block shrink-0"
               />
               <div className="flex flex-col min-w-0">
-                {/* Badges superiores: Empresa + Tipo / Cadena */}
+                {/* Badges superiores: Empresa + Trabajador + Cuestionario */}
                 <div className="flex items-center gap-2 flex-wrap text-[10px] font-bold uppercase tracking-wider">
                   <span className="text-blue-700 flex items-center gap-1">
                     <Building2 className="w-3 h-3 shrink-0" />
-                    <span className="truncate max-w-[180px]">{campaign.company}</span>
+                    <span className="truncate max-w-[200px]">{campaign.company}</span>
                   </span>
-                  {campaign.nextEvaluationCode && (
-                    <span className="text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 flex items-center gap-1 shrink-0">
-                      <GitMerge className="w-2.5 h-2.5" />
-                      <span>Circuito en Cadena</span>
+                  {workerCode && (
+                    <span className="text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 shrink-0">
+                      ID: {workerCode}
                     </span>
                   )}
                   {formsList.length > 1 && (
@@ -1099,11 +1113,11 @@ export default function WorkerEvaluationPage() {
 
                 {/* Sub-línea: Cuestionario actual, Sección y Puesto Asignado */}
                 <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-500 mt-0.5">
-                  <span className="font-semibold text-slate-700 truncate max-w-[200px]" title={activeForm?.title}>
-                    {activeForm?.title || 'Cuestionario'}
+                  <span className="font-semibold text-slate-700 truncate max-w-[320px]" title={displayFormTitle}>
+                    {displayFormTitle}
                   </span>
                   <span className="text-slate-300">•</span>
-                  <span className="text-slate-600 truncate max-w-[180px]">
+                  <span className="text-slate-600 truncate max-w-[240px]">
                     {currentSection?.title || 'Preguntas'}
                   </span>
                   {selectedPuestoLabel && (
@@ -1111,7 +1125,7 @@ export default function WorkerEvaluationPage() {
                       <span className="text-slate-300">•</span>
                       <span className="text-emerald-700 font-semibold truncate flex items-center gap-1">
                         <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                        <span className="truncate max-w-[180px]">Puesto: {selectedPuestoLabel}</span>
+                        <span className="truncate max-w-[220px]">Puesto: {selectedPuestoLabel}</span>
                       </span>
                     </>
                   )}
@@ -1144,8 +1158,8 @@ export default function WorkerEvaluationPage() {
         </div>
       </header>
 
-      {/* Main Wide Evaluation Body: Clean question flow with clear Evaluation Identification */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8 animate-fade-in-slide">
+      {/* Main Wide Evaluation Body: Clean question flow */}
+      <main className="flex-1 max-w-6xl xl:max-w-7xl w-full mx-auto px-4 sm:px-8 md:px-12 py-6 sm:py-8 animate-fade-in-slide">
         {/* Banner si viene de una evaluación previa en cadena */}
         {fromChain && (
           <div className="mb-5 p-3.5 bg-purple-50/80 border border-purple-200 rounded-2xl flex items-center justify-between gap-3 text-xs text-purple-900 animate-in fade-in slide-in-from-top-2 shadow-2xs">
@@ -1170,53 +1184,6 @@ export default function WorkerEvaluationPage() {
           </div>
         )}
 
-        {/* Banner Hero de Identificación Clara de Evaluación Actual */}
-        <div className="mb-6 p-4 sm:p-5 bg-gradient-to-r from-blue-50/80 via-slate-50 to-white border border-blue-200/70 rounded-2xl shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider">
-                  Evaluación en curso
-                </span>
-                <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider">
-                  {campaign.company}
-                </span>
-                {formsList.length > 1 && (
-                  <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] font-bold uppercase tracking-wider">
-                    Cuestionario {activeFormIndex + 1} de {formsList.length}
-                  </span>
-                )}
-                {campaign.nextEvaluationCode && (
-                  <span className="px-2 py-0.5 rounded-md bg-purple-50 border border-purple-200 text-purple-700 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                    <GitMerge className="w-3 h-3 text-purple-600" />
-                    Circuito en Cadena
-                  </span>
-                )}
-              </div>
-              <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight">
-                {campaign.title}
-              </h2>
-              <p className="text-xs text-slate-600">
-                {activeForm?.description || `Instrumento activo: ${activeForm?.title || 'Cuestionario de Evaluación'}. Complete todas las preguntas requeridas.`}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap shrink-0">
-              <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl shadow-2xs">
-                <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-wider">Trabajador</span>
-                <span className="font-mono font-bold text-slate-900 text-xs">{workerCode}</span>
-              </div>
-              {selectedPuestoLabel && (
-                <div className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl shadow-2xs">
-                  <span className="block text-[9px] text-emerald-700 font-bold uppercase tracking-wider">Puesto Asignado</span>
-                  <span className="font-bold text-emerald-900 text-xs truncate max-w-[150px] block" title={selectedPuestoLabel}>
-                    {selectedPuestoLabel}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
         <div className="divide-y divide-slate-100">
           {currentSection?.fields.map((field) => {
             const currentValue = answers[field.id];
@@ -1332,7 +1299,7 @@ export default function WorkerEvaluationPage() {
 
       {/* Guided Sticky Bottom Control Bar */}
       <footer className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-sm border-t border-slate-200 py-3.5 px-4 sm:px-8">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-6xl xl:max-w-7xl w-full mx-auto flex items-center justify-between gap-4">
           <button
             type="button"
             onClick={handlePrevSection}
