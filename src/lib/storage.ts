@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { FormSchema, EvaluationCampaign, WorkerSubmission, EvaluationGroup } from './types';
-import { initialForms, initialCampaigns, initialGroups, initialSubmissions } from './seed-data';
+import { initialForms, initialCampaigns, initialGroups, initialSubmissions, estresLaboralForm } from './seed-data';
 import { getEcuadorISOString } from './date-utils';
 
 interface DatabaseSchema {
@@ -265,6 +265,19 @@ export async function getDatabase(): Promise<DatabaseSchema> {
         }
       }
     }
+
+    // Ensure form-estres-laboral has canonical updated scale and question fields
+    const estresMaster = memDb.forms.find((f) => f.id === 'form-estres-laboral');
+    if (estresMaster && estresLaboralForm) {
+      const q1 = estresMaster.fields.find((f) => f.id === 'estres_q1');
+      if (!q1 || !q1.options || q1.options[1]?.label !== '2. Casi nunca') {
+        estresMaster.fields = estresLaboralForm.fields;
+        estresMaster.title = estresLaboralForm.title;
+        estresMaster.description = estresLaboralForm.description;
+        modified = true;
+      }
+    }
+
     if (modified) {
       await writeToDiskOrBlob(memDb);
     }
