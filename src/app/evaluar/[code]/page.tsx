@@ -975,6 +975,18 @@ export default function WorkerEvaluationPage() {
               Finalizar y salir
             </button>
           </div>
+
+          <div className="pt-2 text-center text-[10px] text-slate-400">
+            Sistema de Evaluaciones | desarrollado por{" "}
+            <a
+              href="https://webfixsoluciones.net"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-slate-600 hover:underline transition-colors"
+            >
+              Web FiX Soluciones
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -983,7 +995,7 @@ export default function WorkerEvaluationPage() {
   // State: Step 1 - Worker Login
   if (!isLoggedIn) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center p-3 sm:p-4">
+      <div className="min-h-[80vh] flex flex-col items-center justify-center p-3 sm:p-4">
         {showResumeModal && resumeData && (
           <ResumePromptModal
             questionNumber={resumeData.questionNumber}
@@ -1080,6 +1092,18 @@ export default function WorkerEvaluationPage() {
               )}
             </button>
           </form>
+        </div>
+
+        <div className="mt-4 text-center text-[11px] text-slate-400">
+          Sistema de Evaluaciones | desarrollado por{" "}
+          <a
+            href="https://webfixsoluciones.net"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-slate-600 hover:underline transition-colors"
+          >
+            Web FiX Soluciones
+          </a>
         </div>
 
         {alertDialog && (
@@ -1400,6 +1424,19 @@ export default function WorkerEvaluationPage() {
               </div>
             );
           })}
+
+          {/* Footer credit inside main scrollable survey body */}
+          <div className="pt-6 pb-2 text-center text-[11px] text-slate-400">
+            Sistema de Evaluaciones | desarrollado por{" "}
+            <a
+              href="https://webfixsoluciones.net"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-slate-600 hover:underline transition-colors"
+            >
+              Web FiX Soluciones
+            </a>
+          </div>
         </div>
       </main>
 

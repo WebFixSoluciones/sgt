@@ -156,6 +156,19 @@ export default function AdminLoginPage() {
             <span>Volver a la pantalla de evaluación</span>
           </Link>
         </div>
+
+        {/* Footer Credit */}
+        <div className="text-center text-[11px] text-slate-400 pt-2">
+          Sistema de Evaluaciones | desarrollado por{" "}
+          <a
+            href="https://webfixsoluciones.net"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-slate-600 hover:underline transition-colors"
+          >
+            Web FiX Soluciones
+          </a>
+        </div>
       </div>
     </div>
   );

@@ -545,6 +545,17 @@ export default function AdminResultadosPage() {
         <div className="pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400 space-y-0.5">
           <p className="font-semibold text-slate-500">Prevención SGT • Sistema Gestor de Salud y Prevención Laboral</p>
           <p>Informe generado automáticamente con baremos estandarizados del INSST y normativa laboral vigente.</p>
+          <p className="text-[10px] text-slate-400 pt-1">
+            Sistema de Evaluaciones | desarrollado por{" "}
+            <a
+              href="https://webfixsoluciones.net"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-slate-600 hover:underline transition-colors"
+            >
+              Web FiX Soluciones
+            </a>
+          </p>
         </div>
       </div>
 

@@ -67,8 +67,16 @@ export default function EvaluacionesIndexPage() {
         </div>
       </div>
 
-      <footer className="w-full max-w-sm flex items-center justify-center text-xs text-slate-400 pt-8">
-        <span>SGT Prevención © 2026</span>
+      <footer className="w-full max-w-sm flex items-center justify-center text-[11px] text-slate-400 pt-8 pb-4">
+        <span>Sistema de Evaluaciones | desarrollado por </span>
+        <a
+          href="https://webfixsoluciones.net"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-1 text-slate-400 hover:text-slate-600 hover:underline transition-colors"
+        >
+          Web FiX Soluciones
+        </a>
       </footer>
     </div>
   );

@@ -136,7 +136,15 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
         </button>
 
         <div className="text-[10px] text-center text-slate-400 font-medium">
-          Prevención SGT • 2026
+          Sistema de Evaluaciones | desarrollado por{" "}
+          <a
+            href="https://webfixsoluciones.net"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-slate-600 hover:underline transition-colors"
+          >
+            Web FiX Soluciones
+          </a>
         </div>
       </div>
     </div>
@@ -204,8 +212,21 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0 overflow-y-auto">
-          {children}
+        <main className="flex-1 min-w-0 overflow-y-auto flex flex-col justify-between">
+          <div className="flex-1">
+            {children}
+          </div>
+          <footer className="py-3 px-6 border-t border-slate-100 bg-white/50 text-center text-[11px] text-slate-400 print:hidden">
+            Sistema de Evaluaciones | desarrollado por{" "}
+            <a
+              href="https://webfixsoluciones.net"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-slate-600 hover:underline transition-colors"
+            >
+              Web FiX Soluciones
+            </a>
+          </footer>
         </main>
       </div>
     </div>
