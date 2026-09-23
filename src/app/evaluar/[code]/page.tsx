@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Sparkles,
   GitMerge,
+  LogOut,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema, FormField } from '@/lib/types';
 import ResumePromptModal from '@/components/worker/ResumePromptModal';
@@ -117,6 +118,54 @@ export default function WorkerEvaluationPage() {
       message,
       confirmText,
     });
+  };
+
+  // Exit Confirmation Dialog State
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+  const hasExplicitlyExitedRef = useRef(false);
+
+  // Exit handler: saves current answers and returns cleanly to the worker login screen
+  const handleExitConfirm = async () => {
+    try {
+      setIsExiting(true);
+      hasExplicitlyExitedRef.current = true;
+
+      // 1. Immediately flush draft to server so progress is never lost
+      if (code && workerCode) {
+        try {
+          await fetch('/api/sesiones', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'save_draft',
+              evaluationCode: code,
+              workerCode,
+              answers,
+              currentFormIndex: activeFormIndex,
+              currentFieldIndex: currentSectionIndex,
+              currentSectionTitle: sections[currentSectionIndex]?.title || '',
+            }),
+          });
+        } catch (e) {
+          console.warn('[EXIT] Error saving draft on exit:', e);
+        }
+      }
+
+      // 2. Reset session state
+      setShowExitConfirm(false);
+      setIsLoggedIn(false);
+      setWorkerCode('');
+      setAnswers({});
+      setCurrentSectionIndex(0);
+      setActiveFieldId(null);
+      setValidationNotice(null);
+
+      // 3. Clear URL query params to prevent auto-relogin
+      router.replace(`/evaluar/${code}`);
+    } finally {
+      setIsExiting(false);
+    }
   };
 
   // Countdown timer for chained evaluation transition
@@ -306,6 +355,7 @@ export default function WorkerEvaluationPage() {
 
   // 3. Worker Check / Login
   const handleWorkerCheck = async (targetCode?: string) => {
+    hasExplicitlyExitedRef.current = false;
     const codeToTest = (targetCode || workerCode).trim().toUpperCase();
     if (!codeToTest) {
       setCheckError('Por favor ingrese su Código de Trabajador.');
@@ -383,10 +433,10 @@ export default function WorkerEvaluationPage() {
   // Auto-login if worker code is in query string (from chained group)
   useEffect(() => {
     const workerParam = searchParams.get('worker');
-    if (workerParam && form && !isLoggedIn && !isSubmittingCheck && !alreadyCompleted) {
+    if (workerParam && form && !isLoggedIn && !isSubmittingCheck && !alreadyCompleted && !hasExplicitlyExitedRef.current) {
       handleWorkerCheck(workerParam);
     }
-  }, [searchParams, form]);
+  }, [searchParams, form, isLoggedIn, isSubmittingCheck, alreadyCompleted]);
 
   // Save & Resume: Continue from where worker stopped
   const handleContinueSaved = () => {
@@ -1146,6 +1196,18 @@ export default function WorkerEvaluationPage() {
                 </span>
                 <span className="block text-[9px] text-slate-400 uppercase font-medium">Completado</span>
               </div>
+
+              {/* Botón Salir de la Evaluación */}
+              <div className="h-6 w-px bg-slate-200" />
+              <button
+                type="button"
+                onClick={() => setShowExitConfirm(true)}
+                className="px-2.5 sm:px-3 py-1.5 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 shadow-2xs group"
+                title="Guardar respuestas y salir de la evaluación"
+              >
+                <LogOut className="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-600 transition-colors" />
+                <span>Salir</span>
+              </button>
             </div>
           </div>
 
@@ -1325,15 +1387,27 @@ export default function WorkerEvaluationPage() {
       {/* Guided Sticky Bottom Control Bar */}
       <footer className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-sm border-t border-slate-200 py-3.5 px-4 sm:px-8">
         <div className="max-w-6xl xl:max-w-7xl w-full mx-auto flex items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={handlePrevSection}
-            disabled={currentSectionIndex === 0}
-            className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs sm:text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-1.5 disabled:opacity-30 disabled:pointer-events-none"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Anterior</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrevSection}
+              disabled={currentSectionIndex === 0}
+              className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs sm:text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-1.5 disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Anterior</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowExitConfirm(true)}
+              className="px-3 py-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 text-xs font-semibold rounded-lg transition-colors inline-flex items-center gap-1.5 border border-slate-200"
+              title="Guardar respuestas y salir"
+            >
+              <LogOut className="w-3.5 h-3.5 text-slate-400 hover:text-rose-600" />
+              <span className="hidden sm:inline">Salir</span>
+            </button>
+          </div>
 
           {/* Dynamic Status / Validation Notice */}
           <div className="text-center text-xs text-slate-500 font-medium">
@@ -1415,6 +1489,20 @@ export default function WorkerEvaluationPage() {
           confirmText={alertDialog.confirmText}
           cancelText={null}
           onConfirm={() => setAlertDialog(null)}
+        />
+      )}
+
+      {showExitConfirm && (
+        <ConfirmDialog
+          isOpen={showExitConfirm}
+          type="warning"
+          title="¿Desea salir de la evaluación?"
+          message="Su progreso actual se guardará de forma segura. Podrá retomar la evaluación en cualquier momento ingresando nuevamente con su Código de Trabajador."
+          confirmText={isExiting ? 'Guardando y saliendo...' : 'Guardar y Salir'}
+          cancelText="Continuar respondiendo"
+          isLoading={isExiting}
+          onConfirm={handleExitConfirm}
+          onCancel={() => setShowExitConfirm(false)}
         />
       )}
     </div>
