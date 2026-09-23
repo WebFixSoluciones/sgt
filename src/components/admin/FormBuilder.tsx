@@ -20,9 +20,12 @@ import {
   Layers,
   ChevronRight,
   Eye,
+  FileDown,
+  Loader2,
 } from 'lucide-react';
 import { FormSchema, FormField, FormFieldOption, FormFieldType } from '@/lib/types';
 import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
+import { exportFormToPdf } from '@/lib/export-pdf-template';
 
 interface FormBuilderProps {
   initialForm: FormSchema;
@@ -56,6 +59,21 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
 
   const showAlert = (title: string, message: string, type: DialogType = 'danger') => {
     setAlertDialog({ isOpen: true, title, message, type });
+  };
+
+  // PDF Export state
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const handleExportPdf = async () => {
+    try {
+      setExportingPdf(true);
+      await exportFormToPdf(form);
+    } catch (e: any) {
+      console.error('Error al exportar PDF:', e);
+      showAlert('Error al exportar PDF', 'No se pudo generar el documento PDF del formulario.', 'danger');
+    } finally {
+      setExportingPdf(false);
+    }
   };
 
   // Selected Section in Navigator ('all' = show full form, or section id = focus that section)
@@ -483,6 +501,23 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                 <Check className="w-4 h-4" /> Guardado con éxito
               </span>
             )}
+
+            {/* Botón Exportar PDF */}
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={exportingPdf}
+              className="px-3 py-2 bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 text-xs sm:text-sm font-semibold rounded-xl transition-colors inline-flex items-center gap-1.5 border border-slate-200 hover:border-rose-200 shadow-2xs disabled:opacity-50"
+              title="Exportar todas las preguntas y opciones vacías en PDF para cruce de variables"
+            >
+              {exportingPdf ? (
+                <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
+              ) : (
+                <FileDown className="w-4 h-4 text-rose-500" />
+              )}
+              <span className="hidden sm:inline">Exportar PDF</span>
+              <span className="sm:hidden">PDF</span>
+            </button>
 
             {/* Botón Guardar */}
             <button

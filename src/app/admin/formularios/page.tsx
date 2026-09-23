@@ -16,10 +16,12 @@ import {
   X,
   Loader2,
   AlertTriangle,
+  FileDown,
 } from 'lucide-react';
 import { FormSchema } from '@/lib/types';
 import Portal from '@/components/common/Portal';
 import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
+import { exportFormToPdf } from '@/lib/export-pdf-template';
 
 export default function AdminFormulariosPage() {
   const [forms, setForms] = useState<FormSchema[]>([]);
@@ -73,6 +75,21 @@ export default function AdminFormulariosPage() {
   const [duplicateAsTemplate, setDuplicateAsTemplate] = useState(true);
   const [duplicateCompany, setDuplicateCompany] = useState('');
   const [isDuplicating, setIsDuplicating] = useState(false);
+
+  // PDF Export state
+  const [exportingFormId, setExportingFormId] = useState<string | null>(null);
+
+  const handleExportPdf = async (formToExport: FormSchema) => {
+    try {
+      setExportingFormId(formToExport.id);
+      await exportFormToPdf(formToExport);
+    } catch (err: any) {
+      console.error('Error al exportar PDF:', err);
+      showAlert('Error al exportar PDF', 'Ocurrió un error al generar el documento PDF del formulario.', 'danger');
+    } finally {
+      setExportingFormId(null);
+    }
+  };
 
   const fetchForms = async () => {
     try {
@@ -385,6 +402,21 @@ export default function AdminFormulariosPage() {
                       {/* Acciones */}
                       <td className="py-4 px-5 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {/* Exportar PDF */}
+                          <button
+                            type="button"
+                            onClick={() => handleExportPdf(form)}
+                            disabled={exportingFormId === form.id}
+                            title="Exportar cuestionario en PDF (preguntas y opciones en blanco)"
+                            className="p-1.5 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                          >
+                            {exportingFormId === form.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                            ) : (
+                              <FileDown className="w-3.5 h-3.5 text-rose-500" />
+                            )}
+                          </button>
+
                           {/* Duplicar */}
                           <button
                             type="button"
@@ -467,6 +499,22 @@ export default function AdminFormulariosPage() {
                   </span>
 
                   <div className="flex items-center gap-1.5">
+                    {/* Exportar PDF */}
+                    <button
+                      type="button"
+                      onClick={() => handleExportPdf(form)}
+                      disabled={exportingFormId === form.id}
+                      title="Exportar cuestionario en PDF (preguntas y opciones en blanco para cruce)"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-200 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                    >
+                      {exportingFormId === form.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                      ) : (
+                        <FileDown className="w-3.5 h-3.5 text-rose-500" />
+                      )}
+                      <span>PDF</span>
+                    </button>
+
                     {/* Duplicar */}
                     <button
                       type="button"
