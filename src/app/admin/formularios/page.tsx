@@ -330,7 +330,7 @@ export default function AdminFormulariosPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {filteredForms.map((form) => {
-                  const questionCount = form.fields.filter((f) => f.type !== 'page_break').length;
+                  const questionCount = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html').length;
                   const isMaster = isMasterForm(form);
                   const formattedDate = form.createdAt
                     ? new Date(form.createdAt).toLocaleDateString('es-EC', {
@@ -460,7 +460,7 @@ export default function AdminFormulariosPage() {
         /* CARDS VIEW FOR MASTER TEMPLATES */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredForms.map((form) => {
-            const questionCount = form.fields.filter((f) => f.type !== 'page_break').length;
+            const questionCount = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html').length;
             const isMaster = isMasterForm(form);
 
             return (

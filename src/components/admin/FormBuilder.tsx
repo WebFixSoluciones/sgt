@@ -22,6 +22,7 @@ import {
   Eye,
   FileDown,
   Loader2,
+  Code,
 } from 'lucide-react';
 import { FormSchema, FormField, FormFieldOption, FormFieldType } from '@/lib/types';
 import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
@@ -48,6 +49,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
   );
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [htmlTabs, setHtmlTabs] = useState<Record<string, 'code' | 'preview'>>({});
 
   // Modern Centered Alert Dialog
   const [alertDialog, setAlertDialog] = useState<{
@@ -140,11 +142,20 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
     const newField: FormField = {
       id: newId,
       type,
-      label: type === 'page_break' ? 'Nueva Sección' : '¿Escriba aquí el enunciado de la pregunta?',
-      required: type !== 'page_break',
+      label:
+        type === 'page_break'
+          ? 'Nueva Sección'
+          : type === 'html'
+          ? 'Bloque de Instrucciones HTML'
+          : '¿Escriba aquí el enunciado de la pregunta?',
+      required: type !== 'page_break' && type !== 'html',
       order: form.fields.length,
       showValues: true,
       sectionTitle: type === 'page_break' ? 'Nueva Sección' : undefined,
+      htmlContent:
+        type === 'html'
+          ? `<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px;">\n  <h4 style="color: #0f172a; font-weight: bold; font-size: 14px; margin: 0 0 6px 0;">Instrucciones para esta sección</h4>\n  <p style="color: #475569; font-size: 13px; line-height: 1.5; margin: 0;">Escriba aquí el contenido, formato HTML, tablas, listas o estilos personalizados.</p>\n</div>`
+          : undefined,
       options:
         type === 'radio' || type === 'select' || type === 'checkbox'
           ? [
@@ -414,7 +425,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
     return [...list, ...activeSection.fields];
   }, [form.fields, selectedSectionFilter, activeSection]);
 
-  const totalQuestionsCount = form.fields.filter((f) => f.type !== 'page_break').length;
+  const totalQuestionsCount = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html').length;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col pb-24">
@@ -589,10 +600,20 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
               <button
                 type="button"
                 onClick={() => handleAddField('textarea')}
-                className="col-span-2 flex items-center justify-center gap-2 p-2 bg-slate-50 hover:bg-purple-50 hover:text-purple-700 border border-slate-200 hover:border-purple-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
+                className="flex flex-col items-center justify-center p-2.5 bg-slate-50 hover:bg-purple-50 hover:text-purple-700 border border-slate-200 hover:border-purple-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
               >
-                <FileText className="w-4 h-4 text-purple-600" />
-                <span>Párrafo / Observaciones</span>
+                <FileText className="w-4 h-4 text-purple-600 mb-1 group-hover:scale-110 transition-transform" />
+                <span>Párrafo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAddField('html')}
+                className="flex flex-col items-center justify-center p-2.5 bg-slate-50 hover:bg-amber-50 hover:text-amber-800 border border-slate-200 hover:border-amber-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
+                title="Añadir bloque de contenido o instrucciones en HTML personalizado"
+              >
+                <Code className="w-4 h-4 text-amber-600 mb-1 group-hover:scale-110 transition-transform" />
+                <span>Bloque HTML</span>
               </button>
             </div>
           </div>
@@ -652,7 +673,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
             <div className="overflow-y-auto space-y-1.5 max-h-72 md:max-h-[300px] pr-1">
               {sections.map((sec, idx) => {
                 const isActive = selectedSectionFilter === sec.id;
-                const qCount = sec.fields.filter((f) => f.type !== 'page_break').length;
+                const qCount = sec.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html').length;
 
                 return (
                   <div
@@ -725,7 +746,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
 
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[11px] font-semibold text-blue-700">
-                  {activeSection.fields.filter((f) => f.type !== 'page_break').length} preguntas en esta pantalla
+                  {activeSection.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html').length} preguntas en esta pantalla
                 </span>
                 <button
                   type="button"
@@ -812,7 +833,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                           type="text"
                           value={field.label}
                           onChange={(e) => updateFormField(field.id, { label: e.target.value })}
-                          placeholder="Escriba la pregunta aquí..."
+                          placeholder={field.type === 'html' ? 'Título o Referencia del Bloque HTML (Opcional)...' : 'Escriba la pregunta aquí...'}
                           className="w-full text-sm sm:text-base font-bold text-slate-900 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-1 transition-colors"
                         />
 
@@ -834,6 +855,11 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                             const newType = e.target.value as FormFieldType;
                             updateFormField(field.id, {
                               type: newType,
+                              required: newType === 'html' ? false : field.required,
+                              htmlContent:
+                                newType === 'html' && !field.htmlContent
+                                  ? `<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px;">\n  <h4 style="color: #0f172a; font-weight: bold; font-size: 14px; margin: 0 0 6px 0;">Instrucciones para esta sección</h4>\n  <p style="color: #475569; font-size: 13px; line-height: 1.5; margin: 0;">Escriba aquí el contenido, formato HTML, tablas, listas o estilos personalizados.</p>\n</div>`
+                                  : field.htmlContent,
                               options:
                                 (newType === 'radio' || newType === 'select' || newType === 'checkbox') &&
                                 (!field.options || field.options.length === 0)
@@ -853,6 +879,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                           <option value="select">Desplegable (Select)</option>
                           <option value="text">Texto Corto</option>
                           <option value="textarea">Párrafo / Observaciones</option>
+                          <option value="html">Bloque de Contenido HTML</option>
                         </select>
                       </div>
                     </div>
@@ -987,24 +1014,151 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                       </div>
                     )}
 
-                    {/* Toolbar inferior de la tarjeta: Obligatoria, Duplicar, Eliminar */}
+                    {/* Editor y Vista Previa HTML */}
+                    {field.type === 'html' && (
+                      <div className="pt-2 border-t border-slate-100 space-y-2.5">
+                        {/* Barra superior de herramientas HTML: Modos + Inserción Rápida */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2">
+                          {/* Selector de modo: Editor de Código vs Vista Previa */}
+                          <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-200 text-xs shadow-2xs">
+                            <button
+                              type="button"
+                              onClick={() => setHtmlTabs((prev) => ({ ...prev, [field.id]: 'code' }))}
+                              className={`px-2.5 py-1 rounded-md font-semibold inline-flex items-center gap-1.5 transition-all ${
+                                (htmlTabs[field.id] || 'code') === 'code'
+                                  ? 'bg-amber-500 text-white shadow-xs'
+                                  : 'text-slate-600 hover:text-slate-900'
+                              }`}
+                            >
+                              <Code className="w-3.5 h-3.5" />
+                              <span>Código HTML</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setHtmlTabs((prev) => ({ ...prev, [field.id]: 'preview' }))}
+                              className={`px-2.5 py-1 rounded-md font-semibold inline-flex items-center gap-1.5 transition-all ${
+                                htmlTabs[field.id] === 'preview'
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'text-slate-600 hover:text-slate-900'
+                              }`}
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Vista Previa</span>
+                            </button>
+                          </div>
+
+                          {/* Inserción rápida de componentes HTML prediseñados */}
+                          <div className="flex items-center gap-1 flex-wrap text-[11px]">
+                            <span className="text-slate-400 font-semibold mr-0.5 hidden sm:inline">Insertar:</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const snippet = `<div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin: 8px 0;">\n  <h4 style="color: #1e40af; font-weight: bold; margin: 0 0 4px 0;">ℹ Información Importante</h4>\n  <p style="color: #1e3a8a; font-size: 13px; margin: 0;">Escriba aquí las indicaciones especiales para este módulo.</p>\n</div>`;
+                                updateFormField(field.id, { htmlContent: (field.htmlContent ? field.htmlContent + '\n' : '') + snippet });
+                              }}
+                              className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md border border-blue-200 transition-colors font-medium"
+                              title="Insertar caja de alerta azul informativa"
+                            >
+                              + Alerta Azul
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const snippet = `<div style="background-color: #fefce8; border: 1px solid #fef08a; border-radius: 8px; padding: 12px 16px; margin: 8px 0;">\n  <h4 style="color: #854d0e; font-weight: bold; margin: 0 0 4px 0;">⚠ Atención</h4>\n  <p style="color: #713f12; font-size: 13px; margin: 0;">Recuerde contestar con total sinceridad y tranquilidad.</p>\n</div>`;
+                                updateFormField(field.id, { htmlContent: (field.htmlContent ? field.htmlContent + '\n' : '') + snippet });
+                              }}
+                              className="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-md border border-amber-200 transition-colors font-medium"
+                              title="Insertar caja de aviso amarilla"
+                            >
+                              + Aviso
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const snippet = `<table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">\n  <thead>\n    <tr style="background-color: #f1f5f9;">\n      <th style="border: 1px solid #cbd5e1; padding: 6px 10px; text-align: left;">Criterio</th>\n      <th style="border: 1px solid #cbd5e1; padding: 6px 10px; text-align: left;">Descripción</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td style="border: 1px solid #cbd5e1; padding: 6px 10px;">Opción A</td>\n      <td style="border: 1px solid #cbd5e1; padding: 6px 10px;">Detalle explicativo</td>\n    </tr>\n  </tbody>\n</table>`;
+                                updateFormField(field.id, { htmlContent: (field.htmlContent ? field.htmlContent + '\n' : '') + snippet });
+                              }}
+                              className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-300 transition-colors font-medium"
+                              title="Insertar tabla HTML con bordes"
+                            >
+                              + Tabla
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const snippet = `<ul style="margin: 8px 0; padding-left: 20px; color: #334155; font-size: 13px; line-height: 1.6;">\n  <li>Primer punto de instrucción o consideración.</li>\n  <li>Segundo punto de instrucción o consideración.</li>\n</ul>`;
+                                updateFormField(field.id, { htmlContent: (field.htmlContent ? field.htmlContent + '\n' : '') + snippet });
+                              }}
+                              className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-300 transition-colors font-medium"
+                              title="Insertar lista con viñetas"
+                            >
+                              + Lista
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Contenido: Editor de código o Render de Vista Previa */}
+                        {(htmlTabs[field.id] || 'code') === 'code' ? (
+                          <div className="relative">
+                            <textarea
+                              rows={8}
+                              value={field.htmlContent || ''}
+                              onChange={(e) => updateFormField(field.id, { htmlContent: e.target.value })}
+                              placeholder="<!-- Escriba o pegue aquí su código HTML, etiquetas <div>, <p>, <table>, estilos en línea, etc. -->"
+                              className="w-full p-3 font-mono text-xs text-emerald-300 bg-slate-900 rounded-xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 leading-relaxed resize-y selection:bg-amber-500 selection:text-white"
+                              spellCheck={false}
+                            />
+                            <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1 px-1">
+                              <span>Admite HTML5 estándar, tablas, estilos en línea (style="...") y banners.</span>
+                              <span className="font-mono font-medium">{(field.htmlContent || '').length} caracteres</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-4 bg-white border border-slate-200 rounded-xl min-h-[120px] shadow-2xs">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 pb-1 border-b border-slate-100 flex items-center justify-between">
+                              <span>Vista Previa en Vivo (Evaluado)</span>
+                              <span className="text-blue-600 font-semibold text-[11px]">Diseño en tiempo real</span>
+                            </div>
+                            {field.htmlContent && field.htmlContent.trim() !== '' ? (
+                              <div
+                                className="prose prose-sm max-w-none text-slate-800 leading-relaxed overflow-x-auto"
+                                dangerouslySetInnerHTML={{ __html: field.htmlContent }}
+                              />
+                            ) : (
+                              <div className="text-center py-6 text-slate-400 text-xs italic">
+                                (No hay contenido HTML para previsualizar. Vuelva al Editor HTML para escribir código)
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Toolbar inferior de la tarjeta: Obligatoria o Informativa, Duplicar, Eliminar */}
                     <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={field.required}
-                          onChange={(e) => updateFormField(field.id, { required: e.target.checked })}
-                          className="rounded text-blue-600 focus:ring-0 w-3.5 h-3.5"
-                        />
-                        <span className="font-medium text-slate-700">Obligatoria *</span>
-                      </label>
+                      {field.type === 'html' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-[11px] font-semibold text-amber-800">
+                          <Code className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Contenido Informativo (No requiere respuesta del trabajador)</span>
+                        </span>
+                      ) : (
+                        <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={field.required}
+                            onChange={(e) => updateFormField(field.id, { required: e.target.checked })}
+                            className="rounded text-blue-600 focus:ring-0 w-3.5 h-3.5"
+                          />
+                          <span className="font-medium text-slate-700">Obligatoria *</span>
+                        </label>
+                      )}
 
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => handleDuplicateField(field, fieldIndex)}
                           className="px-2 py-1 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors inline-flex items-center gap-1 font-medium"
-                          title="Duplicar pregunta"
+                          title="Duplicar elemento"
                         >
                           <Copy className="w-3.5 h-3.5" />
                           <span>Duplicar</span>
@@ -1013,7 +1167,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                           type="button"
                           onClick={() => handleDeleteField(field.id)}
                           className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                          title="Eliminar pregunta"
+                          title="Eliminar elemento"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

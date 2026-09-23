@@ -35,6 +35,8 @@ function getFieldTypeLabel(type: string): string {
       return 'Texto Breve';
     case 'textarea':
       return 'Texto Amplio / Párrafo';
+    case 'html':
+      return 'Bloque HTML / Información';
     default:
       return type;
   }
@@ -76,8 +78,8 @@ export function generateTemplatePdf(form: FormSchema): jsPDF {
   doc.text(titleLines, marginX, currentY);
   currentY += titleLines.length * 6 + 2;
 
-  // Count metrics
-  const totalQuestions = form.fields.filter((f) => f.type !== 'page_break').length;
+  // Count metrics (only real questions, excluding sections and informational HTML blocks)
+  const totalQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html').length;
   const sectionFields = form.fields.filter((f) => f.type === 'page_break');
   const totalSections = Math.max(1, sectionFields.length);
 
@@ -186,6 +188,31 @@ export function generateTemplatePdf(form: FormSchema): jsPDF {
             fontSize: 8.5,
             halign: 'left',
             cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 },
+          },
+        },
+      ]);
+      return;
+    }
+
+    // HTML Content Block (Informational / Rich formatted content)
+    if (field.type === 'html') {
+      const cleanHtml = (field.htmlContent || field.description || field.label || '')
+        .replace(/<br\s*[\/]?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .trim();
+
+      tableBody.push([
+        {
+          content: `[CONTENIDO HTML / NOTA INFORMATIVA]: ${field.label || 'Instrucciones'}\n${cleanHtml || '(Sin contenido HTML)'}`,
+          colSpan: 5,
+          styles: {
+            fillColor: [248, 250, 252],
+            textColor: [30, 41, 59],
+            fontStyle: 'italic',
+            fontSize: 7.5,
+            halign: 'left',
+            cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
           },
         },
       ]);

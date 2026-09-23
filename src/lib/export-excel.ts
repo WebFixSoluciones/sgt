@@ -84,9 +84,9 @@ export function generateEvaluationExcel(
     'PUESTO DE TRABAJO',
   ];
 
-  // Non-pagebreak question fields (omit 'puesto' from dynamic list to avoid duplicate column)
+  // Non-pagebreak question fields (omit 'puesto' and 'html' from dynamic list to avoid duplicate or non-question columns)
   const questionFields = form.fields.filter(
-    (f) => f.type !== 'page_break' && f.id !== 'puesto' && f.id !== 'agrupacion_puestos'
+    (f) => f.type !== 'page_break' && f.type !== 'html' && f.id !== 'puesto' && f.id !== 'agrupacion_puestos'
   );
 
   // Add question headers
@@ -223,7 +223,7 @@ export function generateMultiFormEvaluationExcel(
   for (let idx = 0; idx < forms.length; idx++) {
     const form = forms[idx];
     const questionFields = form.fields.filter(
-      (f) => f.type !== 'page_break' && f.id !== 'puesto' && f.id !== 'agrupacion_puestos'
+      (f) => f.type !== 'page_break' && f.type !== 'html' && f.id !== 'puesto' && f.id !== 'agrupacion_puestos'
     );
 
     const headers: string[] = [

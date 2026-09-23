@@ -11,7 +11,8 @@ export type FormFieldType =
   | 'select' 
   | 'text' 
   | 'textarea' 
-  | 'page_break';
+  | 'page_break'
+  | 'html';
 
 export interface FormField {
   id: string;
@@ -28,6 +29,7 @@ export interface FormField {
   sectionTitle?: string; // used when type === 'page_break' or section header
   section?: string;
   fpsicoCode?: string;
+  htmlContent?: string; // HTML content when type === 'html'
 }
 
 export interface FormSchema {

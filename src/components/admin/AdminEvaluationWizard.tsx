@@ -235,7 +235,7 @@ export default function AdminEvaluationWizard({
   };
 
   const totalQuestions = useMemo(() => {
-    return selectedForms.reduce((acc, f) => acc + (f.fields?.filter((field) => field.type !== 'page_break').length || 0), 0);
+    return selectedForms.reduce((acc, f) => acc + (f.fields?.filter((field) => field.type !== 'page_break' && field.type !== 'html').length || 0), 0);
   }, [selectedForms]);
 
   // Primary selected form
@@ -817,7 +817,7 @@ export default function AdminEvaluationWizard({
 
                     <div className="space-y-2">
                       {selectedForms.map((f, i) => {
-                        const qCount = f.fields?.filter((field) => field.type !== 'page_break').length || 0;
+                        const qCount = f.fields?.filter((field) => field.type !== 'page_break' && field.type !== 'html').length || 0;
                         return (
                           <div
                             key={f.id}
@@ -1101,7 +1101,7 @@ export default function AdminEvaluationWizard({
                           </span>
                         </div>
                         <span className="text-xs text-slate-500 font-medium">
-                          {f.fields?.filter(field => field.type !== 'page_break').length || 0} preguntas
+                          {f.fields?.filter(field => field.type !== 'page_break' && field.type !== 'html').length || 0} preguntas
                         </span>
                       </div>
                     ))}

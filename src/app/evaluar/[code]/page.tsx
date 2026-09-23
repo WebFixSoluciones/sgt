@@ -497,7 +497,7 @@ export default function WorkerEvaluationPage() {
     const currentIndex = currentFields.findIndex((f) => f.id === fieldId);
     if (currentIndex !== -1) {
       const nextUnanswered = currentFields.slice(currentIndex + 1).find((f) => {
-        return updatedAnswers[f.id] === undefined || updatedAnswers[f.id] === null || updatedAnswers[f.id] === '';
+        return f.type !== 'html' && (updatedAnswers[f.id] === undefined || updatedAnswers[f.id] === null || updatedAnswers[f.id] === '');
       });
       if (nextUnanswered) {
         setTimeout(() => {
@@ -516,7 +516,7 @@ export default function WorkerEvaluationPage() {
     // Validate required fields in current section
     const currentFields = sections[currentSectionIndex]?.fields || [];
     const firstMissing = currentFields.find(
-      (f) => f.required && (answers[f.id] === undefined || answers[f.id] === null || String(answers[f.id]).trim() === '')
+      (f) => f.type !== 'html' && f.required && (answers[f.id] === undefined || answers[f.id] === null || String(answers[f.id]).trim() === '')
     );
 
     if (firstMissing) {
@@ -561,7 +561,7 @@ export default function WorkerEvaluationPage() {
 
     sections.forEach((sec, sIdx) => {
       sec.fields.forEach((f) => {
-        if (f.type !== 'page_break' && f.required) {
+        if (f.type !== 'page_break' && f.type !== 'html' && f.required) {
           const val = answers[f.id];
           if (val === undefined || val === null || String(val).trim() === '') {
             missingInActiveForm.push({ field: f, sectionIdx: sIdx, sectionTitle: sec.title });
@@ -1053,13 +1053,14 @@ export default function WorkerEvaluationPage() {
   const progressPercent = Math.round(((currentSectionIndex + 1) / Math.max(sections.length, 1)) * 100);
 
   const currentSectionFields = currentSection?.fields || [];
-  const currentSectionTotal = currentSectionFields.length;
-  const currentSectionAnswered = currentSectionFields.filter(
+  const currentSectionQuestions = currentSectionFields.filter((f) => f.type !== 'html');
+  const currentSectionTotal = currentSectionQuestions.length;
+  const currentSectionAnswered = currentSectionQuestions.filter(
     (f) => answers[f.id] !== undefined && answers[f.id] !== ''
   ).length;
   const currentSectionPending = currentSectionTotal - currentSectionAnswered;
   const allRequiredAnswered = currentSectionFields.every(
-    (f) => !f.required || (answers[f.id] !== undefined && answers[f.id] !== '')
+    (f) => f.type === 'html' || !f.required || (answers[f.id] !== undefined && answers[f.id] !== '')
   );
 
   return (
@@ -1186,6 +1187,30 @@ export default function WorkerEvaluationPage() {
 
         <div className="divide-y divide-slate-100">
           {currentSection?.fields.map((field) => {
+            // RENDER: Bloque de Contenido HTML (Informativo / Instrucciones / Tablas)
+            if (field.type === 'html') {
+              return (
+                <div
+                  key={field.id}
+                  id={`field-${field.id}`}
+                  className="py-5 first:pt-2 last:pb-6"
+                >
+                  {field.label && field.label.trim() !== '' && field.label !== 'Bloque HTML' && field.label !== 'Instrucciones / Contenido Informativo' && (
+                    <h2 className="text-sm sm:text-base font-bold text-slate-800 mb-2 leading-snug">
+                      {field.label}
+                    </h2>
+                  )}
+                  {field.description && (
+                    <p className="mb-2 text-xs text-slate-500 leading-relaxed">{field.description}</p>
+                  )}
+                  <div
+                    className="prose prose-sm sm:prose max-w-none text-slate-800 leading-relaxed overflow-x-auto"
+                    dangerouslySetInnerHTML={{ __html: field.htmlContent || '' }}
+                  />
+                </div>
+              );
+            }
+
             const currentValue = answers[field.id];
             const isAnswered = currentValue !== undefined && currentValue !== '';
 

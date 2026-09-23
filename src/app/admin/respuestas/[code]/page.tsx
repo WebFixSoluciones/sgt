@@ -95,9 +95,9 @@ export default function RespuestasPage() {
     );
   };
 
-  // Total question fields (excluding page breaks)
+  // Total question fields (excluding page breaks and html blocks)
   const totalFormFields = useMemo(() => {
-    return form?.fields?.filter((f) => f.type !== 'page_break').length || 0;
+    return form?.fields?.filter((f) => f.type !== 'page_break' && f.type !== 'html').length || 0;
   }, [form]);
 
   // Filtered submissions
@@ -133,7 +133,7 @@ export default function RespuestasPage() {
   // Filtered fields inside answer modal
   const modalFilteredFields = useMemo(() => {
     if (!form || !selectedSubmission) return [];
-    const fields = form.fields.filter((f) => f.type !== 'page_break');
+    const fields = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html');
     if (!modalSearchTerm) return fields;
     const term = modalSearchTerm.toLowerCase();
     return fields.filter((f, idx) => {
