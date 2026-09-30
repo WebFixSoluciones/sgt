@@ -287,18 +287,26 @@ export default function RespuestasPage() {
             </div>
             <div className="mt-2">
               <div className="text-2xl font-black text-slate-900">{submissions.length}</div>
-              <div className="mt-2 space-y-1">
-                <div className="flex justify-between text-[10px] text-slate-500 font-medium">
-                  <span>Progreso de meta</span>
-                  <span className="font-bold text-slate-700">{coveragePct}%</span>
-                </div>
-                <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-600 rounded-full transition-all duration-500"
-                    style={{ width: `${coveragePct}%` }}
-                  />
-                </div>
-                <div className="text-[10px] text-slate-400">Meta: {expectedCount} trabajadores</div>
+              <div className="mt-2">
+                {campaign?.isOpenEvaluation ? (
+                  <div className="mt-2 text-[10px] text-emerald-600 font-semibold">
+                    Evaluación Abierta (Sin límite definido)
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+                      <span>Progreso de meta</span>
+                      <span className="font-bold text-slate-700">{coveragePct}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                        style={{ width: `${coveragePct}%` }}
+                      />
+                    </div>
+                    <div className="text-[10px] text-slate-400">Meta: {expectedCount} trabajadores</div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

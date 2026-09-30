@@ -393,7 +393,9 @@ export default function AdminResultadosPage() {
           <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
             <div className="text-[11px] font-semibold text-slate-500 uppercase">Trabajadores Evaluados</div>
             <div className="text-2xl font-bold text-slate-900 mt-0.5">{submissions.length}</div>
-            <div className="text-[11px] text-slate-400 mt-0.5">de {campaign?.expectedParticipants || 100} previstos</div>
+            <div className="text-[11px] text-slate-400 mt-0.5">
+              {campaign?.isOpenEvaluation ? 'Participación abierta' : `de ${campaign?.expectedParticipants || 100} previstos`}
+            </div>
           </div>
 
           <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl">

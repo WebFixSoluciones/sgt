@@ -62,6 +62,7 @@ export interface EvaluationCampaign {
   visits: number;
   submissionsCount: number;
   puestos?: string[]; // Job positions configured for this evaluation/company
+  isOpenEvaluation?: boolean; // When true: open participation, no worker code required, unlimited expected participants
   createdAt: string;
   updatedAt: string;
 }

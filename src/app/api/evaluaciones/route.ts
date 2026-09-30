@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, title, company, formId, formIds, expectedParticipants, groupId, nextEvaluationCode, isolateForms = true, puestos } = body;
+    const { code, title, company, formId, formIds, expectedParticipants, groupId, nextEvaluationCode, isolateForms = true, puestos, isOpenEvaluation } = body;
 
     const resolvedFormIds: string[] = Array.isArray(formIds) && formIds.length > 0
       ? formIds
@@ -117,11 +117,12 @@ export async function POST(req: NextRequest) {
       company: cleanCompany,
       formId: campaignFormIds[0],
       formIds: campaignFormIds,
-      expectedParticipants: Number(expectedParticipants) || 100,
+      expectedParticipants: isOpenEvaluation ? (Number(expectedParticipants) || 0) : (Number(expectedParticipants) || 100),
       status: 'active',
       groupId: groupId || undefined,
       nextEvaluationCode: nextEvaluationCode || undefined,
       puestos: cleanPuestos.length > 0 ? cleanPuestos : undefined,
+      isOpenEvaluation: Boolean(isOpenEvaluation),
       visits: 0,
       submissionsCount: 0,
       createdAt: nowEc,
@@ -162,7 +163,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (action === 'update' || (!action && (body.title || body.company))) {
-      const { title, company, expectedParticipants, nextEvaluationCode, status, puestos } = body;
+      const { title, company, expectedParticipants, nextEvaluationCode, status, puestos, isOpenEvaluation } = body;
       const updated = await updateCampaign(code, {
         title,
         company,
@@ -170,6 +171,7 @@ export async function PATCH(req: NextRequest) {
         nextEvaluationCode,
         status,
         puestos: Array.isArray(puestos) ? puestos.map((p: any) => String(p).trim()).filter(Boolean) : undefined,
+        isOpenEvaluation: isOpenEvaluation !== undefined ? Boolean(isOpenEvaluation) : undefined,
       });
       if (!updated) {
         return NextResponse.json(

@@ -67,6 +67,7 @@ export default function AdminEvaluationWizard({
   const [title, setTitle] = useState('');
   const [code, setCode] = useState('');
   const [expectedParticipants, setExpectedParticipants] = useState('100');
+  const [isOpenEvaluation, setIsOpenEvaluation] = useState(false);
   const [puestosText, setPuestosText] = useState(DEFAULT_PUESTOS.join('\n'));
   const [showPuestosCustomizer, setShowPuestosCustomizer] = useState(false);
   
@@ -138,6 +139,7 @@ export default function AdminEvaluationWizard({
         setTitle(initialData.title || '');
         setCode(initialData.code || '');
         setExpectedParticipants(String(initialData.expectedParticipants || 100));
+        setIsOpenEvaluation(Boolean(initialData.isOpenEvaluation));
         if (initialData.puestos && initialData.puestos.length > 0) {
           setPuestosText(initialData.puestos.join('\n'));
         } else {
@@ -158,6 +160,7 @@ export default function AdminEvaluationWizard({
         setTitle('');
         setCode('');
         setExpectedParticipants('100');
+        setIsOpenEvaluation(false);
         setPuestosText(DEFAULT_PUESTOS.join('\n'));
         setShowPuestosCustomizer(false);
         setIsChained(false);
@@ -274,7 +277,7 @@ export default function AdminEvaluationWizard({
 
   // Step 2 Validation
   const canProceedStep2 = Boolean(
-    company.trim() && title.trim() && code.trim() && Number(expectedParticipants) > 0
+    company.trim() && title.trim() && code.trim() && (isOpenEvaluation || Number(expectedParticipants) > 0)
   );
 
   // Step 3 Validation: If multiple forms selected, it is ALWAYS chained and ready to proceed!
@@ -298,7 +301,8 @@ export default function AdminEvaluationWizard({
         formId: selectedFormIds[0] || '',
         formIds: selectedFormIds,
         company: company.trim(),
-        expectedParticipants: parseInt(expectedParticipants) || 100,
+        expectedParticipants: isOpenEvaluation ? 0 : (parseInt(expectedParticipants) || 100),
+        isOpenEvaluation,
         nextEvaluationCode: isChained ? nextEvaluationCode.trim().toUpperCase() : '',
         puestos: cleanPuestos.length > 0 ? cleanPuestos : undefined,
         status: 'active',
@@ -696,19 +700,49 @@ export default function AdminEvaluationWizard({
                     </div>
                   </div>
 
+                  {/* Evaluación Abierta Switch */}
+                  <div className="md:col-span-2 p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3 transition-colors">
+                    <div className="pt-0.5">
+                      <input
+                        id="isOpenEvaluation"
+                        type="checkbox"
+                        checked={isOpenEvaluation}
+                        onChange={(e) => setIsOpenEvaluation(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                      />
+                    </div>
+                    <label htmlFor="isOpenEvaluation" className="cursor-pointer flex-1 select-none">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-800">Evaluación Abierta</span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                          Sin código de trabajador
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                        Permite que cualquier persona responda directamente con el enlace sin solicitar código de trabajador ni requerir un número fijo de participantes.
+                      </p>
+                    </label>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                       <Layers className="w-3.5 h-3.5 text-slate-400" />
                       Trabajadores Esperados
                     </label>
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="100"
-                      value={expectedParticipants}
-                      onChange={(e) => setExpectedParticipants(e.target.value)}
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
-                    />
+                    {isOpenEvaluation ? (
+                      <div className="px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 flex items-center gap-2 h-[42px]">
+                        <span>Ilimitado / Participación abierta</span>
+                      </div>
+                    ) : (
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="100"
+                        value={expectedParticipants}
+                        onChange={(e) => setExpectedParticipants(e.target.value)}
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -1128,8 +1162,14 @@ export default function AdminEvaluationWizard({
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-slate-400 uppercase">Trabajadores</div>
-                    <div className="text-sm font-bold text-slate-800">{expectedParticipants}</div>
+                    <div className="text-xs text-slate-400 uppercase">Modalidad</div>
+                    <div className="text-xs sm:text-sm font-bold text-slate-800">
+                      {isOpenEvaluation ? (
+                        <span className="text-emerald-600 font-bold">Abierta (Sin código)</span>
+                      ) : (
+                        `${expectedParticipants} previstos`
+                      )}
+                    </div>
                   </div>
                 </div>
 

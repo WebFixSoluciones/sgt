@@ -497,7 +497,7 @@ export default function AdminEvaluacionesPage() {
                       {/* Título & Empresa */}
                       <td className="py-4 px-5">
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             {isTrashItem ? (
                               <span className="font-bold text-slate-700 text-xs sm:text-sm">
                                 {camp.title}
@@ -509,6 +509,11 @@ export default function AdminEvaluacionesPage() {
                               >
                                 {camp.title}
                               </Link>
+                            )}
+                            {camp.isOpenEvaluation && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
+                                Abierta
+                              </span>
                             )}
                             {!isTrashItem && (
                               <button
@@ -583,9 +588,20 @@ export default function AdminEvaluacionesPage() {
 
                       {/* Respuestas */}
                       <td className="py-4 px-5 text-center whitespace-nowrap">
-                        <span className="font-semibold text-slate-800 text-xs sm:text-sm">
-                          {camp.submissionsCount || 0} de {camp.expectedParticipants || 100}
-                        </span>
+                        {camp.isOpenEvaluation ? (
+                          <div className="flex flex-col items-center">
+                            <span className="font-semibold text-slate-800 text-xs sm:text-sm">
+                              {camp.submissionsCount || 0} respuestas
+                            </span>
+                            <span className="text-[10px] text-emerald-600 font-semibold">
+                              Ilimitada / Abierta
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="font-semibold text-slate-800 text-xs sm:text-sm">
+                            {camp.submissionsCount || 0} de {camp.expectedParticipants || 100}
+                          </span>
+                        )}
                       </td>
 
                       {/* Acciones */}

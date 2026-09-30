@@ -357,7 +357,8 @@ export default function WorkerEvaluationPage() {
   // 3. Worker Check / Login
   const handleWorkerCheck = async (targetCode?: string) => {
     hasExplicitlyExitedRef.current = false;
-    const codeToTest = (targetCode || workerCode).trim().toUpperCase();
+    const isAutoOrOpen = targetCode === '__auto__' || (Boolean(campaign?.isOpenEvaluation) && !workerCode.trim());
+    const codeToTest = isAutoOrOpen ? '__auto__' : (targetCode || workerCode).trim().toUpperCase();
     if (!codeToTest) {
       setCheckError('Por favor ingrese su Código de Trabajador.');
       return;
@@ -390,10 +391,14 @@ export default function WorkerEvaluationPage() {
         return;
       }
 
+      const assignedWorkerCode = data.workerCode || (codeToTest !== '__auto__' ? codeToTest : '');
+      if (assignedWorkerCode) {
+        setWorkerCode(assignedWorkerCode);
+      }
+
       // If worker already completed this evaluation -> Lock and show exact blocked notice
       if (data.status === 'completed' || data.alreadyExists) {
         setCompletedData(data.submission);
-        setWorkerCode(codeToTest);
         setAlreadyCompleted(true);
         return;
       }
@@ -1039,59 +1044,91 @@ export default function WorkerEvaluationPage() {
             </div>
           )}
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleWorkerCheck();
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label
-                htmlFor="workerId"
-                className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1"
-              >
-                Código de Trabajador (COD) *
-              </label>
-              <div className="relative">
-                <input
-                  id="workerId"
-                  type="text"
-                  required
-                  autoFocus
-                  value={workerCode}
-                  onChange={(e) => {
-                    setWorkerCode(e.target.value.toUpperCase());
-                    setCheckError(null);
-                  }}
-                  placeholder="Ej. 5555 o 999999"
-                  className="w-full pl-9 pr-3 py-3 sm:py-2.5 border border-slate-300 rounded-xl text-base sm:text-sm text-slate-900 font-mono tracking-wider uppercase focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 touch-manipulation"
-                />
-                <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 sm:top-3" />
+          {campaign?.isOpenEvaluation ? (
+            <div className="space-y-4">
+              <div className="p-4 bg-emerald-50/80 border border-emerald-200/80 rounded-xl text-center space-y-2">
+                <span className="inline-block px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[11px] font-bold uppercase tracking-wider rounded-full">
+                  Participación Libre y Confidencial
+                </span>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Esta evaluación no requiere código de identificación personal. Sus respuestas se guardarán de forma totalmente segura.
+                </p>
               </div>
-              <p className="mt-1 text-[11px] text-slate-400">
-                Ingrese su número o código provisto por la empresa para identificarse.
-              </p>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isSubmittingCheck}
-              className="w-full py-3 sm:py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 touch-manipulation active:scale-[0.99] min-h-[46px]"
+              <button
+                type="button"
+                onClick={() => handleWorkerCheck('__auto__')}
+                disabled={isSubmittingCheck}
+                className="w-full py-3.5 sm:py-3 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 touch-manipulation active:scale-[0.99] min-h-[48px]"
+              >
+                {isSubmittingCheck ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Iniciando evaluación...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Comenzar Evaluación</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleWorkerCheck();
+              }}
+              className="space-y-4"
             >
-              {isSubmittingCheck ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Validando...</span>
-                </>
-              ) : (
-                <>
-                  <span>Comenzar Evaluación</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
+              <div>
+                <label
+                  htmlFor="workerId"
+                  className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1"
+                >
+                  Código de Trabajador (COD) *
+                </label>
+                <div className="relative">
+                  <input
+                    id="workerId"
+                    type="text"
+                    required
+                    autoFocus
+                    value={workerCode}
+                    onChange={(e) => {
+                      setWorkerCode(e.target.value.toUpperCase());
+                      setCheckError(null);
+                    }}
+                    placeholder="Ej. 5555 o 999999"
+                    className="w-full pl-9 pr-3 py-3 sm:py-2.5 border border-slate-300 rounded-xl text-base sm:text-sm text-slate-900 font-mono tracking-wider uppercase focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 touch-manipulation"
+                  />
+                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 sm:top-3" />
+                </div>
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Ingrese su número o código provisto por la empresa para identificarse.
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmittingCheck}
+                className="w-full py-3 sm:py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 touch-manipulation active:scale-[0.99] min-h-[46px]"
+              >
+                {isSubmittingCheck ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Validando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Comenzar Evaluación</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
         </div>
 
         <div className="mt-4 text-center text-[11px] text-slate-400">
@@ -1172,7 +1209,7 @@ export default function WorkerEvaluationPage() {
                   </span>
                   {workerCode && (
                     <span className="text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 shrink-0">
-                      ID: {workerCode}
+                      {campaign?.isOpenEvaluation ? `Participante: ${workerCode}` : `ID: ${workerCode}`}
                     </span>
                   )}
                   {formsList.length > 1 && (

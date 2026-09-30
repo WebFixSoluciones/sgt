@@ -33,6 +33,7 @@ export default function EditEvaluationModal({
   const [title, setTitle] = useState('');
   const [company, setCompany] = useState('');
   const [expectedParticipants, setExpectedParticipants] = useState('100');
+  const [isOpenEvaluation, setIsOpenEvaluation] = useState(false);
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [nextEvaluationCode, setNextEvaluationCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +44,7 @@ export default function EditEvaluationModal({
       setTitle(campaign.title || '');
       setCompany(campaign.company || '');
       setExpectedParticipants(String(campaign.expectedParticipants || 100));
+      setIsOpenEvaluation(Boolean(campaign.isOpenEvaluation));
       setStatus(campaign.status === 'inactive' ? 'inactive' : 'active');
       setNextEvaluationCode(campaign.nextEvaluationCode || '');
       setErrorMsg('');
@@ -74,7 +76,8 @@ export default function EditEvaluationModal({
           action: 'update',
           title: title.trim(),
           company: company.trim(),
-          expectedParticipants: parseInt(expectedParticipants) || 100,
+          expectedParticipants: isOpenEvaluation ? 0 : (parseInt(expectedParticipants) || 100),
+          isOpenEvaluation,
           status,
           nextEvaluationCode: nextEvaluationCode.trim().toUpperCase() || '',
         }),
@@ -172,6 +175,30 @@ export default function EditEvaluationModal({
               />
             </div>
 
+            {/* Switch: Evaluación Abierta */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3">
+              <div className="pt-0.5">
+                <input
+                  id="editIsOpenEvaluation"
+                  type="checkbox"
+                  checked={isOpenEvaluation}
+                  onChange={(e) => setIsOpenEvaluation(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                />
+              </div>
+              <label htmlFor="editIsOpenEvaluation" className="cursor-pointer flex-1 select-none">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-800">Evaluación Abierta</span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                    Sin código de trabajador
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                  Permite responder directamente sin solicitar código de trabajador ni requerir un número fijo de participantes.
+                </p>
+              </label>
+            </div>
+
             {/* Participantes esperados & Estado */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
@@ -179,14 +206,20 @@ export default function EditEvaluationModal({
                   <Users className="w-3.5 h-3.5 text-slate-400" />
                   <span>Participantes Esperados</span>
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="50000"
-                  value={expectedParticipants}
-                  onChange={(e) => setExpectedParticipants(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
-                />
+                {isOpenEvaluation ? (
+                  <div className="px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-500 flex items-center h-[34px]">
+                    <span>Ilimitado / Participación abierta</span>
+                  </div>
+                ) : (
+                  <input
+                    type="number"
+                    min="1"
+                    max="50000"
+                    value={expectedParticipants}
+                    onChange={(e) => setExpectedParticipants(e.target.value)}
+                    className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
+                  />
+                )}
               </div>
 
               <div>

@@ -4,6 +4,7 @@ import {
   getFormById,
   getFormsForCampaign,
   getSubmission,
+  getNextOpenParticipantCode,
   saveSubmission,
   resetSubmission,
 } from '@/lib/storage';
@@ -26,9 +27,9 @@ export async function POST(req: NextRequest) {
       currentSectionTitle,
     } = body;
 
-    if (!evaluationCode || !workerCode) {
+    if (!evaluationCode) {
       return NextResponse.json(
-        { success: false, error: 'Código de evaluación y código de trabajador son requeridos' },
+        { success: false, error: 'Código de evaluación es requerido' },
         { status: 400 }
       );
     }
@@ -48,6 +49,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const isOpenEval = Boolean(campaign.isOpenEvaluation);
+    let effectiveWorkerCode = typeof workerCode === 'string' ? workerCode.trim() : '';
+
+    if (isOpenEval && (!effectiveWorkerCode || effectiveWorkerCode === '__auto__')) {
+      effectiveWorkerCode = await getNextOpenParticipantCode(evaluationCode);
+    }
+
+    if (!effectiveWorkerCode) {
+      return NextResponse.json(
+        { success: false, error: 'Código de trabajador es requerido' },
+        { status: 400 }
+      );
+    }
+
     const forms = await getFormsForCampaign(campaign);
     const form = forms[0] || (campaign.formId ? await getFormById(campaign.formId) : null);
     if (!form) {
@@ -59,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     // ACTION: CHECK (Worker enters evaluation code and worker number)
     if (action === 'check') {
-      const existing = await getSubmission(evaluationCode, workerCode);
+      const existing = await getSubmission(evaluationCode, effectiveWorkerCode);
 
       if (existing) {
         // 1. Worker ALREADY COMPLETED -> Block access with the exact requested notice
@@ -71,6 +86,7 @@ export async function POST(req: NextRequest) {
             error: 'LA EVALUACIÓN CON COD DE TRABAJADOR YA EXISTE. Comuníquese con el Evaluador.',
             message: 'LA EVALUACIÓN CON COD DE TRABAJADOR YA EXISTE. Comuníquese con el Evaluador.',
             submission: existing,
+            workerCode: effectiveWorkerCode,
             campaign,
           });
         }
@@ -120,6 +136,7 @@ export async function POST(req: NextRequest) {
           success: true,
           status: 'in_progress',
           canResume: answeredCount > 0,
+          workerCode: effectiveWorkerCode,
           answeredCount,
           totalQuestions,
           questionNumber,
@@ -147,7 +164,7 @@ export async function POST(req: NextRequest) {
         try {
           const { getDatabase } = await import('@/lib/storage');
           const db = await getDatabase();
-          const cleanWCode = workerCode.trim().toUpperCase();
+          const cleanWCode = effectiveWorkerCode.toUpperCase();
           const priorSub = db.submissions.find(
             (s) =>
               s.workerCode.trim().toUpperCase() === cleanWCode &&
@@ -172,6 +189,7 @@ export async function POST(req: NextRequest) {
         success: true,
         status: 'new',
         canResume: false,
+        workerCode: effectiveWorkerCode,
         answeredCount: Object.keys(inheritedAnswers).length,
         totalQuestions: allQuestions.length,
         questionNumber: 1,
@@ -186,7 +204,7 @@ export async function POST(req: NextRequest) {
 
     // ACTION: RESET (Worker chooses to restart from the beginning)
     if (action === 'reset') {
-      const existing = await getSubmission(evaluationCode, workerCode);
+      const existing = await getSubmission(evaluationCode, effectiveWorkerCode);
       if (existing && existing.status === 'completed') {
         return NextResponse.json(
           {
@@ -197,17 +215,18 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const resetSub = await resetSubmission(evaluationCode, workerCode);
+      const resetSub = await resetSubmission(evaluationCode, effectiveWorkerCode);
       return NextResponse.json({
         success: true,
         status: 'reset',
+        workerCode: effectiveWorkerCode,
         submission: resetSub,
       });
     }
 
     // ACTION: SAVE DRAFT (Auto-save answers as the worker moves along)
     if (action === 'save_draft') {
-      const existing = await getSubmission(evaluationCode, workerCode);
+      const existing = await getSubmission(evaluationCode, effectiveWorkerCode);
       if (existing && existing.status === 'completed') {
         return NextResponse.json(
           {
@@ -221,7 +240,7 @@ export async function POST(req: NextRequest) {
       const submission: WorkerSubmission = {
         id: existing ? existing.id : String(Math.floor(1000 + Math.random() * 9000)),
         evaluationCode: campaign.code,
-        workerCode: workerCode.trim(),
+        workerCode: effectiveWorkerCode,
         status: 'in_progress',
         currentFormIndex: typeof currentFormIndex === 'number' ? currentFormIndex : (existing?.currentFormIndex || 0),
         currentFieldIndex: typeof currentFieldIndex === 'number' ? currentFieldIndex : (existing?.currentFieldIndex || 0),
@@ -234,12 +253,12 @@ export async function POST(req: NextRequest) {
       };
 
       await saveSubmission(submission);
-      return NextResponse.json({ success: true, submission });
+      return NextResponse.json({ success: true, workerCode: effectiveWorkerCode, submission });
     }
 
     // ACTION: COMPLETE (Final submission with STRICT validation)
     if (action === 'complete') {
-      const existing = await getSubmission(evaluationCode, workerCode);
+      const existing = await getSubmission(evaluationCode, effectiveWorkerCode);
       if (existing && existing.status === 'completed') {
         return NextResponse.json(
           {
@@ -288,7 +307,7 @@ export async function POST(req: NextRequest) {
       const submission: WorkerSubmission = {
         id: existing ? existing.id : String(Math.floor(1000 + Math.random() * 9000)),
         evaluationCode: campaign.code,
-        workerCode: workerCode.trim(),
+        workerCode: effectiveWorkerCode,
         status: 'completed',
         currentFormIndex: typeof currentFormIndex === 'number' ? currentFormIndex : 0,
         currentFieldIndex: typeof currentFieldIndex === 'number' ? currentFieldIndex : (existing?.currentFieldIndex || 0),

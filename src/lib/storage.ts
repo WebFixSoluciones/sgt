@@ -399,6 +399,7 @@ export async function updateCampaign(
     nextEvaluationCode?: string;
     status?: 'active' | 'inactive';
     puestos?: string[];
+    isOpenEvaluation?: boolean;
   }
 ): Promise<EvaluationCampaign | null> {
   const db = await getDatabase();
@@ -420,6 +421,10 @@ export async function updateCampaign(
         : current.nextEvaluationCode,
     status: updates.status !== undefined ? updates.status : current.status,
     puestos: updates.puestos !== undefined ? updates.puestos : current.puestos,
+    isOpenEvaluation:
+      updates.isOpenEvaluation !== undefined
+        ? Boolean(updates.isOpenEvaluation)
+        : current.isOpenEvaluation,
     updatedAt: getEcuadorISOString(),
   };
 
@@ -687,6 +692,28 @@ export async function getSubmission(
         s.workerCode.toUpperCase() === workerCodeNorm
     ) || null
   );
+}
+
+export async function getNextOpenParticipantCode(evaluationCode: string): Promise<string> {
+  const db = await getDatabase();
+  const evalCodeNorm = evaluationCode.trim().toUpperCase();
+  const evalSubmissions = db.submissions.filter(
+    (s) => s.evaluationCode.toUpperCase() === evalCodeNorm
+  );
+
+  let maxNum = 0;
+  for (const s of evalSubmissions) {
+    const match = s.workerCode.trim().toUpperCase().match(/^PART-(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num > maxNum) {
+        maxNum = num;
+      }
+    }
+  }
+
+  const nextNum = maxNum + 1;
+  return `PART-${String(nextNum).padStart(3, '0')}`;
 }
 
 export async function saveSubmission(submission: WorkerSubmission): Promise<WorkerSubmission> {

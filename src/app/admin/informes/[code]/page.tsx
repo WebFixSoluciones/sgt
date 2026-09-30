@@ -188,8 +188,12 @@ export default function InformesPage() {
             <span>Meta de Participación</span>
             <Users className="w-4 h-4 text-blue-600" />
           </div>
-          <div className="mt-2 text-3xl font-bold text-slate-900">{goal}</div>
-          <p className="text-xs text-slate-500 mt-1">Trabajadores convocados</p>
+          <div className="mt-2 text-3xl font-bold text-slate-900">
+            {campaign?.isOpenEvaluation ? 'Abierta' : goal}
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            {campaign?.isOpenEvaluation ? 'Participación sin límite' : 'Trabajadores convocados'}
+          </p>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
@@ -197,10 +201,18 @@ export default function InformesPage() {
             <span>Tasa de Cobertura</span>
             <TrendingUp className="w-4 h-4 text-purple-600" />
           </div>
-          <div className="mt-2 text-3xl font-bold text-purple-700">{coveragePercent}%</div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
-            <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${coveragePercent}%` }} />
+          <div className="mt-2 text-3xl font-bold text-purple-700">
+            {campaign?.isOpenEvaluation ? '100%' : `${coveragePercent}%`}
           </div>
+          <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+            <div
+              className="bg-purple-600 h-1.5 rounded-full"
+              style={{ width: `${campaign?.isOpenEvaluation ? 100 : coveragePercent}%` }}
+            />
+          </div>
+          {campaign?.isOpenEvaluation && (
+            <p className="text-[10px] text-emerald-600 mt-1 font-semibold">Participación ilimitada</p>
+          )}
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
