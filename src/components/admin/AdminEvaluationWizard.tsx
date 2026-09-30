@@ -26,6 +26,9 @@ import {
   Briefcase,
   ArrowUp,
   ArrowDown,
+  UserCheck,
+  Globe,
+  Lock,
 } from 'lucide-react';
 import type { EvaluationCampaign, FormSchema } from '@/lib/types';
 
@@ -679,6 +682,80 @@ export default function AdminEvaluationWizard({
                   />
                 </div>
 
+                {/* Modalidad de Identificación de Trabajadores (Selector de 2 Opciones) */}
+                <div className="pt-1">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Modalidad de Identificación de Trabajadores *</span>
+                  </label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Opción 1: Con Código de Trabajador */}
+                    <div
+                      onClick={() => setIsOpenEvaluation(false)}
+                      className={`cursor-pointer p-3.5 rounded-xl border-2 transition-all flex flex-col justify-between ${
+                        !isOpenEvaluation
+                          ? 'border-blue-600 bg-blue-50/50 shadow-xs ring-2 ring-blue-500/10'
+                          : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/50'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                              !isOpenEvaluation ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'
+                            }`}>
+                              {!isOpenEvaluation && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </div>
+                            <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                              <Lock className="w-3 h-3 text-blue-600" />
+                              Con Código
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                            Identificado
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed pl-6">
+                          Cada trabajador debe ingresar su número o código de empleado para identificarse y responder.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Opción 2: Evaluación Abierta */}
+                    <div
+                      onClick={() => setIsOpenEvaluation(true)}
+                      className={`cursor-pointer p-3.5 rounded-xl border-2 transition-all flex flex-col justify-between ${
+                        isOpenEvaluation
+                          ? 'border-emerald-600 bg-emerald-50/50 shadow-xs ring-2 ring-emerald-500/10'
+                          : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/50'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                              isOpenEvaluation ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300 bg-white'
+                            }`}>
+                              {isOpenEvaluation && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </div>
+                            <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                              <Globe className="w-3 h-3 text-emerald-600" />
+                              Evaluación Abierta
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                            Sin Código
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed pl-6">
+                          Participación libre y confidencial. No solicita código de trabajador y no exige límite fijo de participantes.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Código de Acceso (ID) & Trabajadores */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -700,30 +777,6 @@ export default function AdminEvaluationWizard({
                     </div>
                   </div>
 
-                  {/* Evaluación Abierta Switch */}
-                  <div className="md:col-span-2 p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3 transition-colors">
-                    <div className="pt-0.5">
-                      <input
-                        id="isOpenEvaluation"
-                        type="checkbox"
-                        checked={isOpenEvaluation}
-                        onChange={(e) => setIsOpenEvaluation(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
-                      />
-                    </div>
-                    <label htmlFor="isOpenEvaluation" className="cursor-pointer flex-1 select-none">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-800">Evaluación Abierta</span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                          Sin código de trabajador
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                        Permite que cualquier persona responda directamente con el enlace sin solicitar código de trabajador ni requerir un número fijo de participantes.
-                      </p>
-                    </label>
-                  </div>
-
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                       <Layers className="w-3.5 h-3.5 text-slate-400" />
@@ -743,6 +796,11 @@ export default function AdminEvaluationWizard({
                         className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
                       />
                     )}
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      {isOpenEvaluation
+                        ? 'No se establece un límite fijo de participantes.'
+                        : 'Meta de trabajadores para cálculo de cobertura.'}
+                    </p>
                   </div>
                 </div>
 

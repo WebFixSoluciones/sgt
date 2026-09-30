@@ -11,6 +11,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Hash,
+  UserCheck,
+  Globe,
+  Lock,
 } from 'lucide-react';
 import { EvaluationCampaign } from '@/lib/types';
 import Portal from '@/components/common/Portal';
@@ -175,28 +178,74 @@ export default function EditEvaluationModal({
               />
             </div>
 
-            {/* Switch: Evaluación Abierta */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3">
-              <div className="pt-0.5">
-                <input
-                  id="editIsOpenEvaluation"
-                  type="checkbox"
-                  checked={isOpenEvaluation}
-                  onChange={(e) => setIsOpenEvaluation(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
-                />
-              </div>
-              <label htmlFor="editIsOpenEvaluation" className="cursor-pointer flex-1 select-none">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-800">Evaluación Abierta</span>
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                    Sin código de trabajador
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                  Permite responder directamente sin solicitar código de trabajador ni requerir un número fijo de participantes.
-                </p>
+            {/* Modalidad de Identificación de Trabajadores */}
+            <div>
+              <label className="block font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                <span>Modalidad de Identificación de Trabajadores *</span>
               </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Con Código */}
+                <div
+                  onClick={() => setIsOpenEvaluation(false)}
+                  className={`cursor-pointer p-3 rounded-xl border-2 transition-all ${
+                    !isOpenEvaluation
+                      ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-500/10'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                        !isOpenEvaluation ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'
+                      }`}>
+                        {!isOpenEvaluation && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-blue-600" />
+                        Con Código
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800">
+                      Identificado
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-tight pl-5">
+                    Requiere que el trabajador ingrese su código de empleado.
+                  </p>
+                </div>
+
+                {/* Evaluación Abierta */}
+                <div
+                  onClick={() => setIsOpenEvaluation(true)}
+                  className={`cursor-pointer p-3 rounded-xl border-2 transition-all ${
+                    isOpenEvaluation
+                      ? 'border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-500/10'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                        isOpenEvaluation ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300 bg-white'
+                      }`}>
+                        {isOpenEvaluation && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1">
+                        <Globe className="w-3 h-3 text-emerald-600" />
+                        Evaluación Abierta
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                      Sin Código
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-tight pl-5">
+                    Participación libre desde el enlace sin solicitar código.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Participantes esperados & Estado */}
