@@ -78,8 +78,8 @@ export function generateTemplatePdf(form: FormSchema): jsPDF {
   doc.text(titleLines, marginX, currentY);
   currentY += titleLines.length * 6 + 2;
 
-  // Count metrics (only real questions, excluding sections and informational HTML blocks)
-  const totalQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html').length;
+  // Count metrics (only real questions, excluding sections, informational HTML blocks, and statements)
+  const totalQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement').length;
   const sectionFields = form.fields.filter((f) => f.type === 'page_break');
   const totalSections = Math.max(1, sectionFields.length);
 
@@ -219,6 +219,29 @@ export function generateTemplatePdf(form: FormSchema): jsPDF {
       return;
     }
 
+    // Statement Block (Enunciado / Indicaciones / Caso de estudio con Imagen opcional)
+    if (field.type === 'statement') {
+      const textDesc = field.description ? `\n${field.description}` : '';
+      const imgNote = field.imageUrl ? '\n[Imagen adjunta o gráfico referenciado]' : '';
+      const captionNote = field.imageCaption ? `\n(Leyenda: ${field.imageCaption})` : '';
+
+      tableBody.push([
+        {
+          content: `[ENUNCIADO / INSTRUCCIONES]: ${field.label || 'Indicaciones'}${textDesc}${imgNote}${captionNote}`,
+          colSpan: 5,
+          styles: {
+            fillColor: [241, 245, 249],
+            textColor: [15, 23, 42],
+            fontStyle: 'normal',
+            fontSize: 8,
+            halign: 'left',
+            cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 },
+          },
+        },
+      ]);
+      return;
+    }
+
     // If first question appears before any page_break
     if (!hasOpenedFirstSection && questionCounter === 0) {
       hasOpenedFirstSection = true;
@@ -249,6 +272,9 @@ export function generateTemplatePdf(form: FormSchema): jsPDF {
     }
     if (field.description) {
       questionText += `\nNota: ${field.description}`;
+    }
+    if (field.imageUrl) {
+      questionText += `\n[Imagen adjunta referenciada${field.imageCaption ? `: ${field.imageCaption}` : ''}]`;
     }
 
     // Format Options with empty marks and points/values

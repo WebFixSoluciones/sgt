@@ -23,10 +23,14 @@ import {
   FileDown,
   Loader2,
   Code,
+  Image as ImageIcon,
+  Maximize2,
+  X,
 } from 'lucide-react';
 import { FormSchema, FormField, FormFieldOption, FormFieldType } from '@/lib/types';
 import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
 import { exportFormToPdf } from '@/lib/export-pdf-template';
+import FieldImageManager from './FieldImageManager';
 
 interface FormBuilderProps {
   initialForm: FormSchema;
@@ -50,6 +54,17 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [htmlTabs, setHtmlTabs] = useState<Record<string, 'code' | 'preview'>>({});
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; caption?: string } | null>(null);
+
+  React.useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && lightboxImage) {
+        setLightboxImage(null);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [lightboxImage]);
 
   // Modern Centered Alert Dialog
   const [alertDialog, setAlertDialog] = useState<{
@@ -147,8 +162,14 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
           ? 'Nueva Sección'
           : type === 'html'
           ? 'Bloque de Instrucciones HTML'
+          : type === 'statement'
+          ? 'Instrucciones / Enunciado con Imagen'
           : '¿Escriba aquí el enunciado de la pregunta?',
-      required: type !== 'page_break' && type !== 'html',
+      description:
+        type === 'statement'
+          ? 'Escriba aquí las indicaciones detalladas, caso de estudio, o instrucciones para contestar las preguntas.'
+          : undefined,
+      required: type !== 'page_break' && type !== 'html' && type !== 'statement',
       order: form.fields.length,
       showValues: true,
       sectionTitle: type === 'page_break' ? 'Nueva Sección' : undefined,
@@ -425,7 +446,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
     return [...list, ...activeSection.fields];
   }, [form.fields, selectedSectionFilter, activeSection]);
 
-  const totalQuestionsCount = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html').length;
+  const totalQuestionsCount = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement').length;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col pb-24">
@@ -553,10 +574,10 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Añadir Campos
+                Añadir Preguntas
               </span>
               <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
-                Tipos
+                Evaluables
               </span>
             </div>
 
@@ -600,21 +621,44 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
               <button
                 type="button"
                 onClick={() => handleAddField('textarea')}
-                className="flex flex-col items-center justify-center p-2.5 bg-slate-50 hover:bg-purple-50 hover:text-purple-700 border border-slate-200 hover:border-purple-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
+                className="col-span-2 flex items-center justify-center gap-2 p-2 bg-slate-50 hover:bg-purple-50 hover:text-purple-700 border border-slate-200 hover:border-purple-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
               >
-                <FileText className="w-4 h-4 text-purple-600 mb-1 group-hover:scale-110 transition-transform" />
-                <span>Párrafo</span>
+                <FileText className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
+                <span>Párrafo / Observaciones</span>
               </button>
+            </div>
 
-              <button
-                type="button"
-                onClick={() => handleAddField('html')}
-                className="flex flex-col items-center justify-center p-2.5 bg-slate-50 hover:bg-amber-50 hover:text-amber-800 border border-slate-200 hover:border-amber-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
-                title="Añadir bloque de contenido o instrucciones en HTML personalizado"
-              >
-                <Code className="w-4 h-4 text-amber-600 mb-1 group-hover:scale-110 transition-transform" />
-                <span>Bloque HTML</span>
-              </button>
+            <div className="pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  Contenido e Instrucciones
+                </span>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                  Informativo
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleAddField('statement')}
+                  className="flex flex-col items-center justify-center p-2.5 bg-emerald-50/60 hover:bg-emerald-100/70 hover:text-emerald-800 border border-emerald-200/80 rounded-xl text-xs font-semibold text-emerald-900 transition-all shadow-2xs group"
+                  title="Añadir bloque de enunciado, texto e imagen informativa o caso de estudio"
+                >
+                  <ImageIcon className="w-4 h-4 text-emerald-600 mb-1 group-hover:scale-110 transition-transform" />
+                  <span>Enunciado / Imagen</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleAddField('html')}
+                  className="flex flex-col items-center justify-center p-2.5 bg-amber-50/60 hover:bg-amber-100/70 hover:text-amber-800 border border-amber-200/80 rounded-xl text-xs font-semibold text-amber-900 transition-all shadow-2xs group"
+                  title="Añadir bloque de contenido o instrucciones en HTML personalizado"
+                >
+                  <Code className="w-4 h-4 text-amber-600 mb-1 group-hover:scale-110 transition-transform" />
+                  <span>Bloque HTML</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -673,7 +717,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
             <div className="overflow-y-auto space-y-1.5 max-h-72 md:max-h-[300px] pr-1">
               {sections.map((sec, idx) => {
                 const isActive = selectedSectionFilter === sec.id;
-                const qCount = sec.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html').length;
+                const qCount = sec.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement').length;
 
                 return (
                   <div
@@ -746,7 +790,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
 
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[11px] font-semibold text-blue-700">
-                  {activeSection.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html').length} preguntas en esta pantalla
+                  {activeSection.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement').length} preguntas en esta pantalla
                 </span>
                 <button
                   type="button"
@@ -833,7 +877,13 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                           type="text"
                           value={field.label}
                           onChange={(e) => updateFormField(field.id, { label: e.target.value })}
-                          placeholder={field.type === 'html' ? 'Título o Referencia del Bloque HTML (Opcional)...' : 'Escriba la pregunta aquí...'}
+                          placeholder={
+                            field.type === 'html'
+                              ? 'Título o Referencia del Bloque HTML (Opcional)...'
+                              : field.type === 'statement'
+                              ? 'Título del Enunciado o Sección (ej: Instrucciones Generales, Caso Práctico)...'
+                              : 'Escriba la pregunta aquí...'
+                          }
                           className="w-full text-sm sm:text-base font-bold text-slate-900 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-1 transition-colors"
                         />
 
@@ -842,7 +892,11 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                           type="text"
                           value={field.description || ''}
                           onChange={(e) => updateFormField(field.id, { description: e.target.value })}
-                          placeholder="+ Añadir descripción o nota aclaratoria (opcional)..."
+                          placeholder={
+                            field.type === 'statement'
+                              ? 'Texto o instrucciones principales del enunciado...'
+                              : '+ Añadir descripción o nota aclaratoria (opcional)...'
+                          }
                           className="w-full text-xs text-slate-500 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-0.5 mt-0.5 transition-colors"
                         />
                       </div>
@@ -855,7 +909,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                             const newType = e.target.value as FormFieldType;
                             updateFormField(field.id, {
                               type: newType,
-                              required: newType === 'html' ? false : field.required,
+                              required: newType === 'html' || newType === 'statement' ? false : field.required,
                               htmlContent:
                                 newType === 'html' && !field.htmlContent
                                   ? `<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px;">\n  <h4 style="color: #0f172a; font-weight: bold; font-size: 14px; margin: 0 0 6px 0;">Instrucciones para esta sección</h4>\n  <p style="color: #475569; font-size: 13px; line-height: 1.5; margin: 0;">Escriba aquí el contenido, formato HTML, tablas, listas o estilos personalizados.</p>\n</div>`
@@ -879,10 +933,23 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                           <option value="select">Desplegable (Select)</option>
                           <option value="text">Texto Corto</option>
                           <option value="textarea">Párrafo / Observaciones</option>
+                          <option value="statement">Enunciado con Imagen y Texto</option>
                           <option value="html">Bloque de Contenido HTML</option>
                         </select>
                       </div>
                     </div>
+
+                    {/* Imagen opcional de apoyo para la pregunta */}
+                    {field.type !== 'html' && field.type !== 'statement' && (
+                      <div className="pt-2 border-t border-slate-100">
+                        <FieldImageManager
+                          field={field}
+                          compact
+                          onUpdate={(updates) => updateFormField(field.id, updates)}
+                          onPreview={(src, caption) => setLightboxImage({ src, caption })}
+                        />
+                      </div>
+                    )}
 
                     {/* Opciones de Respuesta (para radio, checkbox, select) */}
                     {(field.type === 'radio' || field.type === 'checkbox' || field.type === 'select') && (
@@ -1134,12 +1201,41 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                       </div>
                     )}
 
+                    {/* Editor y Vista Previa de Enunciado con Imagen y Texto */}
+                    {field.type === 'statement' && (
+                      <div className="pt-2 border-t border-slate-100 space-y-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Texto Detallado o Instrucciones para el Evaluado
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={field.description || ''}
+                            onChange={(e) => updateFormField(field.id, { description: e.target.value })}
+                            placeholder="Escriba aquí las indicaciones detalladas, caso de estudio, o instrucciones para contestar las preguntas."
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors leading-relaxed"
+                          />
+                        </div>
+
+                        <FieldImageManager
+                          field={field}
+                          onUpdate={(updates) => updateFormField(field.id, updates)}
+                          onPreview={(src, caption) => setLightboxImage({ src, caption })}
+                        />
+                      </div>
+                    )}
+
                     {/* Toolbar inferior de la tarjeta: Obligatoria o Informativa, Duplicar, Eliminar */}
                     <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                       {field.type === 'html' ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-[11px] font-semibold text-amber-800">
                           <Code className="w-3.5 h-3.5 text-amber-600" />
                           <span>Contenido Informativo (No requiere respuesta del trabajador)</span>
+                        </span>
+                      ) : field.type === 'statement' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] font-semibold text-emerald-800">
+                          <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Enunciado Informativo (No requiere respuesta del trabajador)</span>
                         </span>
                       ) : (
                         <label className="flex items-center gap-1.5 cursor-pointer select-none">
@@ -1191,6 +1287,35 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
           cancelText={null}
           onConfirm={() => setAlertDialog(null)}
         />
+      )}
+
+      {/* Lightbox Modal para vista previa de imagen en pantalla completa */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex flex-col items-center justify-center p-4 select-none animate-in fade-in duration-150"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div className="relative max-w-5xl max-h-[90vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setLightboxImage(null)}
+              className="absolute -top-10 right-0 text-white/80 hover:text-white p-1 rounded-lg bg-black/40 hover:bg-black/70 transition-colors flex items-center gap-1 text-xs"
+            >
+              <X className="w-5 h-5" />
+              <span>Cerrar (Esc)</span>
+            </button>
+            <img
+              src={lightboxImage.src}
+              alt={lightboxImage.caption || 'Vista ampliada'}
+              className="max-h-[82vh] max-w-full object-contain rounded-xl shadow-2xl bg-white"
+            />
+            {lightboxImage.caption && (
+              <p className="mt-2 text-sm text-slate-200 text-center font-medium bg-black/60 px-4 py-1 rounded-full">
+                {lightboxImage.caption}
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

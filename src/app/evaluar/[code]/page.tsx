@@ -17,6 +17,8 @@ import {
   GitMerge,
   LogOut,
   X,
+  Maximize2,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { EvaluationCampaign, FormSchema, FormField } from '@/lib/types';
 import ResumePromptModal from '@/components/worker/ResumePromptModal';
@@ -125,6 +127,19 @@ export default function WorkerEvaluationPage() {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const hasExplicitlyExitedRef = useRef(false);
+
+  // Lightbox Modal for full-resolution image inspection
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; caption?: string } | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && lightboxImage) {
+        setLightboxImage(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxImage]);
 
   // Exit handler: saves current answers and returns cleanly to the worker login screen
   const handleExitConfirm = async () => {
@@ -617,7 +632,7 @@ export default function WorkerEvaluationPage() {
 
     sections.forEach((sec, sIdx) => {
       sec.fields.forEach((f) => {
-        if (f.type !== 'page_break' && f.type !== 'html' && f.required) {
+        if (f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement' && f.required) {
           const val = answers[f.id];
           if (val === undefined || val === null || String(val).trim() === '') {
             missingInActiveForm.push({ field: f, sectionIdx: sIdx, sectionTitle: sec.title });
@@ -1353,6 +1368,62 @@ export default function WorkerEvaluationPage() {
               );
             }
 
+            // RENDER: Enunciado / Instrucciones / Caso Práctico con Imagen y Texto
+            if (field.type === 'statement') {
+              return (
+                <div
+                  key={field.id}
+                  id={`field-${field.id}`}
+                  className="py-4 sm:py-6 first:pt-1 last:pb-6"
+                >
+                  <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
+                    {/* Título del Enunciado */}
+                    {field.label && field.label.trim() !== '' && (
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-2.5 h-5 bg-blue-600 rounded-full shrink-0" />
+                        <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
+                          {field.label}
+                        </h2>
+                      </div>
+                    )}
+
+                    {/* Texto o Instrucciones detalladas */}
+                    {field.description && (
+                      <p className="text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed">
+                        {field.description}
+                      </p>
+                    )}
+
+                    {/* Imagen del Enunciado */}
+                    {field.imageUrl && (
+                      <div className="space-y-1.5 pt-1">
+                        <div
+                          onClick={() => setLightboxImage({ src: field.imageUrl!, caption: field.imageCaption || field.label })}
+                          className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white hover:border-blue-400 transition-all shadow-xs flex items-center justify-center max-h-[460px] p-1.5"
+                          title="Haga clic para ampliar la imagen"
+                        >
+                          <img
+                            src={field.imageUrl}
+                            alt={field.imageAlt || field.label || 'Imagen de la sección'}
+                            className="w-auto h-auto max-h-[450px] max-w-full object-contain mx-auto rounded-lg group-hover:scale-[1.01] transition-transform duration-200"
+                          />
+                          <div className="absolute bottom-2 right-2 bg-slate-900/80 text-white text-[11px] px-2.5 py-1 rounded-lg backdrop-blur-xs flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                            <Maximize2 className="w-3.5 h-3.5" />
+                            <span>Ampliar</span>
+                          </div>
+                        </div>
+                        {field.imageCaption && (
+                          <p className="text-xs text-slate-500 text-center italic">
+                            {field.imageCaption}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
             const currentValue = answers[field.id];
             const isAnswered = currentValue !== undefined && currentValue !== '';
 
@@ -1381,6 +1452,32 @@ export default function WorkerEvaluationPage() {
 
                 {field.description && (
                   <p className="mb-3 text-xs text-slate-500 leading-relaxed">{field.description}</p>
+                )}
+
+                {/* Imagen de apoyo en la pregunta */}
+                {field.imageUrl && (
+                  <div className="mb-3.5 space-y-1.5">
+                    <div
+                      onClick={() => setLightboxImage({ src: field.imageUrl!, caption: field.imageCaption || field.label })}
+                      className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 hover:border-blue-400 transition-all shadow-2xs flex items-center justify-center max-h-[380px] p-1"
+                      title="Haga clic para ampliar la imagen"
+                    >
+                      <img
+                        src={field.imageUrl}
+                        alt={field.imageAlt || field.label}
+                        className="w-auto h-auto max-h-[370px] max-w-full object-contain mx-auto rounded-lg group-hover:scale-[1.01] transition-transform duration-200"
+                      />
+                      <div className="absolute bottom-2 right-2 bg-slate-900/80 text-white text-[11px] px-2.5 py-1 rounded-lg backdrop-blur-xs flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <Maximize2 className="w-3 h-3" />
+                        <span>Ampliar</span>
+                      </div>
+                    </div>
+                    {field.imageCaption && (
+                      <p className="text-xs text-slate-500 text-center italic">
+                        {field.imageCaption}
+                      </p>
+                    )}
+                  </div>
                 )}
 
                 {/* Radio Options Grid */}
@@ -1624,6 +1721,38 @@ export default function WorkerEvaluationPage() {
           onConfirm={handleExitConfirm}
           onCancel={() => setShowExitConfirm(false)}
         />
+      )}
+
+      {/* Modal Lightbox para visualización ampliada de imagen en alta resolución */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex flex-col items-center justify-center p-3 sm:p-5 select-none animate-in fade-in duration-150"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div
+            className="relative max-w-5xl max-h-[92vh] flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setLightboxImage(null)}
+              className="absolute -top-10 right-0 text-white/90 hover:text-white p-1 rounded-lg bg-black/40 hover:bg-black/70 transition-colors flex items-center gap-1.5 text-xs font-semibold"
+            >
+              <X className="w-4 h-4" />
+              <span>Cerrar (Esc)</span>
+            </button>
+            <img
+              src={lightboxImage.src}
+              alt={lightboxImage.caption || 'Vista ampliada'}
+              className="max-h-[82vh] max-w-full object-contain rounded-xl shadow-2xl bg-white"
+            />
+            {lightboxImage.caption && (
+              <p className="mt-2.5 text-xs sm:text-sm text-slate-200 text-center font-medium bg-black/60 px-4 py-1.5 rounded-full max-w-xl truncate">
+                {lightboxImage.caption}
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -12,7 +12,8 @@ export type FormFieldType =
   | 'text' 
   | 'textarea' 
   | 'page_break'
-  | 'html';
+  | 'html'
+  | 'statement';
 
 export interface FormField {
   id: string;
@@ -30,6 +31,9 @@ export interface FormField {
   section?: string;
   fpsicoCode?: string;
   htmlContent?: string; // HTML content when type === 'html'
+  imageUrl?: string; // Image URL or Base64 data URL
+  imageAlt?: string; // Alternative text for accessibility
+  imageCaption?: string; // Caption or legend displayed beneath the image
 }
 
 export interface FormSchema {

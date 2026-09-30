@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     // Filter question fields (non-pagebreaks, non-demographic, non-observaciones)
     let fpsicoFieldIds = fpsicoForm.fields
-      .filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.id.startsWith('q'))
+      .filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement' && f.id.startsWith('q'))
       .map((f) => f.id);
 
     if (fpsicoFieldIds.length === 0) {
@@ -45,6 +45,7 @@ export async function GET(req: NextRequest) {
           (f) =>
             f.type !== 'page_break' &&
             f.type !== 'html' &&
+            f.type !== 'statement' &&
             !['puesto', 'agrupacion_puestos', 'horario', 'horarios', 'antiguedad', 'observaciones'].includes(
               f.id.toLowerCase()
             )

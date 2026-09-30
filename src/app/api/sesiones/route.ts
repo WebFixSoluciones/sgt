@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
 
         // 2. Worker IN PROGRESS with answers -> Calculate exact question stopped at
         const existingAnswers = existing.answers || {};
-        const allQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html');
+        const allQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement');
         const totalQuestions = allQuestions.length;
 
         const answeredCount = allQuestions.filter(
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
         } catch (e) {}
       }
 
-      const allQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html');
+      const allQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement');
       return NextResponse.json({
         success: true,
         status: 'new',
@@ -276,7 +276,7 @@ export async function POST(req: NextRequest) {
       const missingRequiredQuestions: { formTitle: string; label: string; fieldId: string; order: number }[] = [];
       for (const f of targetForms) {
         for (const field of f.fields) {
-          if (field.type !== 'page_break' && field.type !== 'html' && field.required) {
+          if (field.type !== 'page_break' && field.type !== 'html' && field.type !== 'statement' && field.required) {
             const val = combinedAnswers[field.id];
             if (val === undefined || val === null || String(val).trim() === '') {
               missingRequiredQuestions.push({
