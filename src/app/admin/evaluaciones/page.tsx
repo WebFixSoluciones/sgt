@@ -555,28 +555,21 @@ export default function AdminEvaluacionesPage() {
                         </div>
                       </td>
 
-                      {/* Formularios que la componen con botón de editar formulario */}
+                      {/* Formularios que la componen en píldoras cuadradas horizontales con clic directo a edición */}
                       <td className="py-4 px-5">
-                        <div className="space-y-1.5 max-w-md">
+                        <div className="flex flex-wrap items-center gap-1.5 max-w-lg">
                           {assignedForms.length > 0 ? (
                             assignedForms.map((f) => (
-                              <div
+                              <Link
                                 key={f.id}
-                                className="inline-flex items-center justify-between gap-2 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-medium mr-2 mb-1 group/form"
+                                href={`/admin/formularios/${f.id}`}
+                                title={`Editar preguntas de: ${f.title}`}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 hover:bg-blue-50/90 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 rounded-md text-[11px] font-semibold transition-all shadow-2xs group/chip max-w-[210px]"
                               >
-                                <div className="flex items-center gap-1.5">
-                                  <FileText className="w-3.5 h-3.5 text-blue-600" />
-                                  <span className="text-slate-800 truncate max-w-[150px]">{f.title}</span>
-                                </div>
-                                <Link
-                                  href={`/admin/formularios/${f.id}`}
-                                  title="Editar las preguntas de este formulario"
-                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white hover:bg-blue-50 text-blue-600 border border-slate-200 hover:border-blue-300 rounded text-[10px] font-semibold transition-colors"
-                                >
-                                  <Edit className="w-3 h-3" />
-                                  <span>Editar</span>
-                                </Link>
-                              </div>
+                                <FileText className="w-3.5 h-3.5 text-slate-400 group-hover/chip:text-blue-600 shrink-0 transition-colors" />
+                                <span className="truncate">{f.title}</span>
+                                <ExternalLink className="w-3 h-3 text-slate-400 group-hover/chip:text-blue-600 opacity-60 group-hover/chip:opacity-100 shrink-0 transition-all ml-0.5" />
+                              </Link>
                             ))
                           ) : (
                             <span className="text-[11px] text-slate-400 italic">
