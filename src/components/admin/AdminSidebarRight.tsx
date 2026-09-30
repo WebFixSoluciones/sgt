@@ -126,7 +126,7 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
       </div>
 
       {/* Footer Area */}
-      <div className="pt-4 border-t border-slate-100 space-y-3">
+      <div className="pt-4 border-t border-slate-100">
         <button
           onClick={handleLogout}
           className="w-full py-2.5 px-3 border border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-600 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-2 shadow-2xs"
@@ -134,18 +134,6 @@ export default function AdminSidebarRight({ children, isAuth }: AdminSidebarRigh
           <LogOut className="w-3.5 h-3.5" />
           <span>Cerrar Sesión</span>
         </button>
-
-        <div className="text-[10px] text-center text-slate-400 font-medium">
-          Sistema de Evaluaciones | desarrollado por{" "}
-          <a
-            href="https://webfixsoluciones.net"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-slate-600 hover:underline transition-colors"
-          >
-            Web FiX Soluciones
-          </a>
-        </div>
       </div>
     </div>
   );
