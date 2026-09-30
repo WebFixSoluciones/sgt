@@ -4,6 +4,7 @@ import {
   getFormById,
   getFormsForCampaign,
   getSubmission,
+  getSubmissions,
   getNextOpenParticipantCode,
   saveSubmission,
   resetSubmission,
@@ -13,6 +14,19 @@ import { getEcuadorISOString } from '@/lib/date-utils';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+function getClientIp(req: NextRequest): string {
+  const forwarded = req.headers.get('x-forwarded-for');
+  if (forwarded) {
+    const first = forwarded.split(',')[0].trim();
+    if (first) return first;
+  }
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+  const cfConnectingIp = req.headers.get('cf-connecting-ip');
+  if (cfConnectingIp) return cfConnectingIp.trim();
+  return (req as any).ip || '127.0.0.1';
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,6 +39,9 @@ export async function POST(req: NextRequest) {
       currentFormIndex,
       currentFieldIndex,
       currentSectionTitle,
+      enteredCode,
+      forceNew,
+      clientWorkerCode,
     } = body;
 
     if (!evaluationCode) {
@@ -50,19 +67,6 @@ export async function POST(req: NextRequest) {
     }
 
     const isOpenEval = Boolean(campaign.isOpenEvaluation);
-    let effectiveWorkerCode = typeof workerCode === 'string' ? workerCode.trim() : '';
-
-    if (isOpenEval && (!effectiveWorkerCode || effectiveWorkerCode === '__auto__')) {
-      effectiveWorkerCode = await getNextOpenParticipantCode(evaluationCode);
-    }
-
-    if (!effectiveWorkerCode) {
-      return NextResponse.json(
-        { success: false, error: 'Código de trabajador es requerido' },
-        { status: 400 }
-      );
-    }
-
     const forms = await getFormsForCampaign(campaign);
     const form = forms[0] || (campaign.formId ? await getFormById(campaign.formId) : null);
     if (!form) {
@@ -72,8 +76,167 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ACTION: CHECK (Worker enters evaluation code and worker number)
+    const clientIp = getClientIp(req);
+
+    // ACTION: CHECK (Worker enters evaluation code or worker number)
     if (action === 'check') {
+      if (isOpenEval) {
+        // En modo abierto la URL es protegida: si o si debe ingresar el código de evaluación
+        const inputCode = String(enteredCode || workerCode || '').trim().toUpperCase();
+        if (!inputCode) {
+          return NextResponse.json(
+            { success: false, error: 'Por favor ingrese el Código de Evaluación.' },
+            { status: 400 }
+          );
+        }
+        if (inputCode !== campaign.code.trim().toUpperCase()) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'El código de evaluación ingresado no coincide con esta evaluación. Verifíquelo e intente nuevamente.',
+            },
+            { status: 403 }
+          );
+        }
+
+        // Si el usuario eligió iniciar una nueva evaluación
+        if (forceNew) {
+          const newWorkerCode = await getNextOpenParticipantCode(evaluationCode);
+          const allQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement');
+          return NextResponse.json({
+            success: true,
+            status: 'new',
+            canResume: false,
+            isOpenEvaluation: true,
+            workerCode: newWorkerCode,
+            clientIp,
+            answeredCount: 0,
+            totalQuestions: allQuestions.length,
+            questionNumber: 1,
+            currentFieldIndex: 0,
+            currentSectionTitle: '',
+            answers: {},
+            form,
+            forms,
+            campaign,
+          });
+        }
+
+        // Identificar si existe evaluación en curso para esta IP o identificador guardado
+        const allSubmissions = await getSubmissions(evaluationCode);
+        let existing: WorkerSubmission | null = null;
+
+        const cleanClientWorkerCode = typeof clientWorkerCode === 'string' ? clientWorkerCode.trim().toUpperCase() : '';
+        if (cleanClientWorkerCode) {
+          existing = allSubmissions.find(
+            (s) => s.workerCode.toUpperCase() === cleanClientWorkerCode && s.status === 'in_progress'
+          ) || null;
+        }
+
+        if (!existing && clientIp) {
+          const ipMatches = allSubmissions.filter(
+            (s) => s.status === 'in_progress' && s.ip && (s.ip === clientIp || s.ip.includes(clientIp))
+          );
+          if (ipMatches.length > 0) {
+            ipMatches.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+            existing = ipMatches[0];
+          }
+        }
+
+        if (existing) {
+          const existingAnswers = existing.answers || {};
+          const allQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement');
+          const totalQuestions = allQuestions.length;
+
+          const answeredCount = allQuestions.filter(
+            (q) => existingAnswers[q.id] !== undefined && existingAnswers[q.id] !== null && String(existingAnswers[q.id]).trim() !== ''
+          ).length;
+
+          if (answeredCount > 0) {
+            const firstUnansweredIndex = allQuestions.findIndex(
+              (q) => existingAnswers[q.id] === undefined || existingAnswers[q.id] === null || String(existingAnswers[q.id]).trim() === ''
+            );
+
+            const questionNumber = firstUnansweredIndex >= 0 ? firstUnansweredIndex + 1 : totalQuestions;
+            const targetQuestion = firstUnansweredIndex >= 0 ? allQuestions[firstUnansweredIndex] : allQuestions[totalQuestions - 1];
+            const questionLabel = targetQuestion ? targetQuestion.label : '';
+            const firstUnansweredFieldId = targetQuestion ? targetQuestion.id : null;
+
+            let targetSectionIndex = 0;
+            let targetSectionTitle = 'Información General';
+            let secCounter = 0;
+            let currentTitle = 'Información General';
+
+            for (const field of form.fields) {
+              if (field.type === 'page_break') {
+                secCounter++;
+                currentTitle = field.sectionTitle || field.label || `Sección ${secCounter + 1}`;
+              } else if (firstUnansweredFieldId && field.id === firstUnansweredFieldId) {
+                targetSectionIndex = secCounter;
+                targetSectionTitle = currentTitle;
+                break;
+              }
+            }
+
+            if (!targetSectionTitle || (targetSectionIndex === 0 && existing.currentSectionTitle)) {
+              targetSectionTitle = existing.currentSectionTitle || targetSectionTitle;
+              targetSectionIndex = typeof existing.currentFieldIndex === 'number' ? existing.currentFieldIndex : targetSectionIndex;
+            }
+
+            return NextResponse.json({
+              success: true,
+              status: 'in_progress',
+              canResume: true,
+              isOpenEvaluation: true,
+              workerCode: existing.workerCode,
+              clientIp,
+              answeredCount,
+              totalQuestions,
+              questionNumber,
+              questionLabel,
+              firstUnansweredFieldId,
+              currentFieldIndex: targetSectionIndex,
+              currentSectionTitle: targetSectionTitle,
+              currentFormIndex: existing.currentFormIndex || 0,
+              answers: existingAnswers,
+              form,
+              forms,
+              campaign,
+            });
+          }
+        }
+
+        // Sin evaluación previa en progreso para esta IP -> Nueva participación
+        const newWorkerCode = await getNextOpenParticipantCode(evaluationCode);
+        const allQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement');
+        return NextResponse.json({
+          success: true,
+          status: 'new',
+          canResume: false,
+          isOpenEvaluation: true,
+          workerCode: newWorkerCode,
+          clientIp,
+          answeredCount: 0,
+          totalQuestions: allQuestions.length,
+          questionNumber: 1,
+          currentFieldIndex: 0,
+          currentSectionTitle: '',
+          answers: {},
+          form,
+          forms,
+          campaign,
+        });
+      }
+
+      // Modalidad con Código de Trabajador
+      const effectiveWorkerCode = typeof workerCode === 'string' ? workerCode.trim().toUpperCase() : '';
+      if (!effectiveWorkerCode) {
+        return NextResponse.json(
+          { success: false, error: 'Código de trabajador es requerido' },
+          { status: 400 }
+        );
+      }
+
       const existing = await getSubmission(evaluationCode, effectiveWorkerCode);
 
       if (existing) {
@@ -137,6 +300,7 @@ export async function POST(req: NextRequest) {
           status: 'in_progress',
           canResume: answeredCount > 0,
           workerCode: effectiveWorkerCode,
+          clientIp,
           answeredCount,
           totalQuestions,
           questionNumber,
@@ -190,6 +354,7 @@ export async function POST(req: NextRequest) {
         status: 'new',
         canResume: false,
         workerCode: effectiveWorkerCode,
+        clientIp,
         answeredCount: Object.keys(inheritedAnswers).length,
         totalQuestions: allQuestions.length,
         questionNumber: 1,
@@ -201,6 +366,8 @@ export async function POST(req: NextRequest) {
         campaign,
       });
     }
+
+    const effectiveWorkerCode = typeof workerCode === 'string' ? workerCode.trim().toUpperCase() : '';
 
     // ACTION: RESET (Worker chooses to restart from the beginning)
     if (action === 'reset') {
@@ -246,7 +413,7 @@ export async function POST(req: NextRequest) {
         currentFieldIndex: typeof currentFieldIndex === 'number' ? currentFieldIndex : (existing?.currentFieldIndex || 0),
         currentSectionTitle: currentSectionTitle || existing?.currentSectionTitle || '',
         answers: { ...(existing?.answers || {}), ...(answers || {}) },
-        ip: req.headers.get('x-forwarded-for') || req.ip || '181.199.58.217',
+        ip: clientIp,
         userAgent: req.headers.get('user-agent') || 'Browser Client',
         startedAt: existing?.startedAt || getEcuadorISOString(),
         updatedAt: getEcuadorISOString(),
@@ -313,7 +480,7 @@ export async function POST(req: NextRequest) {
         currentFieldIndex: typeof currentFieldIndex === 'number' ? currentFieldIndex : (existing?.currentFieldIndex || 0),
         currentSectionTitle: 'Finalizado',
         answers: combinedAnswers,
-        ip: req.headers.get('x-forwarded-for') || req.ip || '181.199.58.217',
+        ip: clientIp,
         userAgent: req.headers.get('user-agent') || 'Browser Client',
         startedAt: existing?.startedAt || getEcuadorISOString(),
         updatedAt: getEcuadorISOString(),

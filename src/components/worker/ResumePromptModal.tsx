@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { History, RotateCcw, ArrowRight, HelpCircle } from 'lucide-react';
+import { History, RotateCcw, ArrowRight, HelpCircle, Globe, PlusCircle } from 'lucide-react';
 
 interface ResumePromptModalProps {
   questionNumber?: number;
@@ -10,6 +10,8 @@ interface ResumePromptModalProps {
   totalQuestions?: number;
   questionLabel?: string;
   currentSectionTitle?: string;
+  isOpenEvaluation?: boolean;
+  clientIp?: string;
   onContinue: () => void;
   onReset: () => void;
 }
@@ -20,6 +22,8 @@ export default function ResumePromptModal({
   totalQuestions,
   questionLabel,
   currentSectionTitle,
+  isOpenEvaluation,
+  clientIp,
   onContinue,
   onReset,
 }: ResumePromptModalProps) {
@@ -44,16 +48,21 @@ export default function ResumePromptModal({
 
         <div className="space-y-2">
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-[11px] uppercase tracking-wider border border-blue-100">
-            Evaluación en Curso Detectada
+            {isOpenEvaluation ? 'Evaluación en Curso Identificada por IP' : 'Evaluación en Curso Detectada'}
           </span>
           <h3 className="text-xl font-bold text-slate-900 tracking-tight">
             Te quedaste en la pregunta {displayQNum}
           </h3>
-          {currentSectionTitle && (
+          {isOpenEvaluation && clientIp ? (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-mono">
+              <Globe className="w-3 h-3 text-slate-500" />
+              <span>Conexión IP: {clientIp}</span>
+            </div>
+          ) : currentSectionTitle ? (
             <p className="text-xs text-slate-500 font-medium">
               {currentSectionTitle}
             </p>
-          )}
+          ) : null}
         </div>
 
         {/* Question preview card */}
@@ -73,17 +82,28 @@ export default function ResumePromptModal({
         </div>
 
         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-          ¿Deseas continuar desde donde te quedaste o prefieres reiniciar la evaluación?
+          {isOpenEvaluation
+            ? 'Se detectó una evaluación en curso desde esta conexión. ¿Deseas continuar con la evaluación desde el último punto o hacer una nueva?'
+            : '¿Deseas continuar desde donde te quedaste o prefieres reiniciar la evaluación?'}
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
           <button
             type="button"
             onClick={onReset}
-            className="w-full py-2.5 px-4 bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-300 hover:border-rose-200 font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+            className="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reiniciar evaluación</span>
+            {isOpenEvaluation ? (
+              <>
+                <PlusCircle className="w-3.5 h-3.5 text-slate-500" />
+                <span>Hacer una nueva</span>
+              </>
+            ) : (
+              <>
+                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                <span>Reiniciar evaluación</span>
+              </>
+            )}
           </button>
 
           <button

@@ -16,7 +16,7 @@ export default function EvaluacionesIndexPage() {
       setError('Por favor ingrese su código de evaluación');
       return;
     }
-    router.push(`/evaluar/${clean}`);
+    router.push(`/evaluar/${clean}?c=${encodeURIComponent(clean)}`);
   };
 
   return (
