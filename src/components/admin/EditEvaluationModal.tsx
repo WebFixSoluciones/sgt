@@ -186,7 +186,7 @@ export default function EditEvaluationModal({
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Con Código */}
+                {/* Con Código de Trabajador */}
                 <div
                   onClick={() => setIsOpenEvaluation(false)}
                   className={`cursor-pointer p-3 rounded-xl border-2 transition-all ${
@@ -204,7 +204,7 @@ export default function EditEvaluationModal({
                       </div>
                       <span className="text-xs font-bold text-slate-900 flex items-center gap-1">
                         <Lock className="w-3 h-3 text-blue-600" />
-                        Con Código
+                        Con Código de Trabajador
                       </span>
                     </div>
                     <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800">
@@ -212,7 +212,7 @@ export default function EditEvaluationModal({
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 leading-tight pl-5">
-                    Requiere que el trabajador ingrese su código de empleado.
+                    Acceso con código de evaluación y requiere código de empleado del trabajador.
                   </p>
                 </div>
 
@@ -238,11 +238,11 @@ export default function EditEvaluationModal({
                       </span>
                     </div>
                     <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
-                      Sin Código
+                      Sin Cód. Trabajador
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 leading-tight pl-5">
-                    Participación libre desde el enlace sin solicitar código.
+                    Acceso con código de evaluación, pero no solicita código ni identificación de trabajador.
                   </p>
                 </div>
               </div>

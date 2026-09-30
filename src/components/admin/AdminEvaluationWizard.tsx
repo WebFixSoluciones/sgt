@@ -709,7 +709,7 @@ export default function AdminEvaluationWizard({
                             </div>
                             <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
                               <Lock className="w-3 h-3 text-blue-600" />
-                              Con Código
+                              Con Código de Trabajador
                             </span>
                           </div>
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
@@ -717,7 +717,7 @@ export default function AdminEvaluationWizard({
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-500 leading-relaxed pl-6">
-                          Cada trabajador debe ingresar su número o código de empleado para identificarse y responder.
+                          Acceso con Código de Evaluación y el trabajador debe ingresar además su código/cédula de empleado para responder.
                         </p>
                       </div>
                     </div>
@@ -745,11 +745,11 @@ export default function AdminEvaluationWizard({
                             </span>
                           </div>
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                            Sin Código
+                            Sin Cód. Trabajador
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-500 leading-relaxed pl-6">
-                          Participación libre y confidencial. No solicita código de trabajador y no exige límite fijo de participantes.
+                          Acceso mediante Código de Evaluación (o enlace directo), pero NO solicita código ni identificación personal de trabajador.
                         </p>
                       </div>
                     </div>

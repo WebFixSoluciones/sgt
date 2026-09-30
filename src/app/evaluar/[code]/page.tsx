@@ -1040,9 +1040,14 @@ export default function WorkerEvaluationPage() {
                 />
               </div>
             </div>
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[11px] font-semibold uppercase tracking-wider mb-2">
-              <Building2 className="w-3.5 h-3.5" />
-              <span>{campaign.company}</span>
+            <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[11px] font-semibold uppercase tracking-wider">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>{campaign.company}</span>
+              </div>
+              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-800 text-[11px] font-mono font-bold tracking-wider">
+                <span>CÓD: {campaign.code}</span>
+              </div>
             </div>
             <h1 className="text-base sm:text-xl font-bold text-slate-900 tracking-tight leading-snug">
               {campaign.title}
@@ -1063,10 +1068,10 @@ export default function WorkerEvaluationPage() {
             <div className="space-y-4">
               <div className="p-4 bg-emerald-50/80 border border-emerald-200/80 rounded-xl text-center space-y-2">
                 <span className="inline-block px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[11px] font-bold uppercase tracking-wider rounded-full">
-                  Participación Libre y Confidencial
+                  Evaluación Abierta (Sin Código de Trabajador)
                 </span>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Esta evaluación no requiere código de identificación personal. Sus respuestas se guardarán de forma totalmente segura.
+                  Has ingresado a la evaluación <strong className="font-mono text-slate-900">{campaign.code}</strong>. Esta modalidad no solicita código de empleado ni identificación personal del trabajador.
                 </p>
               </div>
 
