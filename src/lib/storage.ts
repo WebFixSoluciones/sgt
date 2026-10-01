@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { FormSchema, EvaluationCampaign, WorkerSubmission, EvaluationGroup } from './types';
-import { initialForms, initialCampaigns, initialGroups, initialSubmissions, estresLaboralForm, fpsicoForm } from './seed-data';
+import { initialForms, initialCampaigns, initialGroups, initialSubmissions, estresLaboralForm, fpsicoForm, lips60Form } from './seed-data';
 import { getEcuadorISOString } from './date-utils';
 
 interface DatabaseSchema {
@@ -286,14 +286,43 @@ export async function getDatabase(): Promise<DatabaseSchema> {
     }
 
     // Ensure form-estres-laboral has canonical updated scale and question fields
-    const estresMaster = memDb.forms.find((f) => f.id === 'form-estres-laboral');
-    if (estresMaster && estresLaboralForm) {
-      const q1 = estresMaster.fields.find((f) => f.id === 'estres_q1');
-      if (!q1 || !q1.options || q1.options[1]?.label !== '2. Casi nunca') {
-        estresMaster.fields = estresLaboralForm.fields;
-        estresMaster.title = estresLaboralForm.title;
-        estresMaster.description = estresLaboralForm.description;
+    let estresMaster = memDb.forms.find((f) => f.id === 'form-estres-laboral' || f.code === 'estres-laboral');
+    if (estresLaboralForm) {
+      if (!estresMaster) {
+        memDb.forms.push(estresLaboralForm);
         modified = true;
+      } else {
+        const q1 = estresMaster.fields.find((f) => f.id === 'estres_q1');
+        if (!q1 || !q1.options || q1.options.length !== 6 || q1.options[1]?.label !== '2. Casi Nunca') {
+          estresMaster.fields = estresLaboralForm.fields;
+          estresMaster.title = estresLaboralForm.title;
+          estresMaster.description = estresLaboralForm.description;
+          estresMaster.category = estresLaboralForm.category;
+          estresMaster.isTemplate = true;
+          estresMaster.company = '';
+          modified = true;
+        }
+      }
+    }
+
+    // Ensure form-lips-60 has canonical updated subscales and 60 questions
+    let lipsMaster = memDb.forms.find((f) => f.id === 'form-lips-60' || f.code === 'lips-60');
+    if (lips60Form) {
+      if (!lipsMaster) {
+        memDb.forms.push(lips60Form);
+        modified = true;
+      } else {
+        const pbCount = lipsMaster.fields.filter((f) => f.type === 'page_break').length;
+        const q1 = lipsMaster.fields.find((f) => f.id === 'lips_q1');
+        if (pbCount < 8 || !q1 || !q1.options || q1.options.length !== 5 || lipsMaster.fields.length < 68) {
+          lipsMaster.fields = lips60Form.fields;
+          lipsMaster.title = lips60Form.title;
+          lipsMaster.description = lips60Form.description;
+          lipsMaster.category = lips60Form.category;
+          lipsMaster.isTemplate = true;
+          lipsMaster.company = '';
+          modified = true;
+        }
       }
     }
 
@@ -552,6 +581,41 @@ export async function getFormById(id: string): Promise<FormSchema | null> {
         await writeToDiskOrBlob(db);
       }
     }
+  } else if ((id === 'form-estres-laboral' || id === 'estres-laboral') && estresLaboralForm) {
+    if (!found) {
+      found = estresLaboralForm;
+      db.forms.push(estresLaboralForm);
+      await writeToDiskOrBlob(db);
+    } else {
+      const q1 = found.fields.find((f) => f.id === 'estres_q1');
+      if (!q1 || !q1.options || q1.options.length !== 6 || q1.options[1]?.label !== '2. Casi Nunca') {
+        found.fields = estresLaboralForm.fields;
+        found.title = estresLaboralForm.title;
+        found.description = estresLaboralForm.description;
+        found.category = estresLaboralForm.category;
+        found.isTemplate = true;
+        found.company = '';
+        await writeToDiskOrBlob(db);
+      }
+    }
+  } else if ((id === 'form-lips-60' || id === 'lips-60') && lips60Form) {
+    if (!found) {
+      found = lips60Form;
+      db.forms.push(lips60Form);
+      await writeToDiskOrBlob(db);
+    } else {
+      const pbCount = found.fields.filter((f) => f.type === 'page_break').length;
+      const q1 = found.fields.find((f) => f.id === 'lips_q1');
+      if (pbCount < 8 || !q1 || !q1.options || q1.options.length !== 5 || found.fields.length < 68) {
+        found.fields = lips60Form.fields;
+        found.title = lips60Form.title;
+        found.description = lips60Form.description;
+        found.category = lips60Form.category;
+        found.isTemplate = true;
+        found.company = '';
+        await writeToDiskOrBlob(db);
+      }
+    }
   }
   return found;
 }
@@ -561,8 +625,10 @@ export async function resetTemplateToCanonical(id: string): Promise<FormSchema |
   let canonical: FormSchema | null = null;
   if (id === 'form-fpsico-40' || id === 'fpsico-40') {
     canonical = fpsicoForm;
-  } else if (id === 'form-estres-laboral') {
+  } else if (id === 'form-estres-laboral' || id === 'estres-laboral') {
     canonical = estresLaboralForm;
+  } else if (id === 'form-lips-60' || id === 'lips-60') {
+    canonical = lips60Form;
   }
   if (!canonical) return null;
 

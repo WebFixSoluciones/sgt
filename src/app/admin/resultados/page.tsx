@@ -151,6 +151,29 @@ export default function AdminResultadosPage() {
       ];
     }
 
+    const isLips = currentForm.id === 'form-lips-60' || currentForm.code === 'lips-60' || currentForm.category === 'lips60' || currentForm.title.toLowerCase().includes('lips') || currentForm.title.toLowerCase().includes('acoso');
+
+    if (isLips) {
+      // 6 subescalas oficiales LIPS-60
+      const lipsDims = [
+        { name: '1. Desprestigio Laboral (DL)', score: 24, level: 'Adecuado' as const },
+        { name: '2. Entorpecimiento del Progreso (EP)', score: 32, level: 'Moderado' as const },
+        { name: '3. Incomunicación o Bloqueo de la Comunicación (BC)', score: 18, level: 'Adecuado' as const },
+        { name: '4. Intimidación Encubierta (IE)', score: 28, level: 'Adecuado' as const },
+        { name: '5. Intimidación Manifiesta (IM)', score: 12, level: 'Adecuado' as const },
+        { name: '6. Desprestigio Personal (DP)', score: 15, level: 'Adecuado' as const },
+      ];
+      return lipsDims.map((d) => ({
+        ...d,
+        workersCount: {
+          adecuado: Math.round(total * (1 - d.score / 100) * 0.7),
+          moderado: Math.round(total * 0.2),
+          elevado: Math.round(total * (d.score / 100) * 0.2),
+          muyElevado: Math.round(total * (d.score / 100) * 0.1),
+        },
+      }));
+    }
+
     // Default: INSST 9 Dimensions for FPSICO or general
     const defaultDims = [
       { name: '1. Tiempo de Trabajo', score: 35, level: 'Moderado' as const },
