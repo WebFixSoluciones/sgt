@@ -274,7 +274,7 @@ export async function getDatabase(): Promise<DatabaseSchema> {
         modified = true;
       } else {
         const pbCount = fpsicoMaster.fields.filter((f) => f.type === 'page_break').length;
-        if (pbCount < 18 || fpsicoMaster.fields.length !== fpsicoForm.fields.length) {
+        if (pbCount < 18) {
           fpsicoMaster.fields = fpsicoForm.fields;
           fpsicoMaster.title = fpsicoForm.title;
           fpsicoMaster.description = fpsicoForm.description;
@@ -538,7 +538,7 @@ export async function getFormById(id: string): Promise<FormSchema | null> {
       await writeToDiskOrBlob(db);
     } else {
       const pbCount = found.fields.filter((f) => f.type === 'page_break').length;
-      if (pbCount < 18 || found.fields.length !== fpsicoForm.fields.length) {
+      if (pbCount < 18) {
         found.fields = fpsicoForm.fields;
         found.title = fpsicoForm.title;
         found.description = fpsicoForm.description;

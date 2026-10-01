@@ -1341,15 +1341,21 @@ export default function WorkerEvaluationPage() {
   const progressPercent = Math.round(((currentSectionIndex + 1) / Math.max(sections.length, 1)) * 100);
 
   const currentSectionFields = currentSection?.fields || [];
-  const currentSectionQuestions = currentSectionFields.filter((f) => f.type !== 'html');
+  const currentSectionQuestions = currentSectionFields.filter((f) => f.type !== 'html' && f.type !== 'statement');
+  const currentSectionRequiredQuestions = currentSectionQuestions.filter((f) => f.required);
   const currentSectionTotal = currentSectionQuestions.length;
-  const currentSectionAnswered = currentSectionQuestions.filter(
-    (f) => answers[f.id] !== undefined && answers[f.id] !== ''
+  const currentSectionRequiredTotal = currentSectionRequiredQuestions.length;
+  const currentSectionRequiredAnswered = currentSectionRequiredQuestions.filter(
+    (f) => answers[f.id] !== undefined && answers[f.id] !== null && String(answers[f.id]).trim() !== ''
   ).length;
-  const currentSectionPending = currentSectionTotal - currentSectionAnswered;
-  const allRequiredAnswered = currentSectionFields.every(
-    (f) => f.type === 'html' || !f.required || (answers[f.id] !== undefined && answers[f.id] !== '')
+  const currentSectionAnswered = currentSectionQuestions.filter(
+    (f) => answers[f.id] !== undefined && answers[f.id] !== null && String(answers[f.id]).trim() !== ''
+  ).length;
+  const currentSectionPending = currentSectionRequiredTotal - currentSectionRequiredAnswered;
+  const allRequiredAnswered = currentSectionRequiredQuestions.every(
+    (f) => answers[f.id] !== undefined && answers[f.id] !== null && String(answers[f.id]).trim() !== ''
   );
+  const hasOptionalFields = currentSectionQuestions.some((f) => !f.required);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -1491,8 +1497,13 @@ export default function WorkerEvaluationPage() {
               <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-full text-[10px] sm:text-[11px] font-semibold tracking-wide">
                 Parte {currentSectionIndex + 1} de {sections.length}
               </span>
-              <span className="text-[11px] text-slate-400 font-medium">
-                {currentSectionTotal} {currentSectionTotal === 1 ? 'pregunta' : 'preguntas a responder'}
+              <span className="text-[11px] text-slate-500 font-medium">
+                {currentSectionRequiredTotal} {currentSectionRequiredTotal === 1 ? 'pregunta obligatoria' : 'preguntas obligatorias'}
+                {hasOptionalFields && (
+                  <span className="text-slate-400 ml-1">
+                    (+{currentSectionTotal - currentSectionRequiredTotal} opcional)
+                  </span>
+                )}
               </span>
             </div>
             <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight leading-snug">
@@ -1604,7 +1615,14 @@ export default function WorkerEvaluationPage() {
                 {/* Question Label */}
                 <div className="flex items-start justify-between gap-3 mb-2.5 sm:mb-3">
                   <h2 className="text-sm sm:text-base font-bold sm:font-semibold text-slate-900 leading-snug">
-                    {field.label} {field.required && <span className="text-rose-500 font-bold ml-0.5">*</span>}
+                    {field.label}
+                    {field.required ? (
+                      <span className="text-rose-500 font-bold ml-1" title="Pregunta obligatoria">*</span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full ml-2 align-middle inline-block">
+                        Opcional
+                      </span>
+                    )}
                   </h2>
 
                   {isAnswered && (
@@ -1783,12 +1801,19 @@ export default function WorkerEvaluationPage() {
 
           {/* Dynamic Status / Progress Count */}
           <div className="text-center text-[11px] sm:text-xs text-slate-500 font-medium px-1 truncate">
-            <span className="whitespace-nowrap">
-              <span className="hidden sm:inline">Respondidas: </span>
-              <strong className="text-slate-800 font-bold">{currentSectionAnswered}</strong>
-              <span className="text-slate-400 mx-0.5">/</span>
-              <span className="text-slate-600">{currentSectionTotal}</span>
-            </span>
+            {allRequiredAnswered ? (
+              <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Obligatorias completas ({currentSectionRequiredTotal}/{currentSectionRequiredTotal})</span>
+              </span>
+            ) : (
+              <span className="whitespace-nowrap">
+                <span className="hidden sm:inline">Obligatorias respondidas: </span>
+                <strong className="text-slate-800 font-bold">{currentSectionRequiredAnswered}</strong>
+                <span className="text-slate-400 mx-0.5">/</span>
+                <span className="text-slate-600">{currentSectionRequiredTotal}</span>
+              </span>
+            )}
           </div>
 
           <div className="shrink-0 flex items-center justify-end">

@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
 
           if (answeredCount > 0) {
             const firstUnansweredIndex = allQuestions.findIndex(
-              (q) => existingAnswers[q.id] === undefined || existingAnswers[q.id] === null || String(existingAnswers[q.id]).trim() === ''
+              (q) => q.required && (existingAnswers[q.id] === undefined || existingAnswers[q.id] === null || String(existingAnswers[q.id]).trim() === '')
             );
 
             const questionNumber = firstUnansweredIndex >= 0 ? firstUnansweredIndex + 1 : totalQuestions;
@@ -263,9 +263,9 @@ export async function POST(req: NextRequest) {
           (q) => existingAnswers[q.id] !== undefined && existingAnswers[q.id] !== null && String(existingAnswers[q.id]).trim() !== ''
         ).length;
 
-        // Find the first unanswered question
+        // Find the first unanswered required question
         const firstUnansweredIndex = allQuestions.findIndex(
-          (q) => existingAnswers[q.id] === undefined || existingAnswers[q.id] === null || String(existingAnswers[q.id]).trim() === ''
+          (q) => q.required && (existingAnswers[q.id] === undefined || existingAnswers[q.id] === null || String(existingAnswers[q.id]).trim() === '')
         );
 
         const questionNumber = firstUnansweredIndex >= 0 ? firstUnansweredIndex + 1 : totalQuestions;

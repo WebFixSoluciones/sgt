@@ -1311,6 +1311,10 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                               <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md shrink-0">
                                 Variable Demográfica
                               </span>
+                            ) : field.id === 'observaciones' ? (
+                              <span className="text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md shrink-0">
+                                Observaciones
+                              </span>
                             ) : field.id.startsWith('q') && !isNaN(Number(field.id.slice(1))) ? (
                               <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md shrink-0">
                                 Ítem #{field.id.slice(1)}
@@ -1320,6 +1324,18 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                                 Pregunta #{qNumber}
                               </span>
                             ) : null}
+
+                            {field.type !== 'html' && field.type !== 'statement' && (
+                              field.required ? (
+                                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-md shrink-0">
+                                  Obligatoria *
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md shrink-0">
+                                  Opcional
+                                </span>
+                              )
+                            )}
 
                             {currentSecInfo && (
                               <span
@@ -1697,14 +1713,22 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                             <span>Enunciado Informativo</span>
                           </span>
                         ) : (
-                          <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                          <label className="flex items-center gap-1.5 cursor-pointer select-none px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
                             <input
                               type="checkbox"
-                              checked={field.required}
+                              checked={Boolean(field.required)}
                               onChange={(e) => updateFormField(field.id, { required: e.target.checked })}
                               className="rounded text-blue-600 focus:ring-0 w-3.5 h-3.5"
                             />
-                            <span className="font-medium text-slate-700">Obligatoria *</span>
+                            {field.required ? (
+                              <span className="font-bold text-blue-700 text-xs flex items-center gap-0.5">
+                                Obligatoria <span className="text-rose-500 font-bold">*</span>
+                              </span>
+                            ) : (
+                              <span className="font-medium text-slate-500 text-xs">
+                                Opcional (no obligatoria)
+                              </span>
+                            )}
                           </label>
                         )}
 
