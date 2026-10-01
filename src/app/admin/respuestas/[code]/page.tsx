@@ -9,6 +9,7 @@ import {
   FileText,
   Search,
   Eye,
+  Trash2,
   CheckCircle2,
   Clock,
   User,
@@ -55,9 +56,40 @@ export default function RespuestasPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<WorkerSubmission | null>(null);
   const [modalSearchTerm, setModalSearchTerm] = useState('');
 
+  // Individual Submission Deletion State
+  const [submissionToDelete, setSubmissionToDelete] = useState<WorkerSubmission | null>(null);
+  const [isDeletingSubmission, setIsDeletingSubmission] = useState(false);
+
   // Backup & Clear Modal state
   const [backupModalOpen, setBackupModalOpen] = useState(false);
   const [backupModalTab, setBackupModalTab] = useState<'limpiar' | 'restaurar'>('limpiar');
+
+  const handleConfirmDeleteSubmission = async () => {
+    if (!submissionToDelete || !code) return;
+    try {
+      setIsDeletingSubmission(true);
+      const res = await fetch(`/api/respuestas/${code}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workerCode: submissionToDelete.workerCode }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (selectedSubmission?.workerCode === submissionToDelete.workerCode) {
+          setSelectedSubmission(null);
+        }
+        setSubmissionToDelete(null);
+        await fetchResponses();
+      } else {
+        alert(data.error || 'No se pudo eliminar la entrada.');
+      }
+    } catch (err) {
+      console.error('Error deleting submission:', err);
+      alert('Error de conexión al eliminar la entrada.');
+    } finally {
+      setIsDeletingSubmission(false);
+    }
+  };
 
   const fetchResponses = async () => {
     if (!code) return;
@@ -576,18 +608,29 @@ export default function RespuestasPage() {
 
                       {/* Acción */}
                       <td className="py-4 px-5 text-center">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedSubmission(sub);
-                            setModalSearchTerm('');
-                          }}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 hover:border-blue-300 rounded-lg text-xs font-semibold transition-colors shadow-2xs"
-                          title="Ver cuestionario y respuestas completas"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Ver Detalle</span>
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSubmission(sub);
+                              setModalSearchTerm('');
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 hover:border-blue-300 rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                            title="Ver cuestionario y respuestas completas"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Ver Detalle</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSubmissionToDelete(sub)}
+                            className="inline-flex items-center justify-center p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 hover:border-rose-300 rounded-lg transition-colors shadow-2xs"
+                            title={`Eliminar entrada individual de ${sub.workerCode}`}
+                            aria-label={`Eliminar entrada de ${sub.workerCode}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -764,6 +807,24 @@ export default function RespuestasPage() {
           confirmText="Entendido"
           cancelText={null}
           onConfirm={() => setShowFpsicoNoticeModal(false)}
+        />
+      )}
+
+      {submissionToDelete && (
+        <ConfirmDialog
+          isOpen={!!submissionToDelete}
+          type="danger"
+          title="Eliminar Entrada Individual"
+          message={`¿Está seguro de que desea eliminar permanentemente la respuesta del trabajador con código "${submissionToDelete.workerCode}"?\n\nEsta acción borrará todas sus respuestas registradas en esta evaluación y actualizará los totales y métricas de la campaña. Esta acción no se puede deshacer.`}
+          confirmText={isDeletingSubmission ? "Eliminando..." : "Sí, eliminar entrada"}
+          cancelText="Cancelar"
+          isLoading={isDeletingSubmission}
+          onConfirm={handleConfirmDeleteSubmission}
+          onCancel={() => {
+            if (!isDeletingSubmission) {
+              setSubmissionToDelete(null);
+            }
+          }}
         />
       )}
     </div>
