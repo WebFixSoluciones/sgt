@@ -515,6 +515,14 @@ export default function AdminEvaluacionesPage() {
                                 Abierta
                               </span>
                             )}
+                            {camp.allowSaveProgress === false && (
+                              <span
+                                className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200 shrink-0"
+                                title="Obligatorio terminar al 100% en una sola sesión (sin guardado parcial)"
+                              >
+                                100% Directo
+                              </span>
+                            )}
                           </div>
                           {isTrashItem && camp.trashedAt && (
                             <div className="text-[10px] text-rose-600 font-medium mt-1">

@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Check,
   AlertCircle,
+  AlertTriangle,
   Loader2,
   HelpCircle,
   Sparkles,
@@ -26,6 +27,7 @@ import { EvaluationCampaign, FormSchema, FormField } from '@/lib/types';
 import ResumePromptModal from '@/components/worker/ResumePromptModal';
 import CompletedNotice from '@/components/worker/CompletedNotice';
 import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
+import Portal from '@/components/common/Portal';
 
 interface Section {
   title: string;
@@ -186,6 +188,53 @@ export default function WorkerEvaluationPage() {
       setValidationNotice(null);
 
       // 3. Clear URL query params to prevent auto-relogin
+      router.replace(`/evaluar/${code}`);
+    } finally {
+      setIsExiting(false);
+    }
+  };
+
+  // Exit without saving handler: discards active in-progress draft and resets session cleanly
+  const handleExitWithoutSaving = async () => {
+    try {
+      setIsExiting(true);
+      hasExplicitlyExitedRef.current = true;
+
+      // Discard server in-progress draft
+      if (code && workerCode) {
+        try {
+          await fetch('/api/sesiones', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'discard_draft',
+              evaluationCode: code,
+              workerCode,
+            }),
+          });
+        } catch (e) {
+          console.warn('[EXIT] Error discarding draft on exit:', e);
+        }
+      }
+
+      // Clear local storage / session cached tokens
+      try {
+        if (typeof window !== 'undefined' && code) {
+          localStorage.removeItem(`eval_session_${code}`);
+          localStorage.removeItem(`eval_draft_${code}`);
+        }
+      } catch (e) {}
+
+      // Reset local session state
+      setShowExitConfirm(false);
+      setIsLoggedIn(false);
+      setWorkerCode('');
+      setInputEvalCode('');
+      setAnswers({});
+      setCurrentSectionIndex(0);
+      setActiveFieldId(null);
+      setValidationNotice(null);
+
       router.replace(`/evaluar/${code}`);
     } finally {
       setIsExiting(false);
@@ -1899,17 +1948,116 @@ export default function WorkerEvaluationPage() {
       )}
 
       {showExitConfirm && (
-        <ConfirmDialog
-          isOpen={showExitConfirm}
-          type="warning"
-          title="¿Desea salir de la evaluación?"
-          message="Su progreso actual se guardará de forma segura. Podrá retomar la evaluación en cualquier momento ingresando nuevamente con su Código de Trabajador."
-          confirmText={isExiting ? 'Guardando y saliendo...' : 'Guardar y Salir'}
-          cancelText="Continuar respondiendo"
-          isLoading={isExiting}
-          onConfirm={handleExitConfirm}
-          onCancel={() => setShowExitConfirm(false)}
-        />
+        <Portal>
+          <div
+            className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 select-none animate-in fade-in duration-150"
+            onClick={() => {
+              if (!isExiting) setShowExitConfirm(false);
+            }}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md p-5 sm:p-6 text-center animate-in zoom-in-95 duration-150 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                type="button"
+                disabled={isExiting}
+                onClick={() => setShowExitConfirm(false)}
+                className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
+                title="Cerrar ventana"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Warning Icon */}
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center mx-auto mb-3.5 text-amber-600 shadow-2xs">
+                <AlertTriangle className="w-6 h-6 text-amber-500" />
+              </div>
+
+              {/* Title */}
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-2">
+                ¿Desea salir de la evaluación?
+              </h3>
+
+              {/* Message */}
+              <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-6">
+                {campaign?.allowSaveProgress === false ? (
+                  <>Esta evaluación debe completarse al 100% en una sola sesión. Si decide salir ahora, sus respuestas no se guardarán.</>
+                ) : campaign?.isOpenEvaluation ? (
+                  <>Puede guardar su progreso actual para continuar más tarde desde este mismo dispositivo, o salir sin guardar para descartar sus respuestas.</>
+                ) : (
+                  <>Su progreso actual se guardará de forma segura. Podrá retomar la evaluación en cualquier momento ingresando nuevamente con su Código de Trabajador.</>
+                )}
+              </p>
+
+              {/* Action Buttons */}
+              {campaign?.allowSaveProgress === false ? (
+                // Modo Obligatorio 100% en una sola sesión: 2 botones (Continuar Evaluación y Salir sin Guardar)
+                <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-2.5">
+                  <button
+                    type="button"
+                    disabled={isExiting}
+                    onClick={() => setShowExitConfirm(false)}
+                    className="w-full sm:flex-1 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold transition-colors shadow-2xs disabled:opacity-50"
+                  >
+                    Continuar Evaluación
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isExiting}
+                    onClick={handleExitWithoutSaving}
+                    className="w-full sm:flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs sm:text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50"
+                  >
+                    {isExiting ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Saliendo...</span>
+                      </>
+                    ) : (
+                      <span>Salir sin Guardar</span>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                // Modo Guardar y Retomar: 3 opciones (Continuar Evaluación, Salir sin Guardar y Guardar y Salir)
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    disabled={isExiting}
+                    onClick={() => setShowExitConfirm(false)}
+                    className="w-full sm:w-auto flex-1 px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold transition-colors shadow-2xs disabled:opacity-50"
+                  >
+                    Continuar Evaluación
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isExiting}
+                    onClick={handleExitWithoutSaving}
+                    className="w-full sm:w-auto flex-1 px-3.5 py-2.5 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-semibold transition-colors shadow-2xs disabled:opacity-50"
+                  >
+                    Salir sin Guardar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isExiting}
+                    onClick={handleExitConfirm}
+                    className="w-full sm:w-auto flex-1 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50"
+                  >
+                    {isExiting ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Guardando...</span>
+                      </>
+                    ) : (
+                      <span>Guardar y Salir</span>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </Portal>
       )}
 
       {/* Modal Lightbox para visualización ampliada de imagen en alta resolución */}

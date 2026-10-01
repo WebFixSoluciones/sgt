@@ -8,6 +8,7 @@ import {
   getNextOpenParticipantCode,
   saveSubmission,
   resetSubmission,
+  deleteSubmission,
 } from '@/lib/storage';
 import { WorkerSubmission } from '@/lib/types';
 import { getEcuadorISOString } from '@/lib/date-utils';
@@ -101,6 +102,29 @@ export async function POST(req: NextRequest) {
 
         // Si el usuario eligió iniciar una nueva evaluación
         if (forceNew) {
+          const newWorkerCode = await getNextOpenParticipantCode(evaluationCode);
+          const allQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement');
+          return NextResponse.json({
+            success: true,
+            status: 'new',
+            canResume: false,
+            isOpenEvaluation: true,
+            workerCode: newWorkerCode,
+            clientIp,
+            answeredCount: 0,
+            totalQuestions: allQuestions.length,
+            questionNumber: 1,
+            currentFieldIndex: 0,
+            currentSectionTitle: '',
+            answers: {},
+            form,
+            forms,
+            campaign,
+          });
+        }
+
+        // Si la campaña no permite guardar progreso (obligatorio 100% en una sola sesión), iniciar de nuevo
+        if (campaign.allowSaveProgress === false) {
           const newWorkerCode = await getNextOpenParticipantCode(evaluationCode);
           const allQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement');
           return NextResponse.json({
@@ -254,7 +278,28 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // 2. Worker IN PROGRESS with answers -> Calculate exact question stopped at
+        // 2. Worker IN PROGRESS with answers
+        if (campaign.allowSaveProgress === false) {
+          await deleteSubmission(evaluationCode, effectiveWorkerCode);
+          const allQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement');
+          return NextResponse.json({
+            success: true,
+            status: 'new',
+            canResume: false,
+            workerCode: effectiveWorkerCode,
+            clientIp,
+            answeredCount: 0,
+            totalQuestions: allQuestions.length,
+            questionNumber: 1,
+            currentFieldIndex: 0,
+            currentSectionTitle: '',
+            answers: {},
+            form,
+            forms,
+            campaign,
+          });
+        }
+
         const existingAnswers = existing.answers || {};
         const allQuestions = form.fields.filter((f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement');
         const totalQuestions = allQuestions.length;
@@ -388,6 +433,18 @@ export async function POST(req: NextRequest) {
         status: 'reset',
         workerCode: effectiveWorkerCode,
         submission: resetSub,
+      });
+    }
+
+    // ACTION: DISCARD DRAFT (Worker exits without saving)
+    if (action === 'discard_draft') {
+      const existing = await getSubmission(evaluationCode, effectiveWorkerCode);
+      if (existing && existing.status === 'in_progress') {
+        await deleteSubmission(evaluationCode, effectiveWorkerCode);
+      }
+      return NextResponse.json({
+        success: true,
+        message: 'Borrador descartado correctamente.',
       });
     }
 

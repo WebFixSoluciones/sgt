@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, title, company, formId, formIds, expectedParticipants, groupId, nextEvaluationCode, isolateForms = true, puestos, isOpenEvaluation } = body;
+    const { code, title, company, formId, formIds, expectedParticipants, groupId, nextEvaluationCode, isolateForms = true, puestos, isOpenEvaluation, allowSaveProgress } = body;
 
     const resolvedFormIds: string[] = Array.isArray(formIds) && formIds.length > 0
       ? formIds
@@ -123,6 +123,7 @@ export async function POST(req: NextRequest) {
       nextEvaluationCode: nextEvaluationCode || undefined,
       puestos: cleanPuestos.length > 0 ? cleanPuestos : undefined,
       isOpenEvaluation: Boolean(isOpenEvaluation),
+      allowSaveProgress: allowSaveProgress !== undefined ? Boolean(allowSaveProgress) : true,
       visits: 0,
       submissionsCount: 0,
       createdAt: nowEc,
@@ -163,7 +164,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (action === 'update' || (!action && (body.title || body.company))) {
-      const { title, company, expectedParticipants, nextEvaluationCode, status, puestos, isOpenEvaluation } = body;
+      const { title, company, expectedParticipants, nextEvaluationCode, status, puestos, isOpenEvaluation, allowSaveProgress } = body;
       const updated = await updateCampaign(code, {
         title,
         company,
@@ -172,6 +173,7 @@ export async function PATCH(req: NextRequest) {
         status,
         puestos: Array.isArray(puestos) ? puestos.map((p: any) => String(p).trim()).filter(Boolean) : undefined,
         isOpenEvaluation: isOpenEvaluation !== undefined ? Boolean(isOpenEvaluation) : undefined,
+        allowSaveProgress: allowSaveProgress !== undefined ? Boolean(allowSaveProgress) : undefined,
       });
       if (!updated) {
         return NextResponse.json(

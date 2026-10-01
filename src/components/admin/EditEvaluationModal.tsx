@@ -14,6 +14,8 @@ import {
   UserCheck,
   Globe,
   Lock,
+  BookmarkCheck,
+  Clock,
 } from 'lucide-react';
 import { EvaluationCampaign } from '@/lib/types';
 import Portal from '@/components/common/Portal';
@@ -37,6 +39,7 @@ export default function EditEvaluationModal({
   const [company, setCompany] = useState('');
   const [expectedParticipants, setExpectedParticipants] = useState('100');
   const [isOpenEvaluation, setIsOpenEvaluation] = useState(false);
+  const [allowSaveProgress, setAllowSaveProgress] = useState(true);
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [nextEvaluationCode, setNextEvaluationCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,6 +51,7 @@ export default function EditEvaluationModal({
       setCompany(campaign.company || '');
       setExpectedParticipants(String(campaign.expectedParticipants || 100));
       setIsOpenEvaluation(Boolean(campaign.isOpenEvaluation));
+      setAllowSaveProgress(campaign.allowSaveProgress !== false);
       setStatus(campaign.status === 'inactive' ? 'inactive' : 'active');
       setNextEvaluationCode(campaign.nextEvaluationCode || '');
       setErrorMsg('');
@@ -81,6 +85,7 @@ export default function EditEvaluationModal({
           company: company.trim(),
           expectedParticipants: isOpenEvaluation ? 0 : (parseInt(expectedParticipants) || 100),
           isOpenEvaluation,
+          allowSaveProgress,
           status,
           nextEvaluationCode: nextEvaluationCode.trim().toUpperCase() || '',
         }),
@@ -243,6 +248,76 @@ export default function EditEvaluationModal({
                   </div>
                   <p className="text-[11px] text-slate-500 leading-tight pl-5">
                     Acceso con código de evaluación, pero no solicita código ni identificación de trabajador.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modalidad de Guardado de Progreso */}
+            <div>
+              <label className="block font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                <BookmarkCheck className="w-3.5 h-3.5 text-blue-600" />
+                <span>Guardado de Progreso / Salida de la Evaluación *</span>
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Opción 1: Guardar progreso antes de terminar */}
+                <div
+                  onClick={() => setAllowSaveProgress(true)}
+                  className={`cursor-pointer p-3 rounded-xl border-2 transition-all ${
+                    allowSaveProgress
+                      ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-500/10'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                        allowSaveProgress ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'
+                      }`}>
+                        {allowSaveProgress && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-blue-600" />
+                        Guardar Progreso Parcial
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800">
+                      Guardar y Retomar
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-tight pl-5">
+                    Los trabajadores pueden guardar su avance con "Guardar y Salir" y retomarlo más tarde.
+                  </p>
+                </div>
+
+                {/* Opción 2: Los trabajadores deben terminar al 100% */}
+                <div
+                  onClick={() => setAllowSaveProgress(false)}
+                  className={`cursor-pointer p-3 rounded-xl border-2 transition-all ${
+                    !allowSaveProgress
+                      ? 'border-purple-600 bg-purple-50/50 ring-2 ring-purple-500/10'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                        !allowSaveProgress ? 'border-purple-600 bg-purple-600' : 'border-slate-300 bg-white'
+                      }`}>
+                        {!allowSaveProgress && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-purple-600" />
+                        Obligatorio Terminar al 100%
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800">
+                      Sesión Única (100%)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-tight pl-5">
+                    Deben responder al 100% en una sola sesión. Al salir la opción será "Salir sin Guardar".
                   </p>
                 </div>
               </div>

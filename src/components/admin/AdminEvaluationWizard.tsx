@@ -29,6 +29,8 @@ import {
   UserCheck,
   Globe,
   Lock,
+  BookmarkCheck,
+  Clock,
 } from 'lucide-react';
 import type { EvaluationCampaign, FormSchema } from '@/lib/types';
 
@@ -71,6 +73,7 @@ export default function AdminEvaluationWizard({
   const [code, setCode] = useState('');
   const [expectedParticipants, setExpectedParticipants] = useState('100');
   const [isOpenEvaluation, setIsOpenEvaluation] = useState(false);
+  const [allowSaveProgress, setAllowSaveProgress] = useState(true);
   const [puestosText, setPuestosText] = useState(DEFAULT_PUESTOS.join('\n'));
   const [showPuestosCustomizer, setShowPuestosCustomizer] = useState(false);
   
@@ -143,6 +146,7 @@ export default function AdminEvaluationWizard({
         setCode(initialData.code || '');
         setExpectedParticipants(String(initialData.expectedParticipants || 100));
         setIsOpenEvaluation(Boolean(initialData.isOpenEvaluation));
+        setAllowSaveProgress(initialData.allowSaveProgress !== false);
         if (initialData.puestos && initialData.puestos.length > 0) {
           setPuestosText(initialData.puestos.join('\n'));
         } else {
@@ -306,6 +310,7 @@ export default function AdminEvaluationWizard({
         company: company.trim(),
         expectedParticipants: isOpenEvaluation ? 0 : (parseInt(expectedParticipants) || 100),
         isOpenEvaluation,
+        allowSaveProgress,
         nextEvaluationCode: isChained ? nextEvaluationCode.trim().toUpperCase() : '',
         puestos: cleanPuestos.length > 0 ? cleanPuestos : undefined,
         status: 'active',
@@ -750,6 +755,80 @@ export default function AdminEvaluationWizard({
                         </div>
                         <p className="text-[11px] text-slate-500 leading-relaxed pl-6">
                           Acceso mediante Código de Evaluación (o enlace directo), pero NO solicita código ni identificación personal de trabajador.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modalidad de Guardado de Progreso */}
+                <div className="pt-1">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <BookmarkCheck className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Guardado de Progreso / Salida de la Evaluación *</span>
+                  </label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Opción 1: Guardar progreso antes de terminar */}
+                    <div
+                      onClick={() => setAllowSaveProgress(true)}
+                      className={`cursor-pointer p-3.5 rounded-xl border-2 transition-all flex flex-col justify-between ${
+                        allowSaveProgress
+                          ? 'border-blue-600 bg-blue-50/50 shadow-xs ring-2 ring-blue-500/10'
+                          : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/50'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                              allowSaveProgress ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'
+                            }`}>
+                              {allowSaveProgress && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </div>
+                            <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                              <Clock className="w-3 h-3 text-blue-600" />
+                              Guardar Progreso Parcial
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                            Guardar y Retomar
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed pl-6">
+                          Permite a los trabajadores guardar su avance antes de terminar y salir con "Guardar y Salir" para retomar posteriormente.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Opción 2: Los trabajadores deben terminar al 100% */}
+                    <div
+                      onClick={() => setAllowSaveProgress(false)}
+                      className={`cursor-pointer p-3.5 rounded-xl border-2 transition-all flex flex-col justify-between ${
+                        !allowSaveProgress
+                          ? 'border-purple-600 bg-purple-50/50 shadow-xs ring-2 ring-purple-500/10'
+                          : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/50'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                              !allowSaveProgress ? 'border-purple-600 bg-purple-600' : 'border-slate-300 bg-white'
+                            }`}>
+                              {!allowSaveProgress && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </div>
+                            <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3 h-3 text-purple-600" />
+                              Obligatorio Terminar al 100%
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">
+                            Sesión Única (100%)
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed pl-6">
+                          Los trabajadores deben responder la evaluación al 100% de una sola vez. Al pulsar salir la opción será "Salir sin Guardar".
                         </p>
                       </div>
                     </div>
@@ -1220,12 +1299,19 @@ export default function AdminEvaluationWizard({
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-slate-400 uppercase">Modalidad</div>
+                    <div className="text-xs text-slate-400 uppercase">Modalidad & Guardado</div>
                     <div className="text-xs sm:text-sm font-bold text-slate-800">
                       {isOpenEvaluation ? (
-                        <span className="text-emerald-600 font-bold">Abierta (Sin código)</span>
+                        <span className="text-emerald-600 font-bold">Abierta</span>
                       ) : (
                         `${expectedParticipants} previstos`
+                      )}
+                    </div>
+                    <div className="text-[11px] font-semibold mt-0.5">
+                      {allowSaveProgress ? (
+                        <span className="text-blue-600">Guardar y Retomar</span>
+                      ) : (
+                        <span className="text-purple-600">Obligatorio 100%</span>
                       )}
                     </div>
                   </div>

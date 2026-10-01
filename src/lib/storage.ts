@@ -419,6 +419,7 @@ export async function updateCampaign(
     status?: 'active' | 'inactive';
     puestos?: string[];
     isOpenEvaluation?: boolean;
+    allowSaveProgress?: boolean;
   }
 ): Promise<EvaluationCampaign | null> {
   const db = await getDatabase();
@@ -444,6 +445,10 @@ export async function updateCampaign(
       updates.isOpenEvaluation !== undefined
         ? Boolean(updates.isOpenEvaluation)
         : current.isOpenEvaluation,
+    allowSaveProgress:
+      updates.allowSaveProgress !== undefined
+        ? Boolean(updates.allowSaveProgress)
+        : current.allowSaveProgress,
     updatedAt: getEcuadorISOString(),
   };
 

@@ -67,6 +67,7 @@ export interface EvaluationCampaign {
   submissionsCount: number;
   puestos?: string[]; // Job positions configured for this evaluation/company
   isOpenEvaluation?: boolean; // When true: open participation, no worker code required, unlimited expected participants
+  allowSaveProgress?: boolean; // When true (default): allows save and resume / Guardar y Salir. When false: requires 100% completion in 1 session / Salir sin Guardar.
   createdAt: string;
   updatedAt: string;
 }
