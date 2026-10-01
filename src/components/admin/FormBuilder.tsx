@@ -26,6 +26,8 @@ import {
   Image as ImageIcon,
   Maximize2,
   X,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { FormSchema, FormField, FormFieldOption, FormFieldType } from '@/lib/types';
 import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
@@ -151,6 +153,62 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
     return sections.find((s) => s.id === selectedSectionFilter) || sections[0] || null;
   }, [sections, selectedSectionFilter]);
 
+  // List of all evaluable questions with sequential numbering and shortened label for quick relocation
+  const questionOptions = useMemo(() => {
+    let count = 0;
+    const list: { id: string; number: number; label: string; globalIndex: number }[] = [];
+    form.fields.forEach((f, idx) => {
+      if (f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement') {
+        count++;
+        const rawLabel = (f.label || '').replace(/^\d+[\.\)]\s*/, '').trim();
+        const displayLabel = rawLabel ? rawLabel : `Pregunta ${count}`;
+        const shortText = displayLabel.length > 40 ? displayLabel.substring(0, 40) + '...' : displayLabel;
+        list.push({
+          id: f.id,
+          number: count,
+          label: `${count}. ${shortText}`,
+          globalIndex: idx,
+        });
+      }
+    });
+    return list;
+  }, [form.fields]);
+
+  // Quick lookup map: fieldId -> question sequential number (1-based)
+  const fieldQuestionNumberMap = useMemo(() => {
+    const map = new Map<string, number>();
+    let count = 0;
+    form.fields.forEach((f) => {
+      if (f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement') {
+        count++;
+        map.set(f.id, count);
+      }
+    });
+    return map;
+  }, [form.fields]);
+
+  // Quick lookup map: fieldId -> section info
+  const fieldSectionMap = useMemo(() => {
+    const map = new Map<string, { sectionId: string; sectionTitle: string; sectionIndex: number }>();
+    sections.forEach((sec, sIdx) => {
+      if (sec.pageBreakField) {
+        map.set(sec.pageBreakField.id, {
+          sectionId: sec.id,
+          sectionTitle: sec.title,
+          sectionIndex: sIdx,
+        });
+      }
+      sec.fields.forEach((f) => {
+        map.set(f.id, {
+          sectionId: sec.id,
+          sectionTitle: sec.title,
+          sectionIndex: sIdx,
+        });
+      });
+    });
+    return map;
+  }, [sections]);
+
   // Add new field into active section or at the end
   const handleAddField = (type: FormFieldType) => {
     const newId = `field_${Date.now()}`;
@@ -270,8 +328,8 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
     }
   };
 
-  // Duplicate field
-  const handleDuplicateField = (field: FormField, index: number) => {
+  // Duplicate field using global field index
+  const handleDuplicateField = (field: FormField, globalIndex: number) => {
     const newId = `field_${Date.now()}`;
     const duplicated: FormField = {
       ...field,
@@ -282,14 +340,14 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
 
     setForm((prev) => {
       const newFields = [...prev.fields];
-      newFields.splice(index + 1, 0, duplicated);
+      newFields.splice(globalIndex + 1, 0, duplicated);
       return { ...prev, fields: newFields };
     });
 
     setActiveFieldId(newId);
   };
 
-  // Delete field
+  // Delete field or section
   const handleDeleteField = (fieldId: string) => {
     React.startTransition(() => {
       setForm((prev) => ({
@@ -303,6 +361,176 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
         setSelectedSectionFilter('all');
       }
     });
+  };
+
+  // Split section before a specific field: creates a new page_break right before that field
+  const handleSplitSectionBeforeField = (fieldId: string) => {
+    const targetIdx = form.fields.findIndex((f) => f.id === fieldId);
+    if (targetIdx === -1) return;
+
+    const newSecId = `sec_${Date.now()}`;
+    const nextNum = sections.length + 1;
+    const defaultTitle = `Sección ${nextNum}: Nueva Sección`;
+
+    const newPageBreak: FormField = {
+      id: newSecId,
+      type: 'page_break',
+      label: defaultTitle,
+      sectionTitle: defaultTitle,
+      required: false,
+      order: targetIdx,
+    };
+
+    setForm((prev) => {
+      const newFields = [...prev.fields];
+      newFields.splice(targetIdx, 0, newPageBreak);
+      return { ...prev, fields: newFields };
+    });
+
+    setActiveFieldId(newSecId);
+    if (selectedSectionFilter !== 'all') {
+      setSelectedSectionFilter(newSecId);
+    }
+
+    setTimeout(() => {
+      const el = document.getElementById(`builder-section-${newSecId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
+  };
+
+  // Relocate an existing page_break section divider before a specific target field, or to start/end
+  const handleRelocateSection = (pageBreakId: string, targetId: string) => {
+    if (!targetId) return;
+
+    setForm((prev) => {
+      const currentIdx = prev.fields.findIndex((f) => f.id === pageBreakId);
+      if (currentIdx === -1) return prev;
+
+      const newFields = [...prev.fields];
+      const [movedField] = newFields.splice(currentIdx, 1);
+
+      if (targetId === '__START__') {
+        newFields.unshift(movedField);
+      } else if (targetId === '__END__') {
+        newFields.push(movedField);
+      } else {
+        const targetIdx = newFields.findIndex((f) => f.id === targetId);
+        if (targetIdx !== -1) {
+          newFields.splice(targetIdx, 0, movedField);
+        } else {
+          newFields.push(movedField);
+        }
+      }
+
+      return { ...prev, fields: newFields };
+    });
+
+    setActiveFieldId(pageBreakId);
+
+    setTimeout(() => {
+      const el = document.getElementById(`builder-section-${pageBreakId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
+  };
+
+  // Move any field or page_break 1 step up or down in form.fields
+  const handleMoveField = (fieldId: string, direction: 'up' | 'down') => {
+    setForm((prev) => {
+      const idx = prev.fields.findIndex((f) => f.id === fieldId);
+      if (idx === -1) return prev;
+
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= prev.fields.length) return prev;
+
+      const newFields = [...prev.fields];
+      const [moved] = newFields.splice(idx, 1);
+      newFields.splice(targetIdx, 0, moved);
+
+      return { ...prev, fields: newFields };
+    });
+  };
+
+  // Transfer a question/field to another section
+  const handleMoveFieldToSection = (fieldId: string, targetSectionId: string) => {
+    const targetSec = sections.find((s) => s.id === targetSectionId);
+    if (!targetSec) return;
+
+    setForm((prev) => {
+      const idx = prev.fields.findIndex((f) => f.id === fieldId);
+      if (idx === -1) return prev;
+
+      const newFields = [...prev.fields];
+      const [movedField] = newFields.splice(idx, 1);
+
+      if (targetSec.fields.length > 0) {
+        const lastField = targetSec.fields[targetSec.fields.length - 1];
+        const lastIdx = newFields.findIndex((f) => f.id === lastField.id);
+        if (lastIdx !== -1) {
+          newFields.splice(lastIdx + 1, 0, movedField);
+        } else {
+          newFields.push(movedField);
+        }
+      } else if (targetSec.pageBreakField) {
+        const pbIdx = newFields.findIndex((f) => f.id === targetSec.pageBreakField?.id);
+        if (pbIdx !== -1) {
+          newFields.splice(pbIdx + 1, 0, movedField);
+        } else {
+          newFields.push(movedField);
+        }
+      } else {
+        newFields.unshift(movedField);
+      }
+
+      return { ...prev, fields: newFields };
+    });
+
+    setActiveFieldId(fieldId);
+  };
+
+  // Move entire section block (page_break + its questions) up or down
+  const handleMoveSection = (secIndex: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? secIndex - 1 : secIndex + 1;
+    if (targetIndex < 0 || targetIndex >= sections.length) return;
+
+    // Ensure all sections have an explicit pageBreakField so boundaries are cleanly preserved
+    const normalized = sections.map((sec, idx) => {
+      let pb = sec.pageBreakField;
+      if (!pb && idx === 0) {
+        pb = {
+          id: `sec_pb_${Date.now()}`,
+          type: 'page_break',
+          label: sec.title,
+          sectionTitle: sec.title,
+          required: false,
+          order: 0,
+        };
+      }
+      return {
+        ...sec,
+        pageBreakField: pb,
+      };
+    });
+
+    const reordered = [...normalized];
+    const [moved] = reordered.splice(secIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+
+    const newFields: FormField[] = [];
+    reordered.forEach((sec) => {
+      if (sec.pageBreakField) {
+        newFields.push(sec.pageBreakField);
+      }
+      newFields.push(...sec.fields);
+    });
+
+    setForm((prev) => ({
+      ...prev,
+      fields: newFields,
+    }));
   };
 
   // Options operations
@@ -733,24 +961,62 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                         }
                       });
                     }}
-                    className={`p-2.5 rounded-xl cursor-pointer text-xs transition-all border ${
+                    className={`p-2 rounded-xl cursor-pointer text-xs transition-all border group/sec ${
                       isActive
                         ? 'bg-blue-50/80 border-blue-300 text-blue-900 font-semibold shadow-2xs'
                         : 'bg-slate-50/60 hover:bg-slate-100 border-slate-200/80 text-slate-700'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 truncate">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
                         <span className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-bold text-blue-700 shrink-0">
                           {idx + 1}
                         </span>
-                        <span className="font-semibold text-slate-800 truncate">
+                        <span className="font-semibold text-slate-800 truncate" title={sec.title}>
                           {sec.title}
                         </span>
                       </div>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white text-slate-600 border border-slate-200 shrink-0">
-                        {qCount} {qCount === 1 ? 'preg' : 'pregs'}
-                      </span>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span
+                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${
+                            qCount === 0
+                              ? 'bg-amber-100 text-amber-800 border-amber-300'
+                              : 'bg-white text-slate-600 border-slate-200'
+                          }`}
+                          title={qCount === 0 ? 'Sección vacía (0 preguntas)' : `${qCount} preguntas`}
+                        >
+                          {qCount} {qCount === 1 ? 'preg' : 'pregs'}
+                        </span>
+
+                        {/* Reordenar sección arriba / abajo */}
+                        <div className="flex items-center bg-white border border-slate-200 rounded-md overflow-hidden opacity-70 group-hover/sec:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveSection(idx, 'up');
+                            }}
+                            className="p-1 hover:bg-slate-100 text-slate-600 disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                            title="Subir sección en el orden del formulario"
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === sections.length - 1}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveSection(idx, 'down');
+                            }}
+                            className="p-1 hover:bg-slate-100 text-slate-600 border-l border-slate-200 disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                            title="Bajar sección en el orden del formulario"
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -817,75 +1083,190 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
 
                 // RENDER: Salto de Sección (page_break)
                 if (field.type === 'page_break') {
+                  const currentSecIndex = sections.findIndex((s) => s.id === field.id);
+                  const thisSection = sections.find((s) => s.id === field.id);
+                  const qCount =
+                    thisSection?.fields.filter(
+                      (f) => f.type !== 'page_break' && f.type !== 'html' && f.type !== 'statement'
+                    ).length || 0;
+                  const globalIdx = form.fields.findIndex((f) => f.id === field.id);
+
                   return (
                     <div
                       key={field.id}
                       id={`builder-section-${field.id}`}
                       onClick={() => setActiveFieldId(field.id)}
-                      className="py-2 my-1"
+                      className="py-3 my-2"
                     >
-                      <div className="relative flex items-center justify-between gap-3">
-                        <div className="flex-1 border-t-2 border-dashed border-blue-200" />
+                      <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-blue-50/90 border-2 border-dashed border-blue-300 rounded-2xl p-3 sm:p-4 shadow-2xs space-y-2.5">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                          {/* Left: Section Icon + Title input */}
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">
+                              {currentSecIndex !== -1 ? currentSecIndex + 1 : '§'}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <input
+                                type="text"
+                                value={field.sectionTitle || field.label}
+                                onChange={(e) =>
+                                  updateFormField(field.id, {
+                                    sectionTitle: e.target.value,
+                                    label: e.target.value,
+                                  })
+                                }
+                                placeholder="Nombre de la Sección..."
+                                className="w-full bg-white border border-blue-200 hover:border-blue-400 focus:border-blue-600 rounded-lg px-2.5 py-1 font-bold text-blue-950 text-xs sm:text-sm focus:outline-none transition-colors shadow-2xs"
+                              />
+                            </div>
+                            <span
+                              className={`text-[11px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                                qCount === 0
+                                  ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                  : 'bg-white text-blue-800 border-blue-200'
+                              }`}
+                            >
+                              {qCount} {qCount === 1 ? 'pregunta' : 'preguntas'}
+                            </span>
+                          </div>
 
-                        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-4 py-1.5 rounded-full text-xs font-bold text-blue-900 shadow-xs">
-                          <SplitSquareVertical className="w-4 h-4 text-blue-600 shrink-0" />
-                          <input
-                            type="text"
-                            value={field.sectionTitle || field.label}
-                            onChange={(e) =>
-                              updateFormField(field.id, {
-                                sectionTitle: e.target.value,
-                                label: e.target.value,
-                              })
-                            }
-                            placeholder="Nombre de la Sección..."
-                            className="bg-transparent border-none focus:outline-none font-bold text-blue-900 text-xs w-60 sm:w-80 text-center"
-                          />
+                          {/* Right: Divider Position Mover & Actions */}
+                          <div className="flex items-center gap-1.5 shrink-0 self-end md:self-auto flex-wrap sm:flex-nowrap">
+                            {/* Quick Mover Dropdown: Teleport before any question */}
+                            <div className="flex items-center gap-1 bg-white border border-blue-200 rounded-lg px-2 py-1 shadow-2xs">
+                              <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap hidden lg:inline">
+                                📍 Desplazar antes de:
+                              </span>
+                              <select
+                                value=""
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    handleRelocateSection(field.id, e.target.value);
+                                  }
+                                }}
+                                className="bg-transparent text-[11px] font-semibold text-blue-900 focus:outline-none max-w-[170px] sm:max-w-[220px] truncate cursor-pointer"
+                                title="Mover este salto de sección antes de cualquier pregunta específica"
+                              >
+                                <option value="">Desplazar sección a...</option>
+                                <option value="__START__">⬆ Al inicio de todo el formulario</option>
+                                {questionOptions.map((opt) => (
+                                  <option key={opt.id} value={opt.id}>
+                                    Antes de: {opt.label}
+                                  </option>
+                                ))}
+                                <option value="__END__">⬇ Al final del formulario</option>
+                              </select>
+                            </div>
+
+                            {/* Step Up / Step Down Buttons */}
+                            <div className="flex items-center bg-white border border-blue-200 rounded-lg overflow-hidden shadow-2xs">
+                              <button
+                                type="button"
+                                onClick={() => handleMoveField(field.id, 'up')}
+                                disabled={globalIdx === 0}
+                                className="p-1.5 hover:bg-blue-100 text-blue-700 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                title="Subir división una posición"
+                              >
+                                <ArrowUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveField(field.id, 'down')}
+                                disabled={globalIdx === form.fields.length - 1}
+                                className="p-1.5 hover:bg-blue-100 text-blue-700 border-l border-blue-200 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                title="Bajar división una posición"
+                              >
+                                <ArrowDown className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+
+                            {/* Delete section divider button */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteField(field.id)}
+                              title="Eliminar salto de sección (las preguntas se unirán a la sección anterior)"
+                              className="p-1.5 bg-white border border-rose-200 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors shadow-2xs"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
 
-                        <div className="flex-1 border-t-2 border-dashed border-blue-200" />
-
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteField(field.id)}
-                          title="Eliminar salto de sección"
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors shrink-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {qCount === 0 && (
+                          <div className="flex items-center gap-2 text-[11px] text-amber-800 bg-amber-50/90 border border-amber-200 rounded-lg px-2.5 py-1.5 font-medium">
+                            <span className="font-bold">Nota:</span>
+                            <span>
+                              Esta sección no tiene preguntas aún. Usa el menú <strong>"📍 Desplazar antes de..."</strong> para situarla antes de la pregunta que desees (ej: antes de la pregunta 10), o añade preguntas a esta sección.
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
                 }
 
-                // RENDER: Pregunta Normal
+                // RENDER: Pregunta Normal / Bloque
+                const globalFieldIndex = form.fields.findIndex((f) => f.id === field.id);
+                const currentSecInfo = fieldSectionMap.get(field.id);
+                const qNumber = fieldQuestionNumberMap.get(field.id);
+
                 return (
-                  <div
-                    key={field.id}
-                    id={`builder-field-${field.id}`}
-                    onClick={() => setActiveFieldId(field.id)}
-                    className={`bg-white rounded-2xl p-5 sm:p-6 transition-all duration-150 border ${
-                      isSelected
-                        ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md'
-                        : 'border-slate-200/90 hover:border-slate-300 shadow-xs'
-                    }`}
-                  >
-                    {/* Header de la Pregunta: Enunciado y Tipo */}
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
-                      <div className="flex-1 min-w-0">
-                        <input
-                          type="text"
-                          value={field.label}
-                          onChange={(e) => updateFormField(field.id, { label: e.target.value })}
-                          placeholder={
-                            field.type === 'html'
-                              ? 'Título o Referencia del Bloque HTML (Opcional)...'
-                              : field.type === 'statement'
-                              ? 'Título del Enunciado o Sección (ej: Instrucciones Generales, Caso Práctico)...'
-                              : 'Escriba la pregunta aquí...'
-                          }
-                          className="w-full text-sm sm:text-base font-bold text-slate-900 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-1 transition-colors"
-                        />
+                  <React.Fragment key={field.id}>
+                    {/* Hover Divider para insertar una nueva sección entre preguntas */}
+                    {fieldIndex > 0 && (
+                      <div className="relative group/divider py-1.5 -my-2 flex items-center justify-center">
+                        <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 h-px bg-transparent group-hover/divider:bg-blue-300 transition-colors" />
+                        <button
+                          type="button"
+                          onClick={() => handleSplitSectionBeforeField(field.id)}
+                          className="relative z-10 opacity-0 group-hover/divider:opacity-100 px-3 py-1 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 border border-slate-200 hover:border-blue-300 rounded-full text-[11px] font-semibold transition-all shadow-xs inline-flex items-center gap-1.5"
+                          title="Insertar una nueva sección inmediatamente antes de esta pregunta"
+                        >
+                          <Plus className="w-3 h-3 text-blue-600" />
+                          <span>+ Dividir e Insertar Sección Aquí</span>
+                        </button>
+                      </div>
+                    )}
+
+                    <div
+                      id={`builder-field-${field.id}`}
+                      onClick={() => setActiveFieldId(field.id)}
+                      className={`bg-white rounded-2xl p-5 sm:p-6 transition-all duration-150 border ${
+                        isSelected
+                          ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md'
+                          : 'border-slate-200/90 hover:border-slate-300 shadow-xs'
+                      }`}
+                    >
+                      {/* Header de la Pregunta: Número secuencial, Sección, Enunciado y Tipo */}
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+                        <div className="flex-1 min-w-0">
+                          {/* Badges de número de pregunta y sección */}
+                          <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                            {qNumber !== undefined && (
+                              <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md shrink-0">
+                                Pregunta #{qNumber}
+                              </span>
+                            )}
+                            {currentSecInfo && (
+                              <span className="text-[10px] font-medium text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md truncate max-w-[220px]">
+                                {currentSecInfo.sectionTitle}
+                              </span>
+                            )}
+                          </div>
+
+                          <input
+                            type="text"
+                            value={field.label}
+                            onChange={(e) => updateFormField(field.id, { label: e.target.value })}
+                            placeholder={
+                              field.type === 'html'
+                                ? 'Título o Referencia del Bloque HTML (Opcional)...'
+                                : field.type === 'statement'
+                                ? 'Título del Enunciado o Sección (ej: Instrucciones Generales, Caso Práctico)...'
+                                : 'Escriba la pregunta aquí...'
+                            }
+                            className="w-full text-sm sm:text-base font-bold text-slate-900 placeholder:text-slate-300 border-b border-transparent hover:border-slate-200 focus:border-blue-600 focus:outline-none py-1 transition-colors"
+                          />
 
                         {/* Descripción opcional */}
                         <input
@@ -1225,40 +1606,97 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                       </div>
                     )}
 
-                    {/* Toolbar inferior de la tarjeta: Obligatoria o Informativa, Duplicar, Eliminar */}
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                      {field.type === 'html' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-[11px] font-semibold text-amber-800">
-                          <Code className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Contenido Informativo (No requiere respuesta del trabajador)</span>
-                        </span>
-                      ) : field.type === 'statement' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] font-semibold text-emerald-800">
-                          <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Enunciado Informativo (No requiere respuesta del trabajador)</span>
-                        </span>
-                      ) : (
-                        <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={field.required}
-                            onChange={(e) => updateFormField(field.id, { required: e.target.checked })}
-                            className="rounded text-blue-600 focus:ring-0 w-3.5 h-3.5"
-                          />
-                          <span className="font-medium text-slate-700">Obligatoria *</span>
-                        </label>
-                      )}
+                    {/* Toolbar inferior de la tarjeta: Obligatoria, Dividir Sección, Mover Sección, Subir/Bajar, Duplicar, Eliminar */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5 text-xs text-slate-500">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        {field.type === 'html' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-[11px] font-semibold text-amber-800">
+                            <Code className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Contenido Informativo</span>
+                          </span>
+                        ) : field.type === 'statement' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] font-semibold text-emerald-800">
+                            <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Enunciado Informativo</span>
+                          </span>
+                        ) : (
+                          <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={field.required}
+                              onChange={(e) => updateFormField(field.id, { required: e.target.checked })}
+                              className="rounded text-blue-600 focus:ring-0 w-3.5 h-3.5"
+                            />
+                            <span className="font-medium text-slate-700">Obligatoria *</span>
+                          </label>
+                        )}
 
-                      <div className="flex items-center gap-2">
+                        {/* Botón directo: Dividir Sección Aquí */}
                         <button
                           type="button"
-                          onClick={() => handleDuplicateField(field, fieldIndex)}
+                          onClick={() => handleSplitSectionBeforeField(field.id)}
+                          className="px-2.5 py-1 bg-blue-50/80 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-[11px] font-semibold transition-colors inline-flex items-center gap-1.5 shadow-2xs group/btn"
+                          title="Crear una nueva sección inmediatamente antes de esta pregunta"
+                        >
+                          <SplitSquareVertical className="w-3.5 h-3.5 text-blue-600 group-hover/btn:scale-110 transition-transform" />
+                          <span>+ Dividir Sección Aquí</span>
+                        </button>
+
+                        {/* Selector para transferir esta pregunta a otra sección */}
+                        {sections.length > 1 && (
+                          <div className="flex items-center gap-1 text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-2 py-0.5">
+                            <span className="hidden sm:inline font-medium text-[10px] text-slate-400">Mover a:</span>
+                            <select
+                              value={currentSecInfo?.sectionId || ''}
+                              onChange={(e) => handleMoveFieldToSection(field.id, e.target.value)}
+                              className="bg-transparent text-slate-700 font-semibold text-[11px] focus:outline-none max-w-[130px] sm:max-w-[160px] truncate cursor-pointer"
+                              title="Transferir esta pregunta a otra sección existente"
+                            >
+                              {sections.map((s, sIdx) => (
+                                <option key={s.id} value={s.id}>
+                                  Sec {sIdx + 1}: {s.title.substring(0, 20)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 ml-auto">
+                        {/* Subir / Bajar pregunta */}
+                        <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveField(field.id, 'up')}
+                            disabled={globalFieldIndex === 0}
+                            title="Subir pregunta una posición"
+                            className="p-1 hover:bg-slate-200 text-slate-600 disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveField(field.id, 'down')}
+                            disabled={globalFieldIndex === form.fields.length - 1}
+                            title="Bajar pregunta una posición"
+                            className="p-1 hover:bg-slate-200 text-slate-600 border-l border-slate-200 disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Duplicar */}
+                        <button
+                          type="button"
+                          onClick={() => handleDuplicateField(field, globalFieldIndex)}
                           className="px-2 py-1 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors inline-flex items-center gap-1 font-medium"
                           title="Duplicar elemento"
                         >
                           <Copy className="w-3.5 h-3.5" />
-                          <span>Duplicar</span>
+                          <span className="hidden sm:inline">Duplicar</span>
                         </button>
+
+                        {/* Eliminar */}
                         <button
                           type="button"
                           onClick={() => handleDeleteField(field.id)}
@@ -1270,6 +1708,7 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                       </div>
                     </div>
                   </div>
+                </React.Fragment>
                 );
               })
             )}
