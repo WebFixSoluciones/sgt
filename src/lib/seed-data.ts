@@ -5,1364 +5,2994 @@ import { FormSchema, EvaluationCampaign, EvaluationGroup, WorkerSubmission } fro
 // ==========================================
 
 export const fpsicoForm: FormSchema = {
-  id: 'form-fpsico-40',
-  code: 'fpsico-40',
-  title: 'EVALUACIÓN PSICOSOCIAL FPSICO 4.0 (OFICIAL INSST)',
-  company: '',
-  description: 'Cuestionario oficial de factores psicosociales en el trabajo. Consta de 44 preguntas (89 ítems) y variables sociodemográficas.',
-  isTemplate: true,
-  category: 'psicosocial',
-  createdAt: '2026-01-15T08:00:00.000Z',
-  updatedAt: '2026-09-21T09:57:07.000Z',
-  fields: [
-    // --- SECCIÓN VARIABLES SOCIODEMOGRÁFICAS ---
-    {
-      id: 'sec-variables',
-      type: 'page_break',
-      label: 'Variables Sociodemográficas',
-      required: false,
-      order: 0,
-      sectionTitle: 'Sección 1: Datos Demográficos y Puesto de Trabajo',
-    },
-    {
-      id: 'puesto',
-      name: 'AGRUPACIONES DE PUESTOS',
-      type: 'select',
-      label: 'AGRUPACIONES DE PUESTOS',
-      required: true,
-      order: 1,
-      options: [
-        { id: 'p1', label: '1. DIRECCIÓN / GERENCIA', value: '1' },
-        { id: 'p2', label: '2. ADMINISTRACIÓN / FINANZAS', value: '2' },
-        { id: 'p3', label: '3. COMERCIAL / VENTAS', value: '3' },
-        { id: 'p4', label: '4. COORDINADORES / SUPERVISORES', value: '4' },
-        { id: 'p5', label: '5. OPERACIONES / PLANTA', value: '5' },
-        { id: 'p6', label: '6. LOGÍSTICA / BODEGA', value: '6' },
-        { id: 'p7', label: '7. SERVICIO TÉCNICO / MANTENIMIENTO', value: '7' },
-        { id: 'p28', label: '28. PRODUCCIÓN LÍNEA CONTINUA', value: '28' },
-      ],
-    },
-    {
-      id: 'horario',
-      name: 'HORARIOS',
-      type: 'radio',
-      label: 'HORARIOS',
-      required: true,
-      order: 2,
-      options: [
-        { id: 'h1', label: 'HORARIO DÍA', value: '1' },
-        { id: 'h2', label: 'HORARIO NOCTURNO', value: '2' },
-        { id: 'h3', label: 'TURNOS ROTATIVOS', value: '3' },
-      ],
-    },
-    {
-      id: 'antiguedad',
-      name: 'ANTIGÜEDAD',
-      type: 'radio',
-      label: 'ANTIGÜEDAD',
-      required: true,
-      order: 3,
-      options: [
-        { id: 'a1', label: 'MENOS DE 2 AÑOS', value: '1' },
-        { id: 'a2', label: 'ENTRE 2 Y 5 AÑOS', value: '2' },
-        { id: 'a3', label: 'MÁS DE 5 AÑOS', value: '3' },
-      ],
-    },
-    {
-      id: 'sec-fpsico-2',
-      type: 'page_break',
-      label: 'Sección 2: Preguntas 1 a 18',
-      required: false,
-      order: 4,
-      sectionTitle: 'Sección 2: Preguntas 1 a 18',
-    },
-    {
-      id: 'q1',
-      name: '1. ¿Trabajas los sábados?',
-      type: 'radio',
-      label: '1. ¿Trabajas los sábados?',
-      required: true,
-      order: 5,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q2',
-      name: '2. ¿Trabajas los domingos y festivos?',
-      type: 'radio',
-      label: '2. ¿Trabajas los domingos y festivos?',
-      required: true,
-      order: 6,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q3',
-      name: '3. ¿Tienes la posibilidad de tomar días u horas libres para atender asuntos de tipo personal?',
-      type: 'radio',
-      label: '3. ¿Tienes la posibilidad de tomar días u horas libres para atender asuntos de tipo personal?',
-      required: true,
-      order: 7,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q4',
-      name: '4. ¿Con qué frecuencia tienes que trabajar más tiempo del horario habitual, hacer horas extra o llevarte trabajo a casa?',
-      type: 'radio',
-      label: '4. ¿Con qué frecuencia tienes que trabajar más tiempo del horario habitual, hacer horas extra o llevarte trabajo a casa?',
-      required: true,
-      order: 8,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q5',
-      name: '5. ¿Dispone de al menos 48 horas consecutivas de descanso en el transcurso de una semana (7 días consecutivos)?',
-      type: 'radio',
-      label: '5. ¿Dispone de al menos 48 horas consecutivas de descanso en el transcurso de una semana (7 días consecutivos)?',
-      required: true,
-      order: 9,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q6',
-      name: '6. ¿Tu horario laboral te permite compaginar tu tiempo libre (vacaciones, días libres, horarios de entrada y salida) con los de tu familia y amigos?',
-      type: 'radio',
-      label: '6. ¿Tu horario laboral te permite compaginar tu tiempo libre (vacaciones, días libres, horarios de entrada y salida) con los de tu familia y amigos?',
-      required: true,
-      order: 10,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q7',
-      name: '7. ¿Puedes decidir cuándo realizar las pausas reglamentarias (pausa para comida o bocadillo)?',
-      type: 'radio',
-      label: '7. ¿Puedes decidir cuándo realizar las pausas reglamentarias (pausa para comida o bocadillo)?',
-      required: true,
-      order: 11,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q8',
-      name: '8. Durante la jornada de trabajo y fuera de las pausas reglamentarias, ¿puedes detener tu trabajo o hacer una parada corta cuando lo necesitas?',
-      type: 'radio',
-      label: '8. Durante la jornada de trabajo y fuera de las pausas reglamentarias, ¿puedes detener tu trabajo o hacer una parada corta cuando lo necesitas?',
-      required: true,
-      order: 12,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q9',
-      name: '9. ¿Puedes marcar tu propio ritmo de trabajo a lo largo de la jornada laboral?',
-      type: 'radio',
-      label: '9. ¿Puedes marcar tu propio ritmo de trabajo a lo largo de la jornada laboral?',
-      required: true,
-      order: 13,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q10',
-      name: '1. Lo que debes hacer (actividades y tareas a realizar)',
-      type: 'radio',
-      label: '1. Lo que debes hacer (actividades y tareas a realizar)',
-      required: true,
-      order: 14,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q11',
-      name: '2. La distribución de tareas a lo largo de tu jornada',
-      type: 'radio',
-      label: '2. La distribución de tareas a lo largo de tu jornada',
-      required: true,
-      order: 15,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q12',
-      name: '3. La distribución del entorno directo de tu puesto de trabajo (espacio, mobiliario, objetos personales, etc.)',
-      type: 'radio',
-      label: '3. La distribución del entorno directo de tu puesto de trabajo (espacio, mobiliario, objetos personales, etc.)',
-      required: true,
-      order: 16,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q13',
-      name: '4. Cómo tienes que hacer tu trabajo (método, protocolos, procedimientos de trabajo…)',
-      type: 'radio',
-      label: '4. Cómo tienes que hacer tu trabajo (método, protocolos, procedimientos de trabajo…)',
-      required: true,
-      order: 17,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q14',
-      name: '5. La cantidad de trabajo que tienes que realizar',
-      type: 'radio',
-      label: '5. La cantidad de trabajo que tienes que realizar',
-      required: true,
-      order: 18,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q15',
-      name: '6. La calidad del trabajo que realizas',
-      type: 'radio',
-      label: '6. La calidad del trabajo que realizas',
-      required: true,
-      order: 19,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q16',
-      name: '7. La resolución de situaciones anormales o incidencias que ocurren en tu trabajo',
-      type: 'radio',
-      label: '7. La resolución de situaciones anormales o incidencias que ocurren en tu trabajo',
-      required: true,
-      order: 20,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q17',
-      name: '8. La distribución de los turnos rotativos',
-      type: 'radio',
-      label: '8. La distribución de los turnos rotativos',
-      required: true,
-      order: 21,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q18',
-      name: '1. Introducción de cambios en los equipos y materiales',
-      type: 'radio',
-      label: '1. Introducción de cambios en los equipos y materiales',
-      required: true,
-      order: 22,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'sec-fpsico-3',
-      type: 'page_break',
-      label: 'Sección 3: Preguntas 19 a 36',
-      required: false,
-      order: 23,
-      sectionTitle: 'Sección 3: Preguntas 19 a 36',
-    },
-    {
-      id: 'q19',
-      name: '2. Introducción de cambios en la manera de trabajar',
-      type: 'radio',
-      label: '2. Introducción de cambios en la manera de trabajar',
-      required: true,
-      order: 24,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q20',
-      name: '3. Lanzamiento de nuevos o mejores productos o servicios',
-      type: 'radio',
-      label: '3. Lanzamiento de nuevos o mejores productos o servicios',
-      required: true,
-      order: 25,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q21',
-      name: '4. Reestructuración o reorganización de departamentos o áreas de trabajo',
-      type: 'radio',
-      label: '4. Reestructuración o reorganización de departamentos o áreas de trabajo',
-      required: true,
-      order: 26,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q22',
-      name: '5. Cambios en la dirección o entre tus superiores de trabajo',
-      type: 'radio',
-      label: '5. Cambios en la dirección o entre tus superiores de trabajo',
-      required: true,
-      order: 27,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q23',
-      name: '6. Contratación o incorporación de nuevos empleados',
-      type: 'radio',
-      label: '6. Contratación o incorporación de nuevos empleados',
-      required: true,
-      order: 28,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q24',
-      name: '7. Elaboración de las normas de trabajo',
-      type: 'radio',
-      label: '7. Elaboración de las normas de trabajo',
-      required: true,
-      order: 29,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q25',
-      name: '1. El método para realizar el trabajo',
-      type: 'radio',
-      label: '1. El método para realizar el trabajo',
-      required: true,
-      order: 30,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q26',
-      name: '2. La planificación del trabajo',
-      type: 'radio',
-      label: '2. La planificación del trabajo',
-      required: true,
-      order: 31,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q27',
-      name: '3. El ritmo de trabajo',
-      type: 'radio',
-      label: '3. El ritmo de trabajo',
-      required: true,
-      order: 32,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q28',
-      name: '4. La calidad del trabajo realizado',
-      type: 'radio',
-      label: '4. La calidad del trabajo realizado',
-      required: true,
-      order: 33,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q29',
-      name: '1. Las posibilidades de formación',
-      type: 'radio',
-      label: '1. Las posibilidades de formación',
-      required: true,
-      order: 34,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q30',
-      name: '2. Las posibilidades de promoción',
-      type: 'radio',
-      label: '2. Las posibilidades de promoción',
-      required: true,
-      order: 35,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q31',
-      name: '3. Los requisitos para ocupar plazas de promoción',
-      type: 'radio',
-      label: '3. Los requisitos para ocupar plazas de promoción',
-      required: true,
-      order: 36,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q32',
-      name: '4. La situación de la empresa en el mercado',
-      type: 'radio',
-      label: '4. La situación de la empresa en el mercado',
-      required: true,
-      order: 37,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q33',
-      name: '1. Lo que debes hacer (funciones , competencias y atribuciones)',
-      type: 'radio',
-      label: '1. Lo que debes hacer (funciones , competencias y atribuciones)',
-      required: true,
-      order: 38,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q34',
-      name: '2. Cómo debes hacerlo ( métodos, protocolos, procedimientos de trabajo)',
-      type: 'radio',
-      label: '2. Cómo debes hacerlo ( métodos, protocolos, procedimientos de trabajo)',
-      required: true,
-      order: 39,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q35',
-      name: '3. La cantidad de trabajo que se espera que hagas',
-      type: 'radio',
-      label: '3. La cantidad de trabajo que se espera que hagas',
-      required: true,
-      order: 40,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q36',
-      name: '4. La calidad de trabajo que se espera que hagas',
-      type: 'radio',
-      label: '4. La calidad de trabajo que se espera que hagas',
-      required: true,
-      order: 41,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'sec-fpsico-4',
-      type: 'page_break',
-      label: 'Sección 4: Preguntas 37 a 54',
-      required: false,
-      order: 42,
-      sectionTitle: 'Sección 4: Preguntas 37 a 54',
-    },
-    {
-      id: 'q37',
-      name: '5. El tiempo asignado para realizar el trabajo',
-      type: 'radio',
-      label: '5. El tiempo asignado para realizar el trabajo',
-      required: true,
-      order: 43,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q38',
-      name: '6. La responsabilidad del puesto  de trabajo (qué errores o defectos pueden achacarse a tu actuación y cuáles no)',
-      type: 'radio',
-      label: '6. La responsabilidad del puesto  de trabajo (qué errores o defectos pueden achacarse a tu actuación y cuáles no)',
-      required: true,
-      order: 44,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q39',
-      name: '1.	Se te asignan tareas que no puedes realizar por no tener los recursos humanos o materiales',
-      type: 'radio',
-      label: '1.	Se te asignan tareas que no puedes realizar por no tener los recursos humanos o materiales',
-      required: true,
-      order: 45,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q40',
-      name: '2. Para ejecutar algunas  tareas tienes que saltarte los métodos establecidos',
-      type: 'radio',
-      label: '2. Para ejecutar algunas  tareas tienes que saltarte los métodos establecidos',
-      required: true,
-      order: 46,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q41',
-      name: '3. Se te exige tomar decisiones o realizar cosas con las que no estás de acuerdo porque te suponen un conflicto moral, legal, emocional…',
-      type: 'radio',
-      label: '3. Se te exige tomar decisiones o realizar cosas con las que no estás de acuerdo porque te suponen un conflicto moral, legal, emocional…',
-      required: true,
-      order: 47,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q42',
-      name: '4. Recibes instrucciones contradictorias entre sí (unos te mandan una cosa y otros otra)',
-      type: 'radio',
-      label: '4. Recibes instrucciones contradictorias entre sí (unos te mandan una cosa y otros otra)',
-      required: true,
-      order: 48,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q43',
-      name: '5. Se te exigen responsabilidades, cometidos o tareas que no entran dentro de tus funciones y que deberían llevar a cabo otros trabajadores',
-      type: 'radio',
-      label: '5. Se te exigen responsabilidades, cometidos o tareas que no entran dentro de tus funciones y que deberían llevar a cabo otros trabajadores',
-      required: true,
-      order: 49,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q44',
-      name: '1. Tus jefes',
-      type: 'radio',
-      label: '1. Tus jefes',
-      required: true,
-      order: 50,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q45',
-      name: '2. Tus compañeros',
-      type: 'radio',
-      label: '2. Tus compañeros',
-      required: true,
-      order: 51,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q46',
-      name: '3.	Tus subordinados',
-      type: 'radio',
-      label: '3.	Tus subordinados',
-      required: true,
-      order: 52,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q47',
-      name: '4. Otras personas que trabajan en la empresa',
-      type: 'radio',
-      label: '4. Otras personas que trabajan en la empresa',
-      required: true,
-      order: 53,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q48',
-      name: '17.	¿Cómo consideras que son las relaciones con las personas con las que debes trabajar?',
-      type: 'radio',
-      label: '17.	¿Cómo consideras que son las relaciones con las personas con las que debes trabajar?',
-      required: true,
-      order: 54,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q49',
-      name: '1. Los conflictos interpersonales',
-      type: 'radio',
-      label: '1. Los conflictos interpersonales',
-      required: true,
-      order: 55,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q50',
-      name: '2.	Las situaciones de violencia física',
-      type: 'radio',
-      label: '2.	Las situaciones de violencia física',
-      required: true,
-      order: 56,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q51',
-      name: '3.	Las situaciones de violencia psicológica (amenazas, insultos, hacer el vacío, descalificaciones personales…)',
-      type: 'radio',
-      label: '3.	Las situaciones de violencia psicológica (amenazas, insultos, hacer el vacío, descalificaciones personales…)',
-      required: true,
-      order: 57,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q52',
-      name: '4. Las situaciones de acoso sexual',
-      type: 'radio',
-      label: '4. Las situaciones de acoso sexual',
-      required: true,
-      order: 58,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q53',
-      name: '19.	Tu empresa, frente a situaciones de conflicto interpersonal entre trabajadores:',
-      type: 'radio',
-      label: '19.	Tu empresa, frente a situaciones de conflicto interpersonal entre trabajadores:',
-      required: true,
-      order: 59,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q54',
-      name: '20.	En tu entorno laboral ¿te sientes discriminado? (por razones de edad, sexo, religión, raza, formación, categoría...)',
-      type: 'radio',
-      label: '20.	En tu entorno laboral ¿te sientes discriminado? (por razones de edad, sexo, religión, raza, formación, categoría...)',
-      required: true,
-      order: 60,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'sec-fpsico-5',
-      type: 'page_break',
-      label: 'Sección 5: Preguntas 55 a 72',
-      required: false,
-      order: 61,
-      sectionTitle: 'Sección 5: Preguntas 55 a 72',
-    },
-    {
-      id: 'q55',
-      name: '21.	¿A lo largo de la jornada cuánto tiempo debes mantener una exclusiva atención en tu trabajo? (de forma que te impida hablar, desplazarte o simplemente pensar en cosas ajenas a tu tarea)',
-      type: 'radio',
-      label: '21.	¿A lo largo de la jornada cuánto tiempo debes mantener una exclusiva atención en tu trabajo? (de forma que te impida hablar, desplazarte o simplemente pensar en cosas ajenas a tu tarea)',
-      required: true,
-      order: 62,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q56',
-      name: '22.	En general, ¿cómo consideras la atención que debes mantener para realizar tu trabajo?',
-      type: 'radio',
-      label: '22.	En general, ¿cómo consideras la atención que debes mantener para realizar tu trabajo?',
-      required: true,
-      order: 63,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q57',
-      name: '23.	El tiempo de que dispones para realizar tu trabajo es suficiente y adecuado:',
-      type: 'radio',
-      label: '23.	El tiempo de que dispones para realizar tu trabajo es suficiente y adecuado:',
-      required: true,
-      order: 64,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q58',
-      name: '24.	La ejecución de tu tarea, ¿te impone trabajar con rapidez?',
-      type: 'radio',
-      label: '24.	La ejecución de tu tarea, ¿te impone trabajar con rapidez?',
-      required: true,
-      order: 65,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q59',
-      name: '25. ¿Con qué frecuencia debes acelerar el ritmo de trabajo?',
-      type: 'radio',
-      label: '25. ¿Con qué frecuencia debes acelerar el ritmo de trabajo?',
-      required: true,
-      order: 66,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q60',
-      name: '26. En general, la cantidad de trabajo que tienes es:',
-      type: 'radio',
-      label: '26. En general, la cantidad de trabajo que tienes es:',
-      required: true,
-      order: 67,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q61',
-      name: '27.	¿Debes atender a varias tareas al mismo tiempo?',
-      type: 'radio',
-      label: '27.	¿Debes atender a varias tareas al mismo tiempo?',
-      required: true,
-      order: 68,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q62',
-      name: '28.	El trabajo que realizas, ¿te resulta complicado o difícil?',
-      type: 'radio',
-      label: '28.	El trabajo que realizas, ¿te resulta complicado o difícil?',
-      required: true,
-      order: 69,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q63',
-      name: '29.	¿En tu trabajo tienes que llevar a cabo tareas tan difíciles que necesitas pedir a alguien consejo o ayuda?',
-      type: 'radio',
-      label: '29.	¿En tu trabajo tienes que llevar a cabo tareas tan difíciles que necesitas pedir a alguien consejo o ayuda?',
-      required: true,
-      order: 70,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q64',
-      name: '30.	En tu trabajo, tienes que interrumpir la tarea que estás haciendo para realizar otra no prevista',
-      type: 'radio',
-      label: '30.	En tu trabajo, tienes que interrumpir la tarea que estás haciendo para realizar otra no prevista',
-      required: true,
-      order: 71,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q65',
-      name: '31.	En el caso de que existan interrupciones, ¿alteran seriamente la ejecución de tu trabajo?',
-      type: 'radio',
-      label: '31.	En el caso de que existan interrupciones, ¿alteran seriamente la ejecución de tu trabajo?',
-      required: true,
-      order: 72,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q66',
-      name: '32.	¿La cantidad de trabajo que tienes suele ser irregular e imprevisible?',
-      type: 'radio',
-      label: '32.	¿La cantidad de trabajo que tienes suele ser irregular e imprevisible?',
-      required: true,
-      order: 73,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q67',
-      name: '1. Aprender cosas o métodos nuevos',
-      type: 'radio',
-      label: '1. Aprender cosas o métodos nuevos',
-      required: true,
-      order: 74,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q68',
-      name: '2.	Adaptarse  a nuevas situaciones',
-      type: 'radio',
-      label: '2.	Adaptarse  a nuevas situaciones',
-      required: true,
-      order: 75,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q69',
-      name: '3. Tomar iniciativas',
-      type: 'radio',
-      label: '3. Tomar iniciativas',
-      required: true,
-      order: 76,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q70',
-      name: '4. Tener buena memoria',
-      type: 'radio',
-      label: '4. Tener buena memoria',
-      required: true,
-      order: 77,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q71',
-      name: '5. Ser creativo',
-      type: 'radio',
-      label: '5. Ser creativo',
-      required: true,
-      order: 78,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q72',
-      name: '6. Tratar directamente con personas que no están empleadas en tu trabajo (clientes, pasajeros, alumnos, pacientes, etc.)',
-      type: 'radio',
-      label: '6. Tratar directamente con personas que no están empleadas en tu trabajo (clientes, pasajeros, alumnos, pacientes, etc.)',
-      required: true,
-      order: 79,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'sec-fpsico-6',
-      type: 'page_break',
-      label: 'Sección 6: Preguntas 73 a 89',
-      required: false,
-      order: 80,
-      sectionTitle: 'Sección 6: Preguntas 73 a 89',
-    },
-    {
-      id: 'q73',
-      name: '1. Tus superiores jerárquicos',
-      type: 'radio',
-      label: '1. Tus superiores jerárquicos',
-      required: true,
-      order: 81,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q74',
-      name: '2. Tus subordinados',
-      type: 'radio',
-      label: '2. Tus subordinados',
-      required: true,
-      order: 82,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q75',
-      name: '3. Tus compañeros de trabajo',
-      type: 'radio',
-      label: '3. Tus compañeros de trabajo',
-      required: true,
-      order: 83,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q76',
-      name: '4. Personas que no están empleadas en la empresa  (clientes, pasajeros, alumnos, pacientes, etc.)',
-      type: 'radio',
-      label: '4. Personas que no están empleadas en la empresa  (clientes, pasajeros, alumnos, pacientes, etc.)',
-      required: true,
-      order: 84,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q77',
-      name: '35.	Por el tipo de trabajo que tienes, ¿estás expuesto a situaciones que te afectan emocionalmente?',
-      type: 'radio',
-      label: '35.	Por el tipo de trabajo que tienes, ¿estás expuesto a situaciones que te afectan emocionalmente?',
-      required: true,
-      order: 85,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q78',
-      name: '36.	Por el tipo de trabajo que tienes, ¿con qué frecuencia se espera que des una respuesta a los problemas emocionales y personales de tus clientes externos? (pasajeros, alumnos, pacientes, etc.)',
-      type: 'radio',
-      label: '36.	Por el tipo de trabajo que tienes, ¿con qué frecuencia se espera que des una respuesta a los problemas emocionales y personales de tus clientes externos? (pasajeros, alumnos, pacientes, etc.)',
-      required: true,
-      order: 86,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q79',
-      name: '37.	El trabajo que realizas ¿te resulta rutinario?',
-      type: 'radio',
-      label: '37.	El trabajo que realizas ¿te resulta rutinario?',
-      required: true,
-      order: 87,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q80',
-      name: '38.	En general ¿consideras que las tareas que realizas tienen sentido?',
-      type: 'radio',
-      label: '38.	En general ¿consideras que las tareas que realizas tienen sentido?',
-      required: true,
-      order: 88,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q81',
-      name: '39.	¿Cómo contribuye tu trabajo en el conjunto de la empresa u organización?',
-      type: 'radio',
-      label: '39.	¿Cómo contribuye tu trabajo en el conjunto de la empresa u organización?',
-      required: true,
-      order: 89,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q82',
-      name: '1. Tus superiores',
-      type: 'radio',
-      label: '1. Tus superiores',
-      required: true,
-      order: 90,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q83',
-      name: '2. Tus compañeros de trabajo',
-      type: 'radio',
-      label: '2. Tus compañeros de trabajo',
-      required: true,
-      order: 91,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q84',
-      name: '3. El público, clientes, pasajeros, alumnos, pacientes, etc. (si los hay)',
-      type: 'radio',
-      label: '3. El público, clientes, pasajeros, alumnos, pacientes, etc. (si los hay)',
-      required: true,
-      order: 92,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q85',
-      name: '4.	Tu familia y tus amistades',
-      type: 'radio',
-      label: '4.	Tu familia y tus amistades',
-      required: true,
-      order: 93,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q86',
-      name: '41.	¿Te facilita la empresa el desarrollo profesional (promoción, plan de carrera,…)?',
-      type: 'radio',
-      label: '41.	¿Te facilita la empresa el desarrollo profesional (promoción, plan de carrera,…)?',
-      required: true,
-      order: 94,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q87',
-      name: '42.	¿Cómo definirías la formación que se imparte o se facilita desde tu empresa?',
-      type: 'radio',
-      label: '42.	¿Cómo definirías la formación que se imparte o se facilita desde tu empresa?',
-      required: true,
-      order: 95,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q88',
-      name: '43.	En general, la correspondencia entre el esfuerzo que haces y las recompensas que la empresa te proporciona es:',
-      type: 'radio',
-      label: '43.	En general, la correspondencia entre el esfuerzo que haces y las recompensas que la empresa te proporciona es:',
-      required: true,
-      order: 96,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'q89',
-      name: '44.	Considerando los deberes y responsabilidades de tu trabajo ¿estás satisfecho con el salario que recibes?',
-      type: 'radio',
-      label: '44.	Considerando los deberes y responsabilidades de tu trabajo ¿estás satisfecho con el salario que recibes?',
-      required: true,
-      order: 97,
-      options: [
-        { id: 'o1', label: '1. Siempre o casi siempre', value: '1' },
-        { id: 'o2', label: '2. A menudo', value: '2' },
-        { id: 'o3', label: '3. A veces', value: '3' },
-        { id: 'o4', label: '4. Nunca o casi nunca', value: '4' },
-      ],
-    },
-    {
-      id: 'observaciones',
-      name: 'Observaciones',
-      type: 'textarea',
-      label: 'Observaciones: Indique a continuación las observaciones o consideraciones que no estén suficiente o adecuadamente contempladas en las encuestas:',
-      required: false,
-      order: 98,
-    },
-  ],
+  "id": "form-fpsico-40",
+  "code": "fpsico-40",
+  "title": "EVALUACIÓN PSICOSOCIAL FPSICO 4.0 (OFICIAL INSST)",
+  "company": "",
+  "description": "Cuestionario oficial de factores psicosociales en el trabajo. Consta de 44 preguntas (89 ítems) y variables sociodemográficas.",
+  "isTemplate": true,
+  "category": "psicosocial",
+  "createdAt": "2026-01-15T08:00:00.000Z",
+  "updatedAt": "2026-09-21T09:57:07.000Z",
+  "fields": [
+    {
+      "id": "sec-variables",
+      "type": "page_break",
+      "label": "Datos Demográficos y Puesto de Trabajo",
+      "sectionTitle": "Datos Demográficos y Puesto de Trabajo",
+      "required": false,
+      "order": 0
+    },
+    {
+      "id": "puesto",
+      "name": "AGRUPACIONES DE PUESTOS",
+      "type": "select",
+      "label": "AGRUPACIONES DE PUESTOS",
+      "required": true,
+      "order": 1,
+      "options": [
+        {
+          "id": "p1",
+          "label": "1. DIRECCIÓN / GERENCIA",
+          "value": "1"
+        },
+        {
+          "id": "p2",
+          "label": "2. ADMINISTRACIÓN / FINANZAS",
+          "value": "2"
+        },
+        {
+          "id": "p3",
+          "label": "3. COMERCIAL / VENTAS",
+          "value": "3"
+        },
+        {
+          "id": "p4",
+          "label": "4. COORDINADORES / SUPERVISORES",
+          "value": "4"
+        },
+        {
+          "id": "p5",
+          "label": "5. OPERACIONES / PLANTA",
+          "value": "5"
+        },
+        {
+          "id": "p6",
+          "label": "6. LOGÍSTICA / BODEGA",
+          "value": "6"
+        },
+        {
+          "id": "p7",
+          "label": "7. SERVICIO TÉCNICO / MANTENIMIENTO",
+          "value": "7"
+        },
+        {
+          "id": "p28",
+          "label": "28. PRODUCCIÓN LÍNEA CONTINUA",
+          "value": "28"
+        }
+      ]
+    },
+    {
+      "id": "horario",
+      "name": "HORARIOS",
+      "type": "radio",
+      "label": "HORARIOS",
+      "required": true,
+      "order": 2,
+      "options": [
+        {
+          "id": "h1",
+          "label": "HORARIO DÍA",
+          "value": "1"
+        },
+        {
+          "id": "h2",
+          "label": "HORARIO NOCTURNO",
+          "value": "2"
+        },
+        {
+          "id": "h3",
+          "label": "TURNOS ROTATIVOS",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "id": "antiguedad",
+      "name": "ANTIGÜEDAD",
+      "type": "radio",
+      "label": "ANTIGÜEDAD",
+      "required": true,
+      "order": 3,
+      "options": [
+        {
+          "id": "a1",
+          "label": "MENOS DE 2 AÑOS",
+          "value": "1"
+        },
+        {
+          "id": "a2",
+          "label": "ENTRE 2 Y 5 AÑOS",
+          "value": "2"
+        },
+        {
+          "id": "a3",
+          "label": "MÁS DE 5 AÑOS",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-1-9",
+      "type": "page_break",
+      "label": "1 a 9. Condiciones de Trabajo, Jornada y Ritmo",
+      "sectionTitle": "1 a 9. Condiciones de Trabajo, Jornada y Ritmo",
+      "required": false,
+      "order": 4
+    },
+    {
+      "id": "q1",
+      "name": "1. ¿Trabajas los sábados?",
+      "type": "radio",
+      "label": "1. ¿Trabajas los sábados?",
+      "required": true,
+      "order": 5,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q2",
+      "name": "2. ¿Trabajas los domingos y festivos?",
+      "type": "radio",
+      "label": "2. ¿Trabajas los domingos y festivos?",
+      "required": true,
+      "order": 6,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q3",
+      "name": "3. ¿Tienes la posibilidad de tomar días u horas libres para atender asuntos de tipo personal?",
+      "type": "radio",
+      "label": "3. ¿Tienes la posibilidad de tomar días u horas libres para atender asuntos de tipo personal?",
+      "required": true,
+      "order": 7,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q4",
+      "name": "4. ¿Con qué frecuencia tienes que trabajar más tiempo del horario habitual, hacer horas extra o llevarte trabajo a casa?",
+      "type": "radio",
+      "label": "4. ¿Con qué frecuencia tienes que trabajar más tiempo del horario habitual, hacer horas extra o llevarte trabajo a casa?",
+      "required": true,
+      "order": 8,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q5",
+      "name": "5. ¿Dispone de al menos 48 horas consecutivas de descanso en el transcurso de una semana (7 días consecutivos)?",
+      "type": "radio",
+      "label": "5. ¿Dispone de al menos 48 horas consecutivas de descanso en el transcurso de una semana (7 días consecutivos)?",
+      "required": true,
+      "order": 9,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q6",
+      "name": "6. ¿Tu horario laboral te permite compaginar tu tiempo libre (vacaciones, días libres, horarios de entrada y salida) con los de tu familia y amigos?",
+      "type": "radio",
+      "label": "6. ¿Tu horario laboral te permite compaginar tu tiempo libre (vacaciones, días libres, horarios de entrada y salida) con los de tu familia y amigos?",
+      "required": true,
+      "order": 10,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q7",
+      "name": "7. ¿Puedes decidir cuándo realizar las pausas reglamentarias (pausa para comida o bocadillo)?",
+      "type": "radio",
+      "label": "7. ¿Puedes decidir cuándo realizar las pausas reglamentarias (pausa para comida o bocadillo)?",
+      "required": true,
+      "order": 11,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q8",
+      "name": "8. Durante la jornada de trabajo y fuera de las pausas reglamentarias, ¿puedes detener tu trabajo o hacer una parada corta cuando lo necesitas?",
+      "type": "radio",
+      "label": "8. Durante la jornada de trabajo y fuera de las pausas reglamentarias, ¿puedes detener tu trabajo o hacer una parada corta cuando lo necesitas?",
+      "required": true,
+      "order": 12,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q9",
+      "name": "9. ¿Puedes marcar tu propio ritmo de trabajo a lo largo de la jornada laboral?",
+      "type": "radio",
+      "label": "9. ¿Puedes marcar tu propio ritmo de trabajo a lo largo de la jornada laboral?",
+      "required": true,
+      "order": 13,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-10",
+      "type": "page_break",
+      "label": "10. ¿Puedes tomar decisiones relativas a:",
+      "sectionTitle": "10. ¿Puedes tomar decisiones relativas a:",
+      "required": false,
+      "order": 14
+    },
+    {
+      "id": "q10",
+      "name": "1. Lo que debes hacer (actividades y tareas a realizar)",
+      "type": "radio",
+      "label": "1. Lo que debes hacer (actividades y tareas a realizar)",
+      "required": true,
+      "order": 15,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q11",
+      "name": "2. La distribución de tareas a lo largo de tu jornada",
+      "type": "radio",
+      "label": "2. La distribución de tareas a lo largo de tu jornada",
+      "required": true,
+      "order": 16,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q12",
+      "name": "3. La distribución del entorno directo de tu puesto de trabajo (espacio, mobiliario, objetos personales, etc.)",
+      "type": "radio",
+      "label": "3. La distribución del entorno directo de tu puesto de trabajo (espacio, mobiliario, objetos personales, etc.)",
+      "required": true,
+      "order": 17,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q13",
+      "name": "4. Cómo tienes que hacer tu trabajo (método, protocolos, procedimientos de trabajo…)",
+      "type": "radio",
+      "label": "4. Cómo tienes que hacer tu trabajo (método, protocolos, procedimientos de trabajo…)",
+      "required": true,
+      "order": 18,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q14",
+      "name": "5. La cantidad de trabajo que tienes que realizar",
+      "type": "radio",
+      "label": "5. La cantidad de trabajo que tienes que realizar",
+      "required": true,
+      "order": 19,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q15",
+      "name": "6. La calidad del trabajo que realizas",
+      "type": "radio",
+      "label": "6. La calidad del trabajo que realizas",
+      "required": true,
+      "order": 20,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q16",
+      "name": "7. La resolución de situaciones anormales o incidencias que ocurren en tu trabajo",
+      "type": "radio",
+      "label": "7. La resolución de situaciones anormales o incidencias que ocurren en tu trabajo",
+      "required": true,
+      "order": 21,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q17",
+      "name": "8. La distribución de los turnos rotativos",
+      "type": "radio",
+      "label": "8. La distribución de los turnos rotativos",
+      "required": true,
+      "order": 22,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "No trabajo en turnos rotativos",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-11",
+      "type": "page_break",
+      "label": "11. Qué nivel de participación tienes en los siguientes aspectos de tu trabajo:",
+      "sectionTitle": "11. Qué nivel de participación tienes en los siguientes aspectos de tu trabajo:",
+      "required": false,
+      "order": 23
+    },
+    {
+      "id": "q18",
+      "name": "1. Introducción de cambios en los equipos y materiales",
+      "type": "radio",
+      "label": "1. Introducción de cambios en los equipos y materiales",
+      "required": true,
+      "order": 24,
+      "options": [
+        {
+          "id": "o1",
+          "label": "Puedo decidir",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "Se me consulta",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "Solo recibo información",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "Ninguna participación",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q19",
+      "name": "2. Introducción de cambios en la manera de trabajar",
+      "type": "radio",
+      "label": "2. Introducción de cambios en la manera de trabajar",
+      "required": true,
+      "order": 25,
+      "options": [
+        {
+          "id": "o1",
+          "label": "Puedo decidir",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "Se me consulta",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "Solo recibo información",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "Ninguna participación",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q20",
+      "name": "3. Lanzamiento de nuevos o mejores productos o servicios",
+      "type": "radio",
+      "label": "3. Lanzamiento de nuevos o mejores productos o servicios",
+      "required": true,
+      "order": 26,
+      "options": [
+        {
+          "id": "o1",
+          "label": "Puedo decidir",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "Se me consulta",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "Solo recibo información",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "Ninguna participación",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q21",
+      "name": "4. Reestructuración o reorganización de departamentos o áreas de trabajo",
+      "type": "radio",
+      "label": "4. Reestructuración o reorganización de departamentos o áreas de trabajo",
+      "required": true,
+      "order": 27,
+      "options": [
+        {
+          "id": "o1",
+          "label": "Puedo decidir",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "Se me consulta",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "Solo recibo información",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "Ninguna participación",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q22",
+      "name": "5. Cambios en la dirección o entre tus superiores de trabajo",
+      "type": "radio",
+      "label": "5. Cambios en la dirección o entre tus superiores de trabajo",
+      "required": true,
+      "order": 28,
+      "options": [
+        {
+          "id": "o1",
+          "label": "Puedo decidir",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "Se me consulta",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "Solo recibo información",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "Ninguna participación",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q23",
+      "name": "6. Contratación o incorporación de nuevos empleados",
+      "type": "radio",
+      "label": "6. Contratación o incorporación de nuevos empleados",
+      "required": true,
+      "order": 29,
+      "options": [
+        {
+          "id": "o1",
+          "label": "Puedo decidir",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "Se me consulta",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "Solo recibo información",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "Ninguna participación",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q24",
+      "name": "7. Elaboración de las normas de trabajo",
+      "type": "radio",
+      "label": "7. Elaboración de las normas de trabajo",
+      "required": true,
+      "order": 30,
+      "options": [
+        {
+          "id": "o1",
+          "label": "Puedo decidir",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "Se me consulta",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "Solo recibo información",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "Ninguna participación",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-12",
+      "type": "page_break",
+      "label": "12. ¿Cómo valoras la supervisión que tu jefe inmediato ejerce sobre los siguientes aspectos de tu trabajo?",
+      "sectionTitle": "12. ¿Cómo valoras la supervisión que tu jefe inmediato ejerce sobre los siguientes aspectos de tu trabajo?",
+      "required": false,
+      "order": 31
+    },
+    {
+      "id": "q25",
+      "name": "1. El método para realizar el trabajo",
+      "type": "radio",
+      "label": "1. El método para realizar el trabajo",
+      "required": true,
+      "order": 32,
+      "options": [
+        {
+          "id": "o1",
+          "label": "no interviene",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "insuficiente",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "adecuada",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "excesiva",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q26",
+      "name": "2. La planificación del trabajo",
+      "type": "radio",
+      "label": "2. La planificación del trabajo",
+      "required": true,
+      "order": 33,
+      "options": [
+        {
+          "id": "o1",
+          "label": "no interviene",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "insuficiente",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "adecuada",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "excesiva",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q27",
+      "name": "3. El ritmo de trabajo",
+      "type": "radio",
+      "label": "3. El ritmo de trabajo",
+      "required": true,
+      "order": 34,
+      "options": [
+        {
+          "id": "o1",
+          "label": "no interviene",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "insuficiente",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "adecuada",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "excesiva",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q28",
+      "name": "4. La calidad del trabajo realizado",
+      "type": "radio",
+      "label": "4. La calidad del trabajo realizado",
+      "required": true,
+      "order": 35,
+      "options": [
+        {
+          "id": "o1",
+          "label": "no interviene",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "insuficiente",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "adecuada",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "excesiva",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-13",
+      "type": "page_break",
+      "label": "13. ¿Cómo valoras el grado de información que te proporciona la empresa sobre los siguientes aspectos?",
+      "sectionTitle": "13. ¿Cómo valoras el grado de información que te proporciona la empresa sobre los siguientes aspectos?",
+      "required": false,
+      "order": 36
+    },
+    {
+      "id": "q29",
+      "name": "1. Las posibilidades de formación",
+      "type": "radio",
+      "label": "1. Las posibilidades de formación",
+      "required": true,
+      "order": 37,
+      "options": [
+        {
+          "id": "o1",
+          "label": "no hay información",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "insuficiente",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "es adecuada",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "id": "q30",
+      "name": "2. Las posibilidades de promoción",
+      "type": "radio",
+      "label": "2. Las posibilidades de promoción",
+      "required": true,
+      "order": 38,
+      "options": [
+        {
+          "id": "o1",
+          "label": "no hay información",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "insuficiente",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "es adecuada",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "id": "q31",
+      "name": "3. Los requisitos para ocupar plazas de promoción",
+      "type": "radio",
+      "label": "3. Los requisitos para ocupar plazas de promoción",
+      "required": true,
+      "order": 39,
+      "options": [
+        {
+          "id": "o1",
+          "label": "no hay información",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "insuficiente",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "es adecuada",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "id": "q32",
+      "name": "4. La situación de la empresa en el mercado",
+      "type": "radio",
+      "label": "4. La situación de la empresa en el mercado",
+      "required": true,
+      "order": 40,
+      "options": [
+        {
+          "id": "o1",
+          "label": "no hay información",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "insuficiente",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "es adecuada",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-14",
+      "type": "page_break",
+      "label": "14. Para realizar tu trabajo ¿cómo valoras la información que recibes sobre los siguientes aspectos?",
+      "sectionTitle": "14. Para realizar tu trabajo ¿cómo valoras la información que recibes sobre los siguientes aspectos?",
+      "required": false,
+      "order": 41
+    },
+    {
+      "id": "q33",
+      "name": "1. Lo que debes hacer (funciones , competencias y atribuciones)",
+      "type": "radio",
+      "label": "1. Lo que debes hacer (funciones , competencias y atribuciones)",
+      "required": true,
+      "order": 42,
+      "options": [
+        {
+          "id": "o1",
+          "label": "muy clara",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "clara",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "poco clara",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "nada clara",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q34",
+      "name": "2. Cómo debes hacerlo ( métodos, protocolos, procedimientos de trabajo)",
+      "type": "radio",
+      "label": "2. Cómo debes hacerlo ( métodos, protocolos, procedimientos de trabajo)",
+      "required": true,
+      "order": 43,
+      "options": [
+        {
+          "id": "o1",
+          "label": "muy clara",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "clara",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "poco clara",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "nada clara",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q35",
+      "name": "3. La cantidad de trabajo que se espera que hagas",
+      "type": "radio",
+      "label": "3. La cantidad de trabajo que se espera que hagas",
+      "required": true,
+      "order": 44,
+      "options": [
+        {
+          "id": "o1",
+          "label": "muy clara",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "clara",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "poco clara",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "nada clara",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q36",
+      "name": "4. La calidad de trabajo que se espera que hagas",
+      "type": "radio",
+      "label": "4. La calidad de trabajo que se espera que hagas",
+      "required": true,
+      "order": 45,
+      "options": [
+        {
+          "id": "o1",
+          "label": "muy clara",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "clara",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "poco clara",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "nada clara",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q37",
+      "name": "5. El tiempo asignado para realizar el trabajo",
+      "type": "radio",
+      "label": "5. El tiempo asignado para realizar el trabajo",
+      "required": true,
+      "order": 46,
+      "options": [
+        {
+          "id": "o1",
+          "label": "muy clara",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "clara",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "poco clara",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "nada clara",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q38",
+      "name": "6. La responsabilidad del puesto  de trabajo (qué errores o defectos pueden achacarse a tu actuación y cuáles no)",
+      "type": "radio",
+      "label": "6. La responsabilidad del puesto  de trabajo (qué errores o defectos pueden achacarse a tu actuación y cuáles no)",
+      "required": true,
+      "order": 47,
+      "options": [
+        {
+          "id": "o1",
+          "label": "muy clara",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "clara",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "poco clara",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "nada clara",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-15",
+      "type": "page_break",
+      "label": "15. Señala con qué frecuencia se dan las siguientes situaciones en tu trabajo",
+      "sectionTitle": "15. Señala con qué frecuencia se dan las siguientes situaciones en tu trabajo",
+      "required": false,
+      "order": 48
+    },
+    {
+      "id": "q39",
+      "name": "1.\tSe te asignan tareas que no puedes realizar por no tener los recursos humanos o materiales",
+      "type": "radio",
+      "label": "1.\tSe te asignan tareas que no puedes realizar por no tener los recursos humanos o materiales",
+      "required": true,
+      "order": 49,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q40",
+      "name": "2. Para ejecutar algunas  tareas tienes que saltarte los métodos establecidos",
+      "type": "radio",
+      "label": "2. Para ejecutar algunas  tareas tienes que saltarte los métodos establecidos",
+      "required": true,
+      "order": 50,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q41",
+      "name": "3. Se te exige tomar decisiones o realizar cosas con las que no estás de acuerdo porque te suponen un conflicto moral, legal, emocional…",
+      "type": "radio",
+      "label": "3. Se te exige tomar decisiones o realizar cosas con las que no estás de acuerdo porque te suponen un conflicto moral, legal, emocional…",
+      "required": true,
+      "order": 51,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q42",
+      "name": "4. Recibes instrucciones contradictorias entre sí (unos te mandan una cosa y otros otra)",
+      "type": "radio",
+      "label": "4. Recibes instrucciones contradictorias entre sí (unos te mandan una cosa y otros otra)",
+      "required": true,
+      "order": 52,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q43",
+      "name": "5. Se te exigen responsabilidades, cometidos o tareas que no entran dentro de tus funciones y que deberían llevar a cabo otros trabajadores",
+      "type": "radio",
+      "label": "5. Se te exigen responsabilidades, cometidos o tareas que no entran dentro de tus funciones y que deberían llevar a cabo otros trabajadores",
+      "required": true,
+      "order": 53,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-16",
+      "type": "page_break",
+      "label": "16. Si tienes que realizar un trabajo delicado o complicado y deseas ayuda o apoyo, puedes contar con:",
+      "sectionTitle": "16. Si tienes que realizar un trabajo delicado o complicado y deseas ayuda o apoyo, puedes contar con:",
+      "required": false,
+      "order": 54
+    },
+    {
+      "id": "q44",
+      "name": "1. Tus jefes",
+      "type": "radio",
+      "label": "1. Tus jefes",
+      "required": true,
+      "order": 55,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no hay otras personas",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q45",
+      "name": "2. Tus compañeros",
+      "type": "radio",
+      "label": "2. Tus compañeros",
+      "required": true,
+      "order": 56,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no hay otras personas",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q46",
+      "name": "3.\tTus subordinados",
+      "type": "radio",
+      "label": "3.\tTus subordinados",
+      "required": true,
+      "order": 57,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no hay otras personas",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q47",
+      "name": "4. Otras personas que trabajan en la empresa",
+      "type": "radio",
+      "label": "4. Otras personas que trabajan en la empresa",
+      "required": true,
+      "order": 58,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no hay otras personas",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-17",
+      "type": "page_break",
+      "label": "17. Relaciones con las personas con las que debes trabajar",
+      "sectionTitle": "17. Relaciones con las personas con las que debes trabajar",
+      "required": false,
+      "order": 59
+    },
+    {
+      "id": "q48",
+      "name": "17.\t¿Cómo consideras que son las relaciones con las personas con las que debes trabajar?",
+      "type": "radio",
+      "label": "17.\t¿Cómo consideras que son las relaciones con las personas con las que debes trabajar?",
+      "required": true,
+      "order": 60,
+      "options": [
+        {
+          "id": "o1",
+          "label": "buenas",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "regulares",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "malas",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "no tengo compañeros",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-18",
+      "type": "page_break",
+      "label": "18. Con qué frecuencia se producen en tu trabajo:",
+      "sectionTitle": "18. Con qué frecuencia se producen en tu trabajo:",
+      "required": false,
+      "order": 61
+    },
+    {
+      "id": "q49",
+      "name": "1. Los conflictos interpersonales",
+      "type": "radio",
+      "label": "1. Los conflictos interpersonales",
+      "required": true,
+      "order": 62,
+      "options": [
+        {
+          "id": "o1",
+          "label": "raras veces",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "con frecuencia",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "constantemente",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "no existen",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q50",
+      "name": "2.\tLas situaciones de violencia física",
+      "type": "radio",
+      "label": "2.\tLas situaciones de violencia física",
+      "required": true,
+      "order": 63,
+      "options": [
+        {
+          "id": "o1",
+          "label": "raras veces",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "con frecuencia",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "constantemente",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "no existen",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q51",
+      "name": "3.\tLas situaciones de violencia psicológica (amenazas, insultos, hacer el vacío, descalificaciones personales…)",
+      "type": "radio",
+      "label": "3.\tLas situaciones de violencia psicológica (amenazas, insultos, hacer el vacío, descalificaciones personales…)",
+      "required": true,
+      "order": 64,
+      "options": [
+        {
+          "id": "o1",
+          "label": "raras veces",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "con frecuencia",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "constantemente",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "no existen",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q52",
+      "name": "4. Las situaciones de acoso sexual",
+      "type": "radio",
+      "label": "4. Las situaciones de acoso sexual",
+      "required": true,
+      "order": 65,
+      "options": [
+        {
+          "id": "o1",
+          "label": "raras veces",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "con frecuencia",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "constantemente",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "no existen",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-19-20",
+      "type": "page_break",
+      "label": "19 y 20. Solución de conflictos y no discriminación",
+      "sectionTitle": "19 y 20. Solución de conflictos y no discriminación",
+      "required": false,
+      "order": 66
+    },
+    {
+      "id": "q53",
+      "name": "19.\tTu empresa, frente a situaciones de conflicto interpersonal entre trabajadores:",
+      "type": "radio",
+      "label": "19.\tTu empresa, frente a situaciones de conflicto interpersonal entre trabajadores:",
+      "required": true,
+      "order": 67,
+      "options": [
+        {
+          "id": "o1",
+          "label": "deja que sean los implicados quienes solucionen el tema",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "pide a los mandos de los afectados que traten de buscar una solución al problema",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "tiene establecido un procedimiento formal de actuación",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "no lo sé",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q54",
+      "name": "20.\tEn tu entorno laboral ¿te sientes discriminado? (por razones de edad, sexo, religión, raza, formación, categoría...)",
+      "type": "radio",
+      "label": "20.\tEn tu entorno laboral ¿te sientes discriminado? (por razones de edad, sexo, religión, raza, formación, categoría...)",
+      "required": true,
+      "order": 68,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-21-32",
+      "type": "page_break",
+      "label": "21 a 32. Exigencias, Atención, Tiempo y Carga de Trabajo",
+      "sectionTitle": "21 a 32. Exigencias, Atención, Tiempo y Carga de Trabajo",
+      "required": false,
+      "order": 69
+    },
+    {
+      "id": "q55",
+      "name": "21.\t¿A lo largo de la jornada cuánto tiempo debes mantener una exclusiva atención en tu trabajo? (de forma que te impida hablar, desplazarte o simplemente pensar en cosas ajenas a tu tarea)",
+      "type": "radio",
+      "label": "21.\t¿A lo largo de la jornada cuánto tiempo debes mantener una exclusiva atención en tu trabajo? (de forma que te impida hablar, desplazarte o simplemente pensar en cosas ajenas a tu tarea)",
+      "required": true,
+      "order": 70,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q56",
+      "name": "22.\tEn general, ¿cómo consideras la atención que debes mantener para realizar tu trabajo?",
+      "type": "radio",
+      "label": "22.\tEn general, ¿cómo consideras la atención que debes mantener para realizar tu trabajo?",
+      "required": true,
+      "order": 71,
+      "options": [
+        {
+          "id": "o1",
+          "label": "muy alta",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "alta",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "media",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "baja",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "muy baja",
+          "value": "5"
+        }
+      ]
+    },
+    {
+      "id": "q57",
+      "name": "23.\tEl tiempo de que dispones para realizar tu trabajo es suficiente y adecuado:",
+      "type": "radio",
+      "label": "23.\tEl tiempo de que dispones para realizar tu trabajo es suficiente y adecuado:",
+      "required": true,
+      "order": 72,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q58",
+      "name": "24.\tLa ejecución de tu tarea, ¿te impone trabajar con rapidez?",
+      "type": "radio",
+      "label": "24.\tLa ejecución de tu tarea, ¿te impone trabajar con rapidez?",
+      "required": true,
+      "order": 73,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q59",
+      "name": "25. ¿Con qué frecuencia debes acelerar el ritmo de trabajo?",
+      "type": "radio",
+      "label": "25. ¿Con qué frecuencia debes acelerar el ritmo de trabajo?",
+      "required": true,
+      "order": 74,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q60",
+      "name": "26. En general, la cantidad de trabajo que tienes es:",
+      "type": "radio",
+      "label": "26. En general, la cantidad de trabajo que tienes es:",
+      "required": true,
+      "order": 75,
+      "options": [
+        {
+          "id": "o1",
+          "label": "excesiva",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "elevada",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "adecuada",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "escasa",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "muy escasa",
+          "value": "5"
+        }
+      ]
+    },
+    {
+      "id": "q61",
+      "name": "27.\t¿Debes atender a varias tareas al mismo tiempo?",
+      "type": "radio",
+      "label": "27.\t¿Debes atender a varias tareas al mismo tiempo?",
+      "required": true,
+      "order": 76,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q62",
+      "name": "28.\tEl trabajo que realizas, ¿te resulta complicado o difícil?",
+      "type": "radio",
+      "label": "28.\tEl trabajo que realizas, ¿te resulta complicado o difícil?",
+      "required": true,
+      "order": 77,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q63",
+      "name": "29.\t¿En tu trabajo tienes que llevar a cabo tareas tan difíciles que necesitas pedir a alguien consejo o ayuda?",
+      "type": "radio",
+      "label": "29.\t¿En tu trabajo tienes que llevar a cabo tareas tan difíciles que necesitas pedir a alguien consejo o ayuda?",
+      "required": true,
+      "order": 78,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q64",
+      "name": "30.\tEn tu trabajo, tienes que interrumpir la tarea que estás haciendo para realizar otra no prevista",
+      "type": "radio",
+      "label": "30.\tEn tu trabajo, tienes que interrumpir la tarea que estás haciendo para realizar otra no prevista",
+      "required": true,
+      "order": 79,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q65",
+      "name": "31.\tEn el caso de que existan interrupciones, ¿alteran seriamente la ejecución de tu trabajo?",
+      "type": "radio",
+      "label": "31.\tEn el caso de que existan interrupciones, ¿alteran seriamente la ejecución de tu trabajo?",
+      "required": true,
+      "order": 80,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q66",
+      "name": "32.\t¿La cantidad de trabajo que tienes suele ser irregular e imprevisible?",
+      "type": "radio",
+      "label": "32.\t¿La cantidad de trabajo que tienes suele ser irregular e imprevisible?",
+      "required": true,
+      "order": 81,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-33",
+      "type": "page_break",
+      "label": "33. En qué medida tu trabajo requiere:",
+      "sectionTitle": "33. En qué medida tu trabajo requiere:",
+      "required": false,
+      "order": 82
+    },
+    {
+      "id": "q67",
+      "name": "1. Aprender cosas o métodos nuevos",
+      "type": "radio",
+      "label": "1. Aprender cosas o métodos nuevos",
+      "required": true,
+      "order": 83,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q68",
+      "name": "2.\tAdaptarse  a nuevas situaciones",
+      "type": "radio",
+      "label": "2.\tAdaptarse  a nuevas situaciones",
+      "required": true,
+      "order": 84,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q69",
+      "name": "3. Tomar iniciativas",
+      "type": "radio",
+      "label": "3. Tomar iniciativas",
+      "required": true,
+      "order": 85,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q70",
+      "name": "4. Tener buena memoria",
+      "type": "radio",
+      "label": "4. Tener buena memoria",
+      "required": true,
+      "order": 86,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q71",
+      "name": "5. Ser creativo",
+      "type": "radio",
+      "label": "5. Ser creativo",
+      "required": true,
+      "order": 87,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q72",
+      "name": "6. Tratar directamente con personas que no están empleadas en tu trabajo (clientes, pasajeros, alumnos, pacientes, etc.)",
+      "type": "radio",
+      "label": "6. Tratar directamente con personas que no están empleadas en tu trabajo (clientes, pasajeros, alumnos, pacientes, etc.)",
+      "required": true,
+      "order": 88,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-34",
+      "type": "page_break",
+      "label": "34. En tu trabajo ¿con qué frecuencia tienes que ocultar tus emociones y sentimientos ante…?",
+      "sectionTitle": "34. En tu trabajo ¿con qué frecuencia tienes que ocultar tus emociones y sentimientos ante…?",
+      "required": false,
+      "order": 89
+    },
+    {
+      "id": "q73",
+      "name": "1. Tus superiores jerárquicos",
+      "type": "radio",
+      "label": "1. Tus superiores jerárquicos",
+      "required": true,
+      "order": 90,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no trato",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q74",
+      "name": "2. Tus subordinados",
+      "type": "radio",
+      "label": "2. Tus subordinados",
+      "required": true,
+      "order": 91,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no trato",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q75",
+      "name": "3. Tus compañeros de trabajo",
+      "type": "radio",
+      "label": "3. Tus compañeros de trabajo",
+      "required": true,
+      "order": 92,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no trato",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q76",
+      "name": "4. Personas que no están empleadas en la empresa  (clientes, pasajeros, alumnos, pacientes, etc.)",
+      "type": "radio",
+      "label": "4. Personas que no están empleadas en la empresa  (clientes, pasajeros, alumnos, pacientes, etc.)",
+      "required": true,
+      "order": 93,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no trato",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-35-39",
+      "type": "page_break",
+      "label": "35 a 39. Exigencias Emocionales y Significado del Trabajo",
+      "sectionTitle": "35 a 39. Exigencias Emocionales y Significado del Trabajo",
+      "required": false,
+      "order": 94
+    },
+    {
+      "id": "q77",
+      "name": "35.\tPor el tipo de trabajo que tienes, ¿estás expuesto a situaciones que te afectan emocionalmente?",
+      "type": "radio",
+      "label": "35.\tPor el tipo de trabajo que tienes, ¿estás expuesto a situaciones que te afectan emocionalmente?",
+      "required": true,
+      "order": 95,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q78",
+      "name": "36.\tPor el tipo de trabajo que tienes, ¿con qué frecuencia se espera que des una respuesta a los problemas emocionales y personales de tus clientes externos? (pasajeros, alumnos, pacientes, etc.)",
+      "type": "radio",
+      "label": "36.\tPor el tipo de trabajo que tienes, ¿con qué frecuencia se espera que des una respuesta a los problemas emocionales y personales de tus clientes externos? (pasajeros, alumnos, pacientes, etc.)",
+      "required": true,
+      "order": 96,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q79",
+      "name": "37.\tEl trabajo que realizas ¿te resulta rutinario?",
+      "type": "radio",
+      "label": "37.\tEl trabajo que realizas ¿te resulta rutinario?",
+      "required": true,
+      "order": 97,
+      "options": [
+        {
+          "id": "o1",
+          "label": "no",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "a veces",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "bastante",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "mucho",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q80",
+      "name": "38.\tEn general ¿consideras que las tareas que realizas tienen sentido?",
+      "type": "radio",
+      "label": "38.\tEn general ¿consideras que las tareas que realizas tienen sentido?",
+      "required": true,
+      "order": 98,
+      "options": [
+        {
+          "id": "o1",
+          "label": "mucho",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "bastante",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "poco",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "nada",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q81",
+      "name": "39.\t¿Cómo contribuye tu trabajo en el conjunto de la empresa u organización?",
+      "type": "radio",
+      "label": "39.\t¿Cómo contribuye tu trabajo en el conjunto de la empresa u organización?",
+      "required": true,
+      "order": 99,
+      "options": [
+        {
+          "id": "o1",
+          "label": "no es muy importante",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "es importante",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "es muy importante",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "no lo sé",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-40",
+      "type": "page_break",
+      "label": "40. En general, ¿está tu trabajo reconocido y apreciado por…?",
+      "sectionTitle": "40. En general, ¿está tu trabajo reconocido y apreciado por…?",
+      "required": false,
+      "order": 100
+    },
+    {
+      "id": "q82",
+      "name": "1. Tus superiores",
+      "type": "radio",
+      "label": "1. Tus superiores",
+      "required": true,
+      "order": 101,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no trato",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q83",
+      "name": "2. Tus compañeros de trabajo",
+      "type": "radio",
+      "label": "2. Tus compañeros de trabajo",
+      "required": true,
+      "order": 102,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no trato",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q84",
+      "name": "3. El público, clientes, pasajeros, alumnos, pacientes, etc. (si los hay)",
+      "type": "radio",
+      "label": "3. El público, clientes, pasajeros, alumnos, pacientes, etc. (si los hay)",
+      "required": true,
+      "order": 103,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no trato",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q85",
+      "name": "4.\tTu familia y tus amistades",
+      "type": "radio",
+      "label": "4.\tTu familia y tus amistades",
+      "required": true,
+      "order": 104,
+      "options": [
+        {
+          "id": "o1",
+          "label": "1. Siempre o casi siempre",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "2. A menudo",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "3. A veces",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "4. Nunca o casi nunca",
+          "value": "4"
+        },
+        {
+          "id": "o5",
+          "label": "no tengo, no trato",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "sec-fpsico-41-44",
+      "type": "page_break",
+      "label": "41 a 44. Desarrollo Profesional, Compensación y Observaciones",
+      "sectionTitle": "41 a 44. Desarrollo Profesional, Compensación y Observaciones",
+      "required": false,
+      "order": 105
+    },
+    {
+      "id": "q86",
+      "name": "41.\t¿Te facilita la empresa el desarrollo profesional (promoción, plan de carrera,…)?",
+      "type": "radio",
+      "label": "41.\t¿Te facilita la empresa el desarrollo profesional (promoción, plan de carrera,…)?",
+      "required": true,
+      "order": 106,
+      "options": [
+        {
+          "id": "o1",
+          "label": "adecuadamente",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "regular",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "insuficientemente",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "no existe posibilidad de desarrollo profesional",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "q87",
+      "name": "42.\t¿Cómo definirías la formación que se imparte o se facilita desde tu empresa?",
+      "type": "radio",
+      "label": "42.\t¿Cómo definirías la formación que se imparte o se facilita desde tu empresa?",
+      "required": true,
+      "order": 107,
+      "options": [
+        {
+          "id": "o1",
+          "label": "muy adecuada",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "suficiente",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "insuficiente en algunos casos",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "totalmente insuficiente",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q88",
+      "name": "43.\tEn general, la correspondencia entre el esfuerzo que haces y las recompensas que la empresa te proporciona es:",
+      "type": "radio",
+      "label": "43.\tEn general, la correspondencia entre el esfuerzo que haces y las recompensas que la empresa te proporciona es:",
+      "required": true,
+      "order": 108,
+      "options": [
+        {
+          "id": "o1",
+          "label": "muy adecuada",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "suficiente",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "insuficiente en algunos casos",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "totalmente insuficiente",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "q89",
+      "name": "44.\tConsiderando los deberes y responsabilidades de tu trabajo ¿estás satisfecho con el salario que recibes?",
+      "type": "radio",
+      "label": "44.\tConsiderando los deberes y responsabilidades de tu trabajo ¿estás satisfecho con el salario que recibes?",
+      "required": true,
+      "order": 109,
+      "options": [
+        {
+          "id": "o1",
+          "label": "muy satisfecho",
+          "value": "1"
+        },
+        {
+          "id": "o2",
+          "label": "satisfecho",
+          "value": "2"
+        },
+        {
+          "id": "o3",
+          "label": "insatisfecho",
+          "value": "3"
+        },
+        {
+          "id": "o4",
+          "label": "muy insatisfecho",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "id": "observaciones",
+      "name": "Observaciones",
+      "type": "textarea",
+      "label": "Observaciones: Indique a continuación las observaciones o consideraciones que no estén suficiente o adecuadamente contempladas en las encuestas:",
+      "required": false,
+      "order": 110
+    }
+  ]
 };
 
 export const lips60Form: FormSchema = {

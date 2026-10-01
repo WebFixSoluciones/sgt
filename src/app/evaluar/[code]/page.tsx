@@ -1484,22 +1484,25 @@ export default function WorkerEvaluationPage() {
           </div>
         )}
 
-        {/* TÍTULO DE LA SECCIÓN (BAJADO AL CUERPO PRINCIPAL SOBRE LAS PREGUNTAS) */}
+        {/* ENUNCIADO PRINCIPAL O TÍTULO DEL BLOQUE DE PREGUNTAS */}
         {currentSection?.title && (
-          <div className="mb-4 sm:mb-6 pb-2.5 sm:pb-3.5 border-b border-slate-200">
-            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-1">
-              <span className="px-2 py-0.5 bg-blue-50 border border-blue-200 rounded-md">
-                Sección {currentSectionIndex + 1} de {sections.length}
+          <div className="mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-slate-200">
+            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+              <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-full text-[10px] sm:text-[11px] font-semibold tracking-wide">
+                Parte {currentSectionIndex + 1} de {sections.length}
               </span>
-              {sections.length > 1 && (
-                <span className="text-slate-400 font-medium">
-                  • Pantalla {currentSectionIndex + 1}
-                </span>
-              )}
+              <span className="text-[11px] text-slate-400 font-medium">
+                {currentSectionTotal} {currentSectionTotal === 1 ? 'pregunta' : 'preguntas a responder'}
+              </span>
             </div>
             <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight leading-snug">
               {currentSection.title}
             </h2>
+            {currentSectionTotal > 1 && /^\d+[\.\)]/.test(currentSection.title.trim()) && (
+              <p className="text-xs text-slate-500 mt-1.5 font-medium">
+                Responda a cada uno de los siguientes aspectos para completar esta pregunta:
+              </p>
+            )}
           </div>
         )}
 
@@ -1795,7 +1798,7 @@ export default function WorkerEvaluationPage() {
                 onClick={handleNextSection}
                 className="px-3.5 sm:px-5 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs sm:text-sm font-bold rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs active:scale-95 min-h-[40px] sm:min-h-[44px] touch-manipulation"
               >
-                <span className="hidden sm:inline">Siguiente Sección</span>
+                <span className="hidden sm:inline">Continuar</span>
                 <span className="sm:hidden">Siguiente</span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
               </button>
