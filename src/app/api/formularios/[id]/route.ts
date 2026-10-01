@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFormById, saveForm, deleteForm } from '@/lib/storage';
+import { getFormById, saveForm, deleteForm, resetTemplateToCanonical } from '@/lib/storage';
 import { getEcuadorISOString } from '@/lib/date-utils';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +16,17 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const isReset = req.nextUrl.searchParams.get('reset') === 'true';
+    if (isReset) {
+      const resetForm = await resetTemplateToCanonical(params.id);
+      if (resetForm) {
+        return NextResponse.json(
+          { success: true, data: resetForm, reset: true },
+          { headers: NO_CACHE_HEADERS }
+        );
+      }
+    }
+
     const form = await getFormById(params.id);
     if (!form) {
       return NextResponse.json(

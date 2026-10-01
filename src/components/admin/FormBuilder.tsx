@@ -28,6 +28,7 @@ import {
   X,
   ArrowUp,
   ArrowDown,
+  RotateCcw,
 } from 'lucide-react';
 import { FormSchema, FormField, FormFieldOption, FormFieldType } from '@/lib/types';
 import ConfirmDialog, { DialogType } from '@/components/common/ConfirmDialog';
@@ -78,6 +79,43 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
 
   const showAlert = (title: string, message: string, type: DialogType = 'danger') => {
     setAlertDialog({ isOpen: true, title, message, type });
+  };
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    type?: DialogType;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string | null;
+    onConfirm: () => void;
+  } | null>(null);
+
+  const handleResetCanonical = () => {
+    setConfirmDialog({
+      isOpen: true,
+      type: 'warning',
+      title: '¿Restaurar Estructura Oficial FPSICO 4.0?',
+      message: 'Se sincronizarán las 18 secciones/baterías con los 89 ítems y escalas oficiales del INSST tal cual la norma técnica.',
+      confirmText: 'Sí, Restaurar Plantilla',
+      cancelText: 'Cancelar',
+      onConfirm: async () => {
+        try {
+          setConfirmDialog(null);
+          const res = await fetch(`/api/formularios/${form.id}?reset=true`);
+          const data = await res.json();
+          if (data.success && data.data) {
+            setForm(data.data);
+            try {
+              localStorage.setItem(`sgt_form_${form.id}`, JSON.stringify(data.data));
+            } catch (e) {}
+            showAlert('Plantilla Restaurada', 'La plantilla FPSICO 4.0 ha sido actualizada con la estructura canónica de 18 secciones.', 'success');
+          }
+        } catch (e) {
+          showAlert('Error', 'No se pudo restaurar la plantilla oficial.', 'danger');
+        }
+      },
+    });
   };
 
   // PDF Export state
@@ -762,6 +800,19 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
               </span>
             )}
 
+            {/* Botón Restaurar Plantilla Oficial (solo si es plantilla FPSICO) */}
+            {(form.id === 'form-fpsico-40' || form.code === 'fpsico-40') && (
+              <button
+                type="button"
+                onClick={handleResetCanonical}
+                className="px-3 py-2 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs sm:text-sm font-semibold rounded-xl transition-colors inline-flex items-center gap-1.5 border border-slate-200 hover:border-blue-200 shadow-2xs"
+                title="Restaurar la estructura oficial de 18 secciones/baterías y 89 preguntas del INSST"
+              >
+                <RotateCcw className="w-4 h-4 text-blue-600" />
+                <span className="hidden xl:inline">Restaurar Oficial INSST</span>
+              </button>
+            )}
+
             {/* Botón Exportar PDF */}
             <button
               type="button"
@@ -969,9 +1020,14 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                   >
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
-                        <span className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-bold text-blue-700 shrink-0">
-                          {idx + 1}
-                        </span>
+                        {(() => {
+                          const numMatch = sec.title.match(/^(\d+(?:\s*(?:a|y)\s*\d+)?)\.?\s*/i);
+                          return (
+                            <span className="min-w-5 h-5 px-1 rounded-md bg-white border border-slate-200 flex items-center justify-center text-[10px] font-bold text-blue-700 shrink-0 shadow-2xs">
+                              {numMatch ? numMatch[1] : idx + 1}
+                            </span>
+                          );
+                        })()}
                         <span className="font-semibold text-slate-800 truncate" title={sec.title}>
                           {sec.title}
                         </span>
@@ -1102,9 +1158,18 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                           {/* Left: Section Icon + Title input */}
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <span className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">
-                              {currentSecIndex !== -1 ? currentSecIndex + 1 : '§'}
-                            </span>
+                            {(() => {
+                              const currentTitle = field.sectionTitle || field.label || '';
+                              const numMatch = currentTitle.match(/^(\d+(?:\s*(?:a|y)\s*\d+)?)\.?\s*/i);
+                              return (
+                                <span
+                                  className="px-2.5 py-1 rounded-lg bg-blue-600 text-white flex items-center justify-center text-[11px] font-bold shrink-0 shadow-xs whitespace-nowrap"
+                                  title="Enunciado de batería / Salto de pantalla"
+                                >
+                                  {numMatch ? `Pregunta #${numMatch[1]}` : `Sección ${currentSecIndex !== -1 ? currentSecIndex + 1 : '§'}`}
+                                </span>
+                              );
+                            })()}
                             <div className="flex-1 min-w-0">
                               <input
                                 type="text"
@@ -1115,8 +1180,8 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                                     label: e.target.value,
                                   })
                                 }
-                                placeholder="Nombre de la Sección..."
-                                className="w-full bg-white border border-blue-200 hover:border-blue-400 focus:border-blue-600 rounded-lg px-2.5 py-1 font-bold text-blue-950 text-xs sm:text-sm focus:outline-none transition-colors shadow-2xs"
+                                placeholder="Enunciado de la Batería o Nombre de la Sección..."
+                                className="w-full bg-white border border-blue-200 hover:border-blue-400 focus:border-blue-600 rounded-lg px-2.5 py-1.5 font-bold text-blue-950 text-xs sm:text-sm focus:outline-none transition-colors shadow-2xs"
                               />
                             </div>
                             <span
@@ -1242,14 +1307,26 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
                         <div className="flex-1 min-w-0">
                           {/* Badges de número de pregunta y sección */}
                           <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                            {qNumber !== undefined && (
+                            {field.id === 'puesto' || field.id === 'horario' || field.id === 'antiguedad' ? (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md shrink-0">
+                                Variable Demográfica
+                              </span>
+                            ) : field.id.startsWith('q') && !isNaN(Number(field.id.slice(1))) ? (
+                              <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md shrink-0">
+                                Ítem #{field.id.slice(1)}
+                              </span>
+                            ) : qNumber !== undefined ? (
                               <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md shrink-0">
                                 Pregunta #{qNumber}
                               </span>
-                            )}
+                            ) : null}
+
                             {currentSecInfo && (
-                              <span className="text-[10px] font-medium text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md truncate max-w-[220px]">
-                                {currentSecInfo.sectionTitle}
+                              <span
+                                className="text-[10px] font-medium text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md truncate max-w-[340px]"
+                                title={`Batería / Sección: ${currentSecInfo.sectionTitle}`}
+                              >
+                                Batería: {currentSecInfo.sectionTitle}
                               </span>
                             )}
                           </div>
@@ -1725,6 +1802,19 @@ export default function FormBuilder({ initialForm, isNew = false }: FormBuilderP
           confirmText="Entendido"
           cancelText={null}
           onConfirm={() => setAlertDialog(null)}
+        />
+      )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          type={confirmDialog.type}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText={confirmDialog.confirmText}
+          cancelText={confirmDialog.cancelText}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
         />
       )}
 

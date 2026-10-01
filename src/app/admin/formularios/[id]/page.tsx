@@ -23,8 +23,14 @@ export default function EditarFormularioPage() {
         setLoading(true);
         setError(null);
 
-        // 1. Fetch from server API
-        const res = await fetch(`/api/formularios/${id}`);
+        // 1. Fetch from server API with cache buster
+        const res = await fetch(`/api/formularios/${id}?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+        });
         const data = await res.json();
         if (data.success && data.data) {
           setForm(data.data);
@@ -35,20 +41,20 @@ export default function EditarFormularioPage() {
           return;
         }
 
-        // 2. Fallback: check localStorage cache
+        // 2. Fallback: check localStorage cache only if server returned not found / offline
         if (typeof window !== 'undefined') {
           const cached = localStorage.getItem(`sgt_form_${id}`);
           if (cached) {
             try {
               const parsed: FormSchema = JSON.parse(cached);
-              setForm(parsed);
-              // Re-sync with server in background
-              fetch('/api/formularios', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(parsed),
-              }).catch(() => {});
-              return;
+              // For fpsico template, do not load stale cache with fewer than 18 page breaks
+              const pbCount = (parsed.fields || []).filter((f) => f.type === 'page_break').length;
+              if (id === 'form-fpsico-40' && pbCount < 18) {
+                // Ignore stale cache
+              } else {
+                setForm(parsed);
+                return;
+              }
             } catch (e) {}
           }
         }

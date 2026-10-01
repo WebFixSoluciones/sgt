@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { FormSchema, EvaluationCampaign, WorkerSubmission, EvaluationGroup } from './types';
-import { initialForms, initialCampaigns, initialGroups, initialSubmissions, estresLaboralForm } from './seed-data';
+import { initialForms, initialCampaigns, initialGroups, initialSubmissions, estresLaboralForm, fpsicoForm } from './seed-data';
 import { getEcuadorISOString } from './date-utils';
 
 interface DatabaseSchema {
@@ -266,6 +266,25 @@ export async function getDatabase(): Promise<DatabaseSchema> {
       }
     }
 
+    // Ensure form-fpsico-40 has canonical 18 battery sections and 111 fields from seed-data
+    const fpsicoMaster = memDb.forms.find((f) => f.id === 'form-fpsico-40');
+    if (fpsicoForm) {
+      if (!fpsicoMaster) {
+        memDb.forms.unshift(fpsicoForm);
+        modified = true;
+      } else {
+        const pbCount = fpsicoMaster.fields.filter((f) => f.type === 'page_break').length;
+        if (pbCount < 18 || fpsicoMaster.fields.length !== fpsicoForm.fields.length) {
+          fpsicoMaster.fields = fpsicoForm.fields;
+          fpsicoMaster.title = fpsicoForm.title;
+          fpsicoMaster.description = fpsicoForm.description;
+          fpsicoMaster.isTemplate = true;
+          fpsicoMaster.company = '';
+          modified = true;
+        }
+      }
+    }
+
     // Ensure form-estres-laboral has canonical updated scale and question fields
     const estresMaster = memDb.forms.find((f) => f.id === 'form-estres-laboral');
     if (estresMaster && estresLaboralForm) {
@@ -511,7 +530,45 @@ export async function getForms(): Promise<FormSchema[]> {
 
 export async function getFormById(id: string): Promise<FormSchema | null> {
   const db = await getDatabase();
-  return db.forms.find((f) => f.id === id || f.code === id) || null;
+  let found = db.forms.find((f) => f.id === id || f.code === id) || null;
+  if ((id === 'form-fpsico-40' || id === 'fpsico-40') && fpsicoForm) {
+    if (!found) {
+      found = fpsicoForm;
+      db.forms.unshift(fpsicoForm);
+      await writeToDiskOrBlob(db);
+    } else {
+      const pbCount = found.fields.filter((f) => f.type === 'page_break').length;
+      if (pbCount < 18 || found.fields.length !== fpsicoForm.fields.length) {
+        found.fields = fpsicoForm.fields;
+        found.title = fpsicoForm.title;
+        found.description = fpsicoForm.description;
+        found.isTemplate = true;
+        found.company = '';
+        await writeToDiskOrBlob(db);
+      }
+    }
+  }
+  return found;
+}
+
+export async function resetTemplateToCanonical(id: string): Promise<FormSchema | null> {
+  const db = await getDatabase();
+  let canonical: FormSchema | null = null;
+  if (id === 'form-fpsico-40' || id === 'fpsico-40') {
+    canonical = fpsicoForm;
+  } else if (id === 'form-estres-laboral') {
+    canonical = estresLaboralForm;
+  }
+  if (!canonical) return null;
+
+  const fIdx = db.forms.findIndex((f) => f.id === id || f.code === id);
+  if (fIdx >= 0) {
+    db.forms[fIdx] = { ...canonical, updatedAt: getEcuadorISOString() };
+  } else {
+    db.forms.unshift({ ...canonical, updatedAt: getEcuadorISOString() });
+  }
+  await writeToDiskOrBlob(db);
+  return canonical;
 }
 
 export async function saveForm(form: FormSchema): Promise<FormSchema> {
