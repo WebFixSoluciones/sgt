@@ -412,6 +412,14 @@ export async function POST(req: NextRequest) {
     if (action === 'reset') {
       const existing = await getSubmission(evaluationCode, effectiveWorkerCode);
       if (existing && existing.status === 'completed') {
+        if (isOpenEval) {
+          const newCode = await getNextOpenParticipantCode(evaluationCode);
+          return NextResponse.json({
+            success: true,
+            status: 'reset',
+            workerCode: newCode,
+          });
+        }
         return NextResponse.json(
           {
             success: false,
