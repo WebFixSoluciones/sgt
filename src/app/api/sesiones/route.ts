@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // Identificar si existe evaluación en curso para esta IP o identificador guardado
+        // Identificar si existe evaluación en curso para este navegador (aislado por dispositivo)
         const allSubmissions = await getSubmissions(evaluationCode);
         let existing: WorkerSubmission | null = null;
 
@@ -157,15 +157,9 @@ export async function POST(req: NextRequest) {
           ) || null;
         }
 
-        if (!existing && clientIp) {
-          const ipMatches = allSubmissions.filter(
-            (s) => s.status === 'in_progress' && s.ip && (s.ip === clientIp || s.ip.includes(clientIp))
-          );
-          if (ipMatches.length > 0) {
-            ipMatches.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-            existing = ipMatches[0];
-          }
-        }
+        // NOTA CRÍTICA: En evaluaciones abiertas NO se vincula por IP pública, porque en una oficina
+        // o call center decenas de trabajadores comparten la misma IP. Vincular por IP causaba que
+        // un trabajador tomara el borrador de otro. La sesión se aísla exclusivamente por dispositivo (localStorage).
 
         if (existing) {
           const existingAnswers = existing.answers || {};
@@ -452,6 +446,9 @@ export async function POST(req: NextRequest) {
     if (action === 'save_draft') {
       const existing = await getSubmission(evaluationCode, effectiveWorkerCode);
       if (existing && existing.status === 'completed') {
+        if (isOpenEval) {
+          return NextResponse.json({ success: true, workerCode: effectiveWorkerCode });
+        }
         return NextResponse.json(
           {
             success: false,
@@ -484,6 +481,15 @@ export async function POST(req: NextRequest) {
     if (action === 'complete') {
       const existing = await getSubmission(evaluationCode, effectiveWorkerCode);
       if (existing && existing.status === 'completed') {
+        if (isOpenEval) {
+          return NextResponse.json({
+            success: true,
+            status: 'completed',
+            currentEvaluationTitle: campaign.title,
+            nextEvaluationCode: campaign.nextEvaluationCode || null,
+            message: 'USTED HA COMPLETADO SATISFACTORIAMENTE SU EVALUACIÓN.',
+          });
+        }
         return NextResponse.json(
           {
             success: false,

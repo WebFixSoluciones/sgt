@@ -564,6 +564,13 @@ export default function WorkerEvaluationPage() {
       }
 
       if (data.status === 'completed' || data.alreadyExists) {
+        if (campaign?.isOpenEvaluation) {
+          try {
+            localStorage.removeItem(`sgt_open_worker_${code}`);
+          } catch (e) {}
+          handleOpenEvaluationCheck(true);
+          return;
+        }
         setCompletedData(data.submission);
         setAlreadyCompleted(true);
         return;
@@ -888,6 +895,16 @@ export default function WorkerEvaluationPage() {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }
+
+        // Si ya fue completada (por reintento de red o doble tap) en evaluación abierta, tratar como éxito
+        if (campaign?.isOpenEvaluation && (String(data.error || '').toUpperCase().includes('YA EXISTE') || data.status === 'completed')) {
+          try {
+            localStorage.removeItem(`sgt_open_worker_${code}`);
+          } catch (e) {}
+          setSurveyCompletedSuccess(true);
+          return;
+        }
+
         showAlert(
           'Validación de cuestionario',
           data.error || 'Asegúrese de haber completado todas las preguntas requeridas para poder finalizar.',
