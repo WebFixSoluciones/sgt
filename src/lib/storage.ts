@@ -4,11 +4,18 @@ import { FormSchema, EvaluationCampaign, WorkerSubmission, EvaluationGroup } fro
 import { initialForms, initialCampaigns, initialGroups, initialSubmissions, estresLaboralForm, fpsicoForm, lips60Form } from './seed-data';
 import { getEcuadorISOString } from './date-utils';
 
+export interface SystemSettings {
+  adminUsername?: string;
+  adminPassword?: string;
+  updatedAt?: string;
+}
+
 interface DatabaseSchema {
   forms: FormSchema[];
   campaigns: EvaluationCampaign[];
   submissions: WorkerSubmission[];
   groups: EvaluationGroup[];
+  systemSettings?: SystemSettings;
 }
 
 const IS_SERVERLESS = Boolean(
@@ -37,6 +44,11 @@ function getInitialDb(): DatabaseSchema {
     campaigns: initialCampaigns,
     submissions: initialSubmissions,
     groups: initialGroups,
+    systemSettings: {
+      adminUsername: 'admin',
+      adminPassword: process.env.ADMIN_PASSWORD || 'PrevencionSGT2026!',
+      updatedAt: getEcuadorISOString(),
+    },
   };
 }
 
@@ -324,6 +336,16 @@ export async function getDatabase(): Promise<DatabaseSchema> {
           modified = true;
         }
       }
+    }
+
+    // Ensure systemSettings exists in DB
+    if (!memDb.systemSettings) {
+      memDb.systemSettings = {
+        adminUsername: 'admin',
+        adminPassword: process.env.ADMIN_PASSWORD || 'PrevencionSGT2026!',
+        updatedAt: getEcuadorISOString(),
+      };
+      modified = true;
     }
 
     if (modified) {
@@ -1008,3 +1030,27 @@ export async function getGroups(): Promise<EvaluationGroup[]> {
   const db = await getDatabase();
   return db.groups;
 }
+
+// System Settings / Admin Credentials Operations
+export async function getSystemSettings(): Promise<SystemSettings> {
+  const db = await getDatabase();
+  return (
+    db.systemSettings || {
+      adminUsername: 'admin',
+      adminPassword: process.env.ADMIN_PASSWORD || 'PrevencionSGT2026!',
+    }
+  );
+}
+
+export async function updateAdminPassword(newPassword: string, adminUsername = 'admin'): Promise<boolean> {
+  const db = await getDatabase();
+  db.systemSettings = {
+    ...(db.systemSettings || {}),
+    adminUsername: adminUsername.trim(),
+    adminPassword: newPassword.trim(),
+    updatedAt: getEcuadorISOString(),
+  };
+  await writeToDiskOrBlob(db);
+  return true;
+}
+

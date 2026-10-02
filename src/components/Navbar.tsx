@@ -59,16 +59,6 @@ export default function Navbar() {
               <ClipboardList className="w-4 h-4" />
               <span>Constructor</span>
             </Link>
-
-            <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block"></div>
-
-            <Link
-              href="/evaluar"
-              className="px-3 py-1.5 rounded text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center gap-1.5"
-            >
-              <UserCheck className="w-4 h-4 text-emerald-600" />
-              <span>Portal Trabajador</span>
-            </Link>
           </nav>
         </div>
       </div>
