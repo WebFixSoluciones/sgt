@@ -92,21 +92,23 @@ export async function writeToBlobOnly(db: DatabaseSchema): Promise<{ success: bo
       });
     }
 
-    // Non-blocking background cleanup: do NOT await list and del in the user request!
-    (async () => {
-      try {
-        const allBlobs = await list({ token });
-        const olderDbBlobs = allBlobs.blobs
-          .filter((b) => b.pathname.startsWith('db') && b.pathname.endsWith('.json') && b.pathname !== newSnapshotName)
-          .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
-          .slice(2);
-        if (olderDbBlobs.length > 0) {
-          await del(olderDbBlobs.map((b) => b.url), { token });
+    // Non-blocking background cleanup: only run occasionally (1 in 50 writes) to conserve operations quota
+    if (Math.random() < 0.02) {
+      (async () => {
+        try {
+          const allBlobs = await list({ token });
+          const olderDbBlobs = allBlobs.blobs
+            .filter((b) => b.pathname.startsWith('db') && b.pathname.endsWith('.json') && b.pathname !== newSnapshotName)
+            .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+            .slice(2);
+          if (olderDbBlobs.length > 0) {
+            await del(olderDbBlobs.map((b) => b.url), { token });
+          }
+        } catch (cleanupErr) {
+          console.warn('[STORAGE] Blob history background cleanup note:', cleanupErr);
         }
-      } catch (cleanupErr) {
-        console.warn('[STORAGE] Blob history background cleanup note:', cleanupErr);
-      }
-    })().catch(() => {});
+      })().catch(() => {});
+    }
 
     return { success: true, url: blobResult?.url || blobResult?.downloadUrl };
   } catch (e: any) {

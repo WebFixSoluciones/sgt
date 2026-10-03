@@ -702,9 +702,10 @@ export default function WorkerEvaluationPage() {
       if (draftTimerRef.current) {
         clearTimeout(draftTimerRef.current);
       }
+      // 10s debounce: saves quota while guaranteeing persistence across sections
       draftTimerRef.current = setTimeout(() => {
         triggerAutoSave(updatedAnswers, targetSectionIdx);
-      }, 500); // 500ms debounce: allows instant UI clicks without event loop lag
+      }, 10000);
     },
     [triggerAutoSave]
   );
@@ -721,10 +722,15 @@ export default function WorkerEvaluationPage() {
   // Handle Answer Selection - 100% Synchronous, Instant UI (< 1ms execution, 0 INP lag)
   const handleSelectAnswer = (fieldId: string, value: string | number) => {
     const updatedAnswers = { ...answers, [fieldId]: value };
-    // 1. Instant local state updates
+    // 1. Instant local state and offline safety backup
     setAnswers(updatedAnswers);
     setActiveFieldId(fieldId);
     setValidationNotice(null);
+    try {
+      if (typeof window !== 'undefined' && code) {
+        localStorage.setItem(`sgt_answers_${code}`, JSON.stringify(updatedAnswers));
+      }
+    } catch (e) {}
 
     // 2. Schedule non-blocking background auto-save (debounced)
     scheduleAutoSave(updatedAnswers, currentSectionIndex);
